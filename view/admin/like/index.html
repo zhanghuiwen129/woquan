@@ -1,0 +1,459 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>点赞记录 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .bg-modern-white {
+            background-color: #ffffff;
+        }
+        .bg-modern-light {
+            background-color: #f8fafc;
+        }
+        .text-modern-dark {
+            color: #1e293b;
+        }
+        .text-modern-gray {
+            color: #64748b;
+        }
+        .bg-modern-primary {
+            background-color: #3b82f6;
+        }
+        .text-modern-primary {
+            color: #3b82f6;
+        }
+        .bg-modern-secondary {
+            background-color: #2563eb;
+        }
+        .bg-modern-success {
+            background-color: #10b981;
+        }
+        .text-modern-success {
+            color: #10b981;
+        }
+        .bg-modern-gray {
+            background-color: #64748b;
+        }
+        .bg-modern-darkGray {
+            background-color: #475569;
+        }
+        .bg-modern-lightGray {
+            background-color: #e2e8f0;
+        }
+        .border-modern-lightGray {
+            border-color: #e2e8f0;
+        }
+        .shadow-modern {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+        
+        /* 自定义确认弹窗样式 */
+        .confirm-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .confirm-modal.show {
+            display: flex;
+        }
+        .confirm-modal-content {
+            background-color: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .confirm-modal-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+        .confirm-modal-icon.warning {
+            background-color: #fef3c7;
+            color: #f59e0b;
+        }
+        .confirm-modal-icon.danger {
+            background-color: #fee2e2;
+            color: #ef4444;
+        }
+        .confirm-modal-icon.info {
+            background-color: #dbeafe;
+            color: #3b82f6;
+        }
+        .confirm-modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .confirm-modal-message {
+            font-size: 14px;
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        .confirm-modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .confirm-modal-btn {
+            flex: 1;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        .confirm-modal-btn.cancel {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+        .confirm-modal-btn.cancel:hover {
+            background-color: #e5e7eb;
+        }
+        .confirm-modal-btn.confirm {
+            background-color: #ef4444;
+            color: white;
+        }
+        .confirm-modal-btn.confirm:hover {
+            background-color: #dc2626;
+        }
+        .confirm-modal-btn.confirm.blue {
+            background-color: #3b82f6;
+        }
+        .confirm-modal-btn.confirm.blue:hover {
+            background-color: #2563eb;
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'like';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">点赞记录</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-modern-dark">点赞列表</h2>
+                <p class="text-modern-gray text-sm mt-1">管理系统点赞记录</p>
+            </div>
+
+            <!-- 搜索栏 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-5 mb-6">
+                <form action="" method="get" class="flex flex-wrap items-center gap-4">
+                    <!-- 关键词搜索 -->
+                    <div class="flex-1 min-w-[200px]">
+                        <input type="text" name="keyword" value="<?php echo isset($keyword) ? $keyword : ''; ?>"
+                               placeholder="搜索用户昵称"
+                               class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                    </div>
+
+                    <!-- 类型筛选 -->
+                    <div class="min-w-[140px]">
+                        <select name="type"
+                                class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                            <option value="all" <?php echo isset($type) && $type == 'all' ? 'selected' : ''; ?>>全部</option>
+                            <option value="moment" <?php echo isset($type) && $type == 'moment' ? 'selected' : ''; ?>>动态点赞</option>
+                            <option value="comment" <?php echo isset($type) && $type == 'comment' ? 'selected' : ''; ?>>评论点赞</option>
+                        </select>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="flex gap-3">
+                        <button type="submit" class="px-5 py-2 bg-modern-primary text-white text-sm rounded-lg hover:bg-modern-secondary transition-colors shadow-sm">
+                            <i class="fas fa-search mr-1"></i>搜索
+                        </button>
+                        <a href="/admin/like" class="px-5 py-2 bg-modern-gray text-white text-sm rounded-lg hover:bg-modern-darkGray transition-colors shadow-sm">
+                            <i class="fas fa-redo mr-1"></i>重置
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 点赞列表 -->
+            <div class="bg-modern-white rounded-lg shadow-modern overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-modern-light border-b border-modern-lightGray">
+                        <tr>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold w-[80px]">ID</th>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold w-[140px]">点赞用户</th>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold w-[80px]">类型</th>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold w-[80px]">目标ID</th>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold w-[140px]">点赞时间</th>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold w-[120px]">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($likes)): ?>
+                        <tr class="border-b border-modern-lightGray">
+                            <td colspan="6" class="py-12 text-center text-modern-gray">
+                                <i class="fas fa-thumbs-up text-4xl text-modern-lightGray mb-3"></i>
+                                <p class="text-sm">暂无点赞数据</p>
+                            </td>
+                        </tr>
+                        <?php else: foreach ($likes as $like): ?>
+                        <tr class="border-b border-modern-lightGray hover:bg-modern-light transition-colors">
+                            <td class="py-3 px-3 text-modern-dark text-xs whitespace-nowrap">
+                                <?php echo $like['id']; ?>
+                            </td>
+                            <td class="py-3 px-3">
+                                <div class="flex items-center gap-2 overflow-hidden">
+                                    <?php if ($like['user_avatar']): ?>
+                                    <img src="<?php echo $like['user_avatar'] ?: '/static/images/default-avatar.png'; ?>"
+                                         alt="头像" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-modern-lightGray">
+                                    <?php else: ?>
+                                    <div class="w-8 h-8 bg-modern-lightGray rounded-full flex-shrink-0 flex items-center justify-center">
+                                        <i class="fas fa-user text-modern-gray"></i>
+                                    </div>
+                                    <?php endif; ?>
+                                    <div class="flex-1 min-w-0 overflow-hidden">
+                                        <div class="font-medium text-modern-dark text-sm truncate"><?php echo $like['user_nickname']; ?></div>
+                                        <div class="text-xs text-modern-gray truncate">UID: <?php echo $like['user_id']; ?></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-3 px-3 whitespace-nowrap">
+                                <span class="px-2.5 py-1 text-xs font-medium rounded-full <?php echo $like['target_type'] === 'moment' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'; ?>">
+                                    <?php echo $like['target_type'] === 'moment' ? '动态' : '评论'; ?>
+                                </span>
+                            </td>
+                            <td class="py-3 px-3 text-modern-dark text-xs whitespace-nowrap">
+                                <?php echo $like['target_id']; ?>
+                            </td>
+                            <td class="py-3 px-3 text-modern-dark text-xs whitespace-nowrap">
+                                <?php echo date('Y-m-d H:i', $like['create_time'] ?? time()); ?>
+                            </td>
+                            <td class="py-3 px-3">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <a href="javascript:void(0);"
+                                       class="delete-like px-2 py-1 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white cursor-pointer text-xs rounded transition-colors"
+                                       data-id="<?php echo $like['id']; ?>"
+                                       title="取消点赞">
+                                        取消
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+
+                <!-- 分页 -->
+                <?php if (isset($likes) && $likes->total() > $likes->listRows()): ?>
+                <div class="px-5 py-4 border-t border-modern-lightGray flex justify-center bg-modern-light">
+                    <nav class="flex items-center justify-between" aria-label="Pagination">
+                        <div class="flex items-center gap-2">
+                            <p class="text-sm text-modern-gray">
+                                显示第 <span class="font-semibold text-modern-dark"><?php echo $likes->currentPage(); ?></span> 页，
+                                共 <span class="font-semibold text-modern-dark"><?php echo $likes->lastPage(); ?></span> 页
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <?php if ($likes->currentPage() > 1): ?>
+                            <a href="<?php echo $likes->previousPageUrl(); ?>" class="px-4 py-2 border border-modern-lightGray text-sm font-medium rounded-md text-modern-dark bg-modern-white hover:bg-modern-light transition-colors">
+                                上一页
+                            </a>
+                            <?php endif; ?>
+                            <?php if ($likes->currentPage() < $likes->lastPage()): ?>
+                            <a href="<?php echo $likes->nextPageUrl(); ?>" class="px-4 py-2 border border-modern-lightGray text-sm font-medium rounded-md text-modern-dark bg-modern-white hover:bg-modern-light transition-colors">
+                                下一页
+                            </a>
+                            <?php endif; ?>
+                        </div>
+                    </nav>
+                </div>
+                <?php endif; ?>
+            </div>
+        </main>
+    </div>
+
+    <!-- 自定义确认弹窗 -->
+    <div id="confirmModal" class="confirm-modal">
+        <div class="confirm-modal-content">
+            <div class="confirm-modal-icon danger">
+                <i class="fas fa-exclamation-triangle text-2xl"></i>
+            </div>
+            <div class="confirm-modal-title">确认操作</div>
+            <div class="confirm-modal-message" id="confirmMessage">确定要执行此操作吗？</div>
+            <div class="confirm-modal-buttons">
+                <button class="confirm-modal-btn cancel" id="confirmCancel">取消</button>
+                <button class="confirm-modal-btn confirm" id="confirmOk">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 自定义确认弹窗函数
+        function showConfirm(message, onConfirm) {
+            var modal = $('#confirmModal');
+            var messageEl = $('#confirmMessage');
+            var cancelBtn = $('#confirmCancel');
+            var okBtn = $('#confirmOk');
+            
+            messageEl.text(message);
+            modal.addClass('show');
+            
+            // 清除之前的事件绑定
+            cancelBtn.off('click');
+            okBtn.off('click');
+            
+            // 取消按钮
+            cancelBtn.on('click', function() {
+                modal.removeClass('show');
+            });
+            
+            // 确定按钮
+            okBtn.on('click', function() {
+                modal.removeClass('show');
+                if (typeof onConfirm === 'function') {
+                    onConfirm();
+                }
+            });
+            
+            // 点击背景关闭
+            modal.on('click', function(e) {
+                if (e.target === this) {
+                    modal.removeClass('show');
+                }
+            });
+        }
+
+        // 取消点赞
+        $('.delete-like').click(function() {
+            var id = $(this).data('id');
+            var that = this;
+            
+            showConfirm('确定要取消该点赞吗？', function() {
+                $.ajax({
+                    url: '/admin/like/delete',
+                    type: 'POST',
+                    data: { id: id },
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.code == 200) {
+                            alert('取消成功！');
+                            window.location.reload();
+                        } else {
+                            alert('取消失败：' + res.msg);
+                        }
+                    },
+                    error: function() {
+                        alert('网络错误，请重试！');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

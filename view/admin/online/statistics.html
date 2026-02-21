@@ -1,0 +1,176 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线统计 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .stat-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'online';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">在线统计</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回列表 -->
+                <a href="/admin/online" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-arrow-left"></i>
+                    <span class="text-sm font-medium">返回列表</span>
+                </a>
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6">
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">在线数据统计</h2>
+                <p class="text-gray-500 text-sm mt-1">查看系统在线用户统计数据</p>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- 总在线人数 -->
+                <div class="stat-card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-users text-blue-600 text-xl"></i>
+                        </div>
+                        <span class="text-sm text-gray-500">当前在线</span>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-800"><?php echo $total_online ?? 0; ?></div>
+                    <p class="text-sm text-gray-500 mt-2">在线用户总数</p>
+                </div>
+
+                <!-- 今日访问 -->
+                <div class="stat-card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-chart-line text-green-600 text-xl"></i>
+                        </div>
+                        <span class="text-sm text-gray-500">今日访问</span>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-800"><?php echo $today_visits ?? 0; ?></div>
+                    <p class="text-sm text-gray-500 mt-2">今日访问次数</p>
+                </div>
+            </div>
+
+            <!-- 设备类型统计 -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-6">设备类型分布</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <?php if (isset($device_data) && is_array($device_data)): foreach ($device_data as $key => $data): ?>
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 <?php
+                            $bgColors = [
+                                'mobile' => 'bg-blue-100',
+                                'tablet' => 'bg-purple-100',
+                                'desktop' => 'bg-green-100',
+                                'other' => 'bg-gray-100'
+                            ];
+                            $iconColors = [
+                                'mobile' => 'text-blue-600',
+                                'tablet' => 'text-purple-600',
+                                'desktop' => 'text-green-600',
+                                'other' => 'text-gray-600'
+                            ];
+                            $icons = [
+                                'mobile' => 'fa-mobile-alt',
+                                'tablet' => 'fa-tablet-alt',
+                                'desktop' => 'fa-desktop',
+                                'other' => 'fa-laptop'
+                            ];
+                            echo $bgColors[$key] ?? 'bg-gray-100';
+                        ?> rounded-lg flex items-center justify-center">
+                            <i class="fas <?php echo $icons[$key] ?? 'fa-laptop'; ?> <?php echo $iconColors[$key] ?? 'text-gray-600'; ?> text-xl"></i>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-gray-800"><?php echo $data['count'] ?? 0; ?></div>
+                            <p class="text-sm text-gray-500"><?php echo $data['label'] ?? '其他'; ?></p>
+                        </div>
+                    </div>
+                    <?php endforeach; endif; ?>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

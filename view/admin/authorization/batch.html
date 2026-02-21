@@ -1,0 +1,281 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>批量生成授权 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">批量生成授权</h2>
+    <p class="text-modern-gray text-sm mt-1">一次性生成多个授权码</p>
+</div>
+
+<!-- 返回按钮 -->
+<div class="mb-6">
+    <a href="/admin/authorization" class="inline-flex items-center gap-2 px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md text-modern-gray hover:border-modern-primary transition-colors">
+        <i class="fas fa-arrow-left"></i>
+        <span>返回列表</span>
+    </a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- 批量生成表单 -->
+    <div class="card rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-modern-dark mb-6 pb-2 border-b">生成设置</h3>
+        <form id="batchForm" class="space-y-6">
+            <div>
+                <label for="software_id" class="block text-sm font-medium text-modern-gray mb-2">授权软件 <span class="text-red-500">*</span></label>
+                <select id="software_id" name="software_id" required class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-lg focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                    <option value="">请选择软件</option>
+                    {volist name="softwareList" id="software"}
+                    <option value="{$software.id}">{$software.software_name} ({$software.version|default='未设置版本'})</option>
+                    {/volist}
+                </select>
+            </div>
+
+            <div>
+                <label for="count" class="block text-sm font-medium text-modern-gray mb-2">生成数量 <span class="text-red-500">*</span></label>
+                <input type="number" id="count" name="count" required min="1" max="1000" value="10" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-lg focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                <p class="text-xs text-modern-gray mt-1">单次最多生成 1000 个授权码</p>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <input type="checkbox" id="is_permanent" name="is_permanent" value="1" class="w-4 h-4 text-modern-primary rounded focus:ring-modern-primary focus:ring-1" checked>
+                <label for="is_permanent" class="text-sm font-medium text-modern-gray">永久授权</label>
+            </div>
+
+            <div id="time-settings" class="space-y-4 hidden">
+                <div>
+                    <label for="start_time" class="block text-sm font-medium text-modern-gray mb-2">开始时间</label>
+                    <input type="date" id="start_time" name="start_time" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-lg focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                </div>
+                <div>
+                    <label for="end_time" class="block text-sm font-medium text-modern-gray mb-2">结束时间</label>
+                    <input type="date" id="end_time" name="end_time" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-lg focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                </div>
+            </div>
+
+            <div>
+                <label for="status" class="block text-sm font-medium text-modern-gray mb-2">授权状态</label>
+                <select id="status" name="status" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-lg focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                    <option value="1">有效</option>
+                    <option value="0">无效</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="domains" class="block text-sm font-medium text-modern-gray mb-2">授权域名</label>
+                <input type="text" id="domains" name="domains" placeholder="多个域名用逗号分隔，如：example.com,www.example.com" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-lg focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                <p class="text-xs text-modern-gray mt-1">留空表示不限制域名</p>
+            </div>
+
+            <div>
+                <label for="ips" class="block text-sm font-medium text-modern-gray mb-2">服务器IP</label>
+                <input type="text" id="ips" name="ips" placeholder="多个IP用逗号分隔，如：127.0.0.1,192.168.1.1" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-lg focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                <p class="text-xs text-modern-gray mt-1">留空表示不限制IP</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-modern-gray mb-2">功能权限</label>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="features[]" value="articles" class="w-4 h-4 text-modern-primary rounded focus:ring-modern-primary focus:ring-1">
+                        <span class="text-sm text-modern-gray">文章功能</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="features[]" value="comments" class="w-4 h-4 text-modern-primary rounded focus:ring-modern-primary focus:ring-1">
+                        <span class="text-sm text-modern-gray">评论功能</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="features[]" value="chat" class="w-4 h-4 text-modern-primary rounded focus:ring-modern-primary focus:ring-1">
+                        <span class="text-sm text-modern-gray">聊天功能</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="features[]" value="vip" class="w-4 h-4 text-modern-primary rounded focus:ring-modern-primary focus:ring-1">
+                        <span class="text-sm text-modern-gray">VIP功能</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="features[]" value="storage" class="w-4 h-4 text-modern-primary rounded focus:ring-modern-primary focus:ring-1">
+                        <span class="text-sm text-modern-gray">存储功能</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="features[]" value="payment" class="w-4 h-4 text-modern-primary rounded focus:ring-modern-primary focus:ring-1">
+                        <span class="text-sm text-modern-gray">支付功能</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-modern-lightGray flex gap-4">
+                <button type="submit" class="flex-1 px-6 py-3 bg-modern-primary text-white rounded-lg hover:bg-modern-secondary transition-colors">
+                    <i class="fas fa-magic mr-2"></i>开始生成
+                </button>
+                <button type="reset" class="px-6 py-3 bg-modern-light border border-modern-lightGray rounded-lg text-modern-gray hover:border-modern-primary transition-colors">
+                    <i class="fas fa-undo mr-2"></i>重置
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 生成结果 -->
+    <div class="card rounded-lg p-6">
+        <div class="flex items-center justify-between mb-4 pb-2 border-b">
+            <h3 class="text-lg font-semibold text-modern-dark">生成结果</h3>
+            <button id="copyAll" class="px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md text-modern-gray hover:border-modern-primary transition-colors text-sm">
+                <i class="fas fa-copy mr-1"></i>复制全部
+            </button>
+        </div>
+        <div id="resultArea" class="space-y-2 max-h-96 overflow-y-auto">
+            <div class="text-center py-8 text-modern-gray">
+                <i class="fas fa-code text-4xl mb-3 opacity-50"></i>
+                <p class="text-sm">等待生成授权码...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 使用提示 -->
+<div class="card rounded-lg p-6 mt-6">
+    <h3 class="text-lg font-semibold text-modern-dark mb-4 pb-2 border-b">
+        <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>使用提示
+    </h3>
+    <ul class="space-y-2 text-sm text-modern-gray">
+        <li class="flex items-start gap-2">
+            <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+            <span>授权码格式：XXXXXXXX-XXXXXXXX，共24位（16位基础码+8位签名）</span>
+        </li>
+        <li class="flex items-start gap-2">
+            <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+            <span>每次生成的授权码都是唯一的，系统会自动检测并避免重复</span>
+        </li>
+        <li class="flex items-start gap-2">
+            <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+            <span>建议每次生成100个以内，避免生成过多导致管理困难</span>
+        </li>
+        <li class="flex items-start gap-2">
+            <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+            <span>生成的授权码会自动保存到数据库，可在授权列表中查看和管理</span>
+        </li>
+        <li class="flex items-start gap-2">
+            <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+            <span>支持域名绑定和IP绑定，留空表示不限制</span>
+        </li>
+        <li class="flex items-start gap-2">
+            <i class="fas fa-check-circle text-green-500 mt-0.5"></i>
+            <span>支持功能权限控制，可限制授权可使用的功能</span>
+        </li>
+    </ul>
+</div>
+
+<!-- JavaScript 实现 -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isPermanent = document.getElementById('is_permanent');
+    const timeSettings = document.getElementById('time-settings');
+    const startTime = document.getElementById('start_time');
+    const endTime = document.getElementById('end_time');
+
+    isPermanent.addEventListener('change', function() {
+        if (this.checked) {
+            timeSettings.classList.add('hidden');
+        } else {
+            timeSettings.classList.remove('hidden');
+            const today = new Date().toISOString().split('T')[0];
+            startTime.value = today;
+            const nextYear = new Date();
+            nextYear.setFullYear(nextYear.getFullYear() + 1);
+            endTime.value = nextYear.toISOString().split('T')[0];
+        }
+    });
+
+    const batchForm = document.getElementById('batchForm');
+    const resultArea = document.getElementById('resultArea');
+
+    batchForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(batchForm);
+        const data = Object.fromEntries(formData.entries());
+
+        const featuresCheckboxes = batchForm.querySelectorAll('input[name="features[]"]:checked');
+        data.features = Array.from(featuresCheckboxes).map(cb => cb.value);
+
+        if (!data.software_id || !data.count) {
+            alert('请填写完整信息');
+            return;
+        }
+
+        if (data.count < 1 || data.count > 1000) {
+            alert('生成数量必须在1-1000之间');
+            return;
+        }
+
+        const submitBtn = batchForm.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>生成中...';
+
+        try {
+            const response = await fetch('/admin/authorization/batchGenerate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                let html = '';
+                result.data.forEach((item, index) => {
+                    html += `
+                        <div class="flex items-center justify-between p-3 bg-modern-light rounded-lg border border-modern-lightGray">
+                            <div class="flex-1">
+                                <div class="font-mono text-sm font-medium text-modern-dark">${item.license_number}</div>
+                                <div class="text-xs text-modern-gray mt-1">${item.end_time} · ${index + 1}</div>
+                            </div>
+                            <button onclick="copyLicense('${item.license_number}')" class="px-3 py-1 bg-white border border-modern-lightGray rounded text-xs hover:border-modern-primary transition-colors">
+                                复制
+                            </button>
+                        </div>
+                    `;
+                });
+                resultArea.innerHTML = html;
+
+                alert(`成功生成 ${result.data.length} 个授权码！`);
+            } else {
+                alert(result.msg || '生成失败');
+            }
+        } catch (error) {
+            alert('网络错误：' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
+
+    window.copyLicense = function(code) {
+        navigator.clipboard.writeText(code).then(() => {
+            alert('已复制：' + code);
+        }).catch(() => {
+            prompt('请复制：', code);
+        });
+    };
+
+    document.getElementById('copyAll').addEventListener('click', function() {
+        const codes = Array.from(document.querySelectorAll('.font-mono'))
+            .map(el => el.textContent)
+            .join('\n');
+
+        if (!codes) {
+            alert('暂无授权码可复制');
+            return;
+        }
+
+        navigator.clipboard.writeText(codes).then(() => {
+            alert('已复制所有授权码');
+        }).catch(() => {
+            prompt('请复制所有授权码：', codes);
+        });
+    });
+});
+</script>
+{/block}

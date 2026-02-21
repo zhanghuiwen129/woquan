@@ -1,0 +1,63 @@
+﻿<!-- 公共资源设置 -->
+<div class="tab-content" id="resource">
+    <h3 class="text-lg font-medium text-gray-800">公共资源配置</h3>
+    <form id="resourceForm" class="space-y-6">
+        <!-- 公共图片/素材管理 -->
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+            <h4 class="text-md font-semibold text-gray-700 mb-4">公共图片/素材管理</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">默认头像</label>
+                    <input type="file" name="default_avatar" accept="image/*"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">默认背景图</label>
+                    <input type="file" name="default_bg" accept="image/*"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">404页面图片</label>
+                    <input type="file" name="error_404" accept="image/*"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">500错误页面图片</label>
+                    <input type="file" name="error_500" accept="image/*"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- 资源路径配置 -->
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+            <h4 class="text-md font-semibold text-gray-700 mb-4">资源路径配置</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">图片存储路径</label>
+                    <input type="text" name="image_path" value="{$config.image_path ?? '/uploads/images/'}"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">视频存储路径</label>
+                    <input type="text" name="video_path" value="{$config.video_path ?? '/uploads/videos/'}"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <div class="mt-6">
+                <label class="block text-sm text-gray-500 mb-2">临时文件存储路径</label>
+                <input type="text" name="temp_path" value="{$config.temp_path ?? '/runtime/temp/'}"
+                       class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 mt-8">
+            <button type="button" onclick="saveResource()"
+                    class="px-5 py-2.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                保存配置
+            </button>
+        </div>
+    </form>
+</div>

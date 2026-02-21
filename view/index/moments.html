@@ -1,0 +1,328 @@
+{extend name="index/main-layout" /}
+
+{block name="content"}
+<style>
+    .moment-item {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s;
+    }
+
+    .moment-item:hover {
+        box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .moment-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        object-fit: cover;
+    }
+
+    .moment-time {
+        font-size: 12px;
+        color: var(--text-tertiary);
+    }
+
+    .moment-images {
+        display: grid;
+        gap: 4px;
+        margin-top: 12px;
+    }
+
+    .moment-images.grid-1 {
+        grid-template-columns: 1fr;
+    }
+
+    .moment-images.grid-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .moment-images.grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .moment-images.grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .moment-images.grid-more {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .moment-images img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .moment-images.grid-1 img {
+        max-height: 400px;
+    }
+
+    .moment-images.grid-4 img,
+    .moment-images.grid-more img {
+        height: 150px;
+    }
+</style>
+
+<div id="moments-container" class="space-y-4">
+    <div id="loading" class="text-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+    </div>
+    <div id="moments-list" style="display: none;"></div>
+    <div id="empty" class="text-center py-16 hidden">
+        <div class="w-24 h-24 bg-lightBlue rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fa fa-rss text-4xl text-primary"></i>
+        </div>
+        <h2 class="text-xl font-bold text-gray-800 mb-2">暂无动态</h2>
+        <p class="text-gray-500 mb-4">快去发布第一条动态吧</p>
+        <button onclick="location.href='/profile'" class="inline-block bg-primary text-white px-6 py-2 rounded-full hover:bg-secondary transition-colors">
+            发布动态
+        </button>
+    </div>
+    <div id="load-more" class="text-center py-4 hidden">
+        <button onclick="loadMore()" class="text-primary hover:text-secondary transition-colors">
+            加载更多
+        </button>
+    </div>
+</div>
+{/block}
+
+{block name="contentMobile"}
+<style>
+    .moment-item {
+        background: white;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s;
+    }
+
+    .moment-item:hover {
+        box-shadow: 0 4px 10px rgba(74, 144, 226, 0.15);
+        transform: translateY(-1px);
+    }
+
+    .moment-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        object-fit: cover;
+    }
+
+    .moment-time {
+        font-size: 11px;
+        color: var(--text-tertiary);
+    }
+
+    .moment-images {
+        display: grid;
+        gap: 3px;
+        margin-top: 10px;
+    }
+
+    .moment-images.grid-1 {
+        grid-template-columns: 1fr;
+    }
+
+    .moment-images.grid-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .moment-images.grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .moment-images.grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .moment-images.grid-more {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .moment-images img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .moment-images.grid-1 img {
+        max-height: 300px;
+    }
+
+    .moment-images.grid-4 img,
+    .moment-images.grid-more img {
+        height: 100px;
+    }
+</style>
+
+<div id="mobile-moments-container" class="space-y-3">
+    <div id="mobile-loading" class="text-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+    </div>
+    <div id="mobile-moments-list" style="display: none;"></div>
+    <div id="mobile-empty" class="text-center py-16 hidden">
+        <div class="w-20 h-20 bg-lightBlue rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fa fa-rss text-3xl text-primary"></i>
+        </div>
+        <h2 class="text-lg font-bold text-gray-800 mb-2">暂无动态</h2>
+        <p class="text-gray-500 text-sm mb-4">快去发布第一条动态吧</p>
+        <button onclick="location.href='/profile'" class="inline-block bg-primary text-white px-5 py-2 rounded-full hover:bg-secondary transition-colors text-sm">
+            发布动态
+        </button>
+    </div>
+    <div id="mobile-load-more" class="text-center py-4 hidden">
+        <button onclick="loadMore()" class="text-primary hover:text-secondary transition-colors text-sm">
+            加载更多
+        </button>
+    </div>
+</div>
+{/block}
+
+{block name="script"}
+<script>
+    let currentPage = 1;
+    let hasMore = false;
+    const limit = 10;
+
+    function formatTime(timestamp) {
+        const now = Date.now() / 1000;
+        const diff = now - timestamp;
+
+        if (diff < 60) {
+            return '刚刚';
+        } else if (diff < 3600) {
+            return Math.floor(diff / 60) + '分钟前';
+        } else if (diff < 86400) {
+            return Math.floor(diff / 3600) + '小时前';
+        } else if (diff < 2592000) {
+            return Math.floor(diff / 86400) + '天前';
+        } else {
+            const date = new Date(timestamp * 1000);
+            return date.getFullYear() + '-' + 
+                   String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                   String(date.getDate()).padStart(2, '0');
+        }
+    }
+
+    function getImageGridClass(count) {
+        if (count === 1) return 'grid-1';
+        if (count === 2) return 'grid-2';
+        if (count === 3) return 'grid-3';
+        if (count === 4) return 'grid-4';
+        return 'grid-more';
+    }
+
+    function renderMoment(moment) {
+        const isMobile = window.innerWidth < 768;
+        const containerId = isMobile ? 'mobile-moments-list' : 'moments-list';
+        const container = document.getElementById(containerId);
+
+        const imagesHtml = moment.images && moment.images.length > 0 ? `
+            <div class="moment-images ${getImageGridClass(moment.images.length)}">
+                ${moment.images.map(img => `<img src="${img}" alt="动态图片" onclick="viewImage('${img}')">`).join('')}
+            </div>
+        ` : '';
+
+        const html = `
+            <div class="moment-item">
+                <div class="flex items-start gap-3">
+                    <a href="/card/${moment.user_id}" class="flex-shrink-0">
+                        <img src="${moment.avatar || '/static/images/default-avatar.png'}" alt="头像" class="moment-avatar">
+                    </a>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between mb-1">
+                            <h3 class="font-semibold text-gray-800 truncate">${moment.nickname || moment.username}</h3>
+                            <span class="moment-time">${formatTime(moment.create_time)}</span>
+                        </div>
+                        <p class="text-gray-700 text-sm mb-2 line-clamp-3">${moment.content}</p>
+                        ${imagesHtml}
+                        <div class="flex items-center gap-4 mt-3 text-gray-500 text-sm">
+                            <span><i class="fa fa-heart"></i> ${moment.likes || 0}</span>
+                            <span><i class="fa fa-comment"></i> ${moment.comments || 0}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', html);
+    }
+
+    async function loadMoments(page = 1, append = false) {
+        try {
+            const isMobile = window.innerWidth < 768;
+            const loadingId = isMobile ? 'mobile-loading' : 'loading';
+            const listId = isMobile ? 'mobile-moments-list' : 'moments-list';
+            const emptyId = isMobile ? 'mobile-empty' : 'empty';
+            const loadMoreId = isMobile ? 'mobile-load-more' : 'load-more';
+
+            if (!append) {
+                document.getElementById(loadingId).style.display = 'block';
+                document.getElementById(listId).style.display = 'none';
+                document.getElementById(emptyId).classList.add('hidden');
+                document.getElementById(loadMoreId).classList.add('hidden');
+            }
+
+            const response = await fetch(`/api/moments?page=${page}&limit=${limit}`);
+            const result = await response.json();
+
+            document.getElementById(loadingId).style.display = 'none';
+
+            if (result.code === 200 && result.data) {
+                const moments = result.data.moments || [];
+                hasMore = result.data.hasMore || false;
+
+                if (moments.length > 0) {
+                    document.getElementById(listId).style.display = 'block';
+                    if (!append) {
+                        document.getElementById(listId).innerHTML = '';
+                    }
+                    moments.forEach(moment => renderMoment(moment));
+
+                    if (hasMore) {
+                        document.getElementById(loadMoreId).classList.remove('hidden');
+                    } else {
+                        document.getElementById(loadMoreId).classList.add('hidden');
+                    }
+                } else {
+                    document.getElementById(emptyId).classList.remove('hidden');
+                }
+            } else {
+                document.getElementById(emptyId).classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('加载动态失败:', error);
+            const isMobile = window.innerWidth < 768;
+            const emptyId = isMobile ? 'mobile-empty' : 'empty';
+            document.getElementById(emptyId).classList.remove('hidden');
+        }
+    }
+
+    function loadMore() {
+        if (hasMore) {
+            currentPage++;
+            loadMoments(currentPage, true);
+        }
+    }
+
+    function viewImage(url) {
+        window.open(url, '_blank');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadMoments();
+    });
+</script>
+{/block}

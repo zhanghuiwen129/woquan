@@ -1,0 +1,66 @@
+﻿<!-- 社交功能设置 -->
+<div class="tab-content" id="social">
+    <h3 class="text-lg font-medium text-gray-800">社交功能配置</h3>
+    <form id="socialForm" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">私信功能</label>
+                <select name="message_enabled" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                    <option value="0" {if $config.message_enabled ?? 1 == 0}selected{/if}>关闭</option>
+                    <option value="1" {if $config.message_enabled ?? 1 == 1}selected{/if}>开启</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-2">开启后，用户可以发送和接收私信</p>
+            </div>
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">话题功能</label>
+                <select name="topic_enabled" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                    <option value="0" {if $config.topic_enabled ?? 1 == 0}selected{/if}>关闭</option>
+                    <option value="1" {if $config.topic_enabled ?? 1 == 1}selected{/if}>开启</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-2">开启后，用户可以创建和参与话题</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">关注功能</label>
+                <select name="follow_enabled" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                    <option value="0" {if $config.follow_enabled ?? 1 == 0}selected{/if}>关闭</option>
+                    <option value="1" {if $config.follow_enabled ?? 1 == 1}selected{/if}>开启</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-2">开启后，用户可以关注其他用户</p>
+            </div>
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">评论功能</label>
+                <select name="comment_enabled" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                    <option value="0" {if $config.comment_enabled ?? 1 == 0}selected{/if}>关闭</option>
+                    <option value="1" {if $config.comment_enabled ?? 1 == 1}selected{/if}>开启</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-2">开启后，用户可以在动态下发表评论</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">点赞功能</label>
+                <select name="like_enabled" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                    <option value="0" {if $config.like_enabled ?? 1 == 0}selected{/if}>关闭</option>
+                    <option value="1" {if $config.like_enabled ?? 1 == 1}selected{/if}>开启</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-2">开启后，用户可以对动态点赞</p>
+            </div>
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">好友分组功能</label>
+                <select name="group_enabled" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                    <option value="0" {if $config.group_enabled ?? 1 == 0}selected{/if}>关闭</option>
+                    <option value="1" {if $config.group_enabled ?? 1 == 1}selected{/if}>开启</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-2">开启后，用户可以对关注的好友进行分组</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4 mt-8">
+            <button type="button" onclick="saveSocial()"
+                    class="px-5 py-2.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                保存配置
+            </button>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,1607 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="content"}
+<!-- 存储当前用户信息到JavaScript变量 -->
+<script>
+    window.currentUserInfo = <?php echo isset($isLogin) && $isLogin && $currentUser ? json_encode([
+        'id' => $currentUser['id'] ?? '',
+        'username' => $currentUser['username'] ?? '',
+        'nickname' => $currentUser['nickname'] ?? '',
+        'avatar' => $currentUser['avatar'] ?? '/static/images/default-avatar.png'
+    ]) : 'null'; ?>;
+    window.otherUserInfo = <?php echo isset($otherUser) ? json_encode([
+        'id' => $otherUser['id'] ?? '',
+        'nickname' => $otherUser['nickname'] ?? '用户',
+        'avatar' => $otherUser['avatar'] ?? '/static/images/default-avatar.png',
+        'level' => $otherUser['level'] ?? 0,
+        'bio' => $otherUser['bio'] ?? ''
+    ]) : 'null'; ?>;
+</script>
+
+<!-- 表情配置模块 -->
+<script src="/static/js/emoji-config.js"></script>
+<!-- 语音和视频消息组件 -->
+<script src="/static/js/voice-message.js"></script>
+<script src="/static/js/video-message.js"></script>
+
+<style>
+    /* 清除默认样式，让内联样式生效 */
+</style>
+
+<!-- 主内容区 -->
+<main class="container mx-auto px-4 py-6 max-w-4xl">
+    <!-- 聊天头部 -->
+    <div class="flex items-center justify-between mb-6 bg-white rounded-xl shadow-sm p-4">
+        <div class="flex items-center">
+            <a href="/messages" class="mr-3 text-gray-500 hover:text-gray-700">
+                <i class="fa fa-arrow-left"></i>
+            </a>
+            <img src="<?php echo $otherUser['avatar'] ?? '/static/images/default-avatar.png'; ?>" alt="用户头像" class="w-10 h-10 rounded-full object-cover mr-3">
+            <div>
+                <div class="font-medium"><?php echo $otherUser['nickname'] ?? '用户'; ?></div>
+                <div class="text-xs text-gray-500">等级 <?php echo $otherUser['level'] ?? 0; ?></div>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="/card/<?php echo $otherUser['id'] ?? 0; ?>" class="text-gray-500 hover:text-gray-700">
+                <i class="fa fa-user"></i>
+            </a>
+            <button class="text-gray-500 hover:text-gray-700" onclick="showChatOptions()">
+                <i class="fa fa-ellipsis-v"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 聊天内容区 -->
+    <div class="bg-gray-100 rounded-xl shadow-sm p-4 mb-6 h-[60vh] overflow-y-auto" id="chat-content">
+        <div class="text-center py-8 text-gray-500">
+            <i class="fa fa-spinner fa-spin text-xl mb-2"></i>
+            <p>加载中...</p>
+        </div>
+    </div>
+
+    <!-- 消息输入区 -->
+    <div class="bg-white rounded-xl shadow-sm p-4">
+        <div class="flex items-center gap-3">
+            <div class="relative">
+                <button id="emoji-button" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-smile-o"></i>
+                </button>
+                <!-- 表情选择器弹窗 -->
+                <div id="emoji-picker" class="hidden absolute bottom-12 left-0 bg-white rounded-lg shadow-xl border border-gray-200 p-3 z-50 w-80">
+                    <div class="grid grid-cols-8 gap-2 max-h-60 overflow-y-auto" id="emoji-grid">
+                    </div>
+                </div>
+            </div>
+            <div class="relative">
+                <button class="text-gray-500 hover:text-gray-700" onclick="document.getElementById('file-input').click()">
+                    <i class="fa fa-picture-o"></i>
+                </button>
+                <input type="file" id="file-input" accept="image/*" hidden onchange="handleFileUpload(event)">
+            </div>
+            <div class="flex-1 relative">
+                <div id="message-input" contenteditable="true" placeholder="输入消息..." class="w-full px-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent min-h-[40px] max-h-[120px] overflow-y-auto" style="display: flex; align-items: center;"></div>
+            </div>
+            <button id="send-button" class="bg-primary text-white px-4 py-2 rounded-full hover:bg-primary/90 transition-colors">
+                <i class="fa fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</main>
+
+<script>
+    // 获取当前用户ID和对方用户ID
+    if (typeof window.CHAT_USER_ID === 'undefined') {
+        if (window.currentUserInfo && window.currentUserInfo.id) {
+            window.CHAT_USER_ID = parseInt(window.currentUserInfo.id);
+        } else {
+            // 未登录则跳转到登录页
+            window.location.href = '/login';
+            return;
+        }
+    }
+    const CURRENT_USER_ID = window.CHAT_USER_ID;
+    const OTHER_USER_ID = window.otherUserInfo ? parseInt(window.otherUserInfo.id) : null;
+
+    // 轮询定时器
+    let pollingTimer = null;
+
+    // 页面加载完成后获取数据
+    window.addEventListener('DOMContentLoaded', function() {
+        if (!OTHER_USER_ID) {
+            // 缺少对方用户ID，重定向到消息页面
+            window.location.href = '/messages';
+            return;
+        }
+
+        // 动态生成表情选择器
+        const emojiPicker = document.getElementById('emoji-picker');
+        const emojiGrid = document.getElementById('emoji-grid');
+
+        // 从API加载表情列表
+        loadEmojis();
+
+        // 加载聊天记录
+        loadChatHistory();
+
+        // 进入聊天页面时自动标记所有消息为已读
+        markAllAsRead();
+
+        // 绑定发送按钮点击事件
+        document.getElementById('send-button').addEventListener('click', sendMessage);
+
+        // 绑定消息输入框回车事件
+        document.getElementById('message-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // 绑定表情按钮点击事件
+        document.getElementById('emoji-button').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const picker = document.getElementById('emoji-picker');
+            picker.classList.toggle('hidden');
+        });
+
+        // 点击页面其他地方关闭表情选择器
+        document.addEventListener('click', function(e) {
+            const picker = document.getElementById('emoji-picker');
+            const button = document.getElementById('emoji-button');
+            if (!picker.contains(e.target) && !button.contains(e.target)) {
+                picker.classList.add('hidden');
+            }
+        });
+
+        // 加载表情
+        async function loadEmojis() {
+            try {
+                const response = await fetch('/emojis/getEmojiList');
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    // 合并所有表情
+                    let allEmojis = [];
+                    const categories = ['default', 'custom', 'recent'];
+
+                    categories.forEach(category => {
+                        if (result.data[category] && Array.isArray(result.data[category])) {
+                            allEmojis = allEmojis.concat(result.data[category]);
+                        }
+                    });
+
+                    // 去重
+                    const emojiMap = new Map();
+                    allEmojis.forEach(emoji => {
+                        emojiMap.set(emoji.id, emoji);
+                    });
+                    allEmojis = Array.from(emojiMap.values());
+
+                    // 渲染表情
+                    emojiGrid.innerHTML = allEmojis.map(emoji =>
+                        `<button class="emoji-btn hover:bg-gray-100 rounded p-1" onclick="insertEmoji('${emoji.id}|${emoji.url}')" title="${emoji.name}">
+                            <img src="${emoji.url}" alt="${emoji.name}" style="width: 24px; height: 24px;">
+                        </button>`
+                    ).join('');
+
+                    console.log('PC端表情加载成功，共', allEmojis.length, '个表情');
+                }
+            } catch (error) {
+                console.error('加载表情失败:', error);
+                emojiGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 20px; color: #999;">表情加载失败</div>';
+            }
+        }
+
+        // 启动轮询，实时获取新消息
+        startPolling();
+    });
+
+    // 页面卸载时停止轮询和清理播放状态
+    window.addEventListener('beforeunload', function() {
+        stopPolling();
+        voiceMessage.destroy();
+        videoMessage.destroy();
+    });
+
+    // 启动轮询
+    function startPolling() {
+        if (pollingTimer) return; // 防止重复启动
+
+        pollingTimer = setInterval(async () => {
+            const container = document.getElementById('chat-content');
+            const lastMessage = container.lastElementChild;
+            const lastMessageId = lastMessage?.dataset?.id || 0;
+
+            try {
+                const response = await fetch(`/api/v1/messages/getNewMessages?other_user_id=${OTHER_USER_ID}&last_message_id=${lastMessageId}`);
+                const result = await response.json();
+
+                if (result.code === 200 && result.data.list && result.data.list.length > 0) {
+                    result.data.list.forEach(msg => {
+                        const element = createMessageElement(msg);
+                        element.dataset.id = msg.id;
+                        container.appendChild(element);
+                    });
+                    container.scrollTop = container.scrollHeight;
+                }
+            } catch (error) {
+                console.error('轮询新消息失败:', error);
+            }
+        }, 3000); // 每3秒轮询一次
+    }
+
+    // 停止轮询
+    function stopPolling() {
+        if (pollingTimer) {
+            clearInterval(pollingTimer);
+            pollingTimer = null;
+        }
+    }
+
+    // 插入表情
+    function insertEmoji(emojiData) {
+        const input = document.getElementById('message-input');
+
+        // emojiData 格式: "emojiId|emojiUrl"
+        const [emojiId, emojiUrl] = emojiData.split('|');
+
+        // 创建表情图片元素
+        const emojiImg = document.createElement('img');
+        emojiImg.src = emojiUrl;
+        emojiImg.className = 'inline-emoji';
+        emojiImg.dataset.emojiId = emojiId;
+        emojiImg.style.display = 'inline-block';
+        emojiImg.style.verticalAlign = 'middle';
+
+        // 创建文本节点（空格），确保能正常插入
+        const spaceNode = document.createTextNode('\u00A0');
+
+        try {
+            // 插入到光标位置
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+
+                // 检查选区是否在输入框内
+                const node = range.commonAncestorContainer;
+                if (!input.contains(node) && node !== input) {
+                    // 如果选区不在输入框内，就追加到末尾
+                    input.appendChild(emojiImg);
+                    input.appendChild(spaceNode);
+                } else {
+                    range.deleteContents();
+                    range.insertNode(emojiImg);
+                    // 移动光标到表情后面
+                    range.setStartAfter(emojiImg);
+                    range.setEndAfter(emojiImg);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                }
+            } else {
+                // 没有选区，追加到末尾
+                input.appendChild(emojiImg);
+                input.appendChild(spaceNode);
+            }
+        } catch (error) {
+            console.error('插入表情失败:', error);
+            // 出错时追加到末尾
+            input.appendChild(emojiImg);
+            input.appendChild(spaceNode);
+        }
+
+        input.focus();
+        // 不自动关闭表情面板,允许连续选择表情
+        // document.getElementById('emoji-picker').classList.add('hidden');
+    }
+
+    // 加载聊天记录
+    async function loadChatHistory(page = 1) {
+        const container = document.getElementById('chat-content');
+
+        try {
+            const response = await fetch(`/api/v1/messages/getChatHistory?other_user_id=${OTHER_USER_ID}&page=${page}`);
+            const result = await response.json();
+
+            if (result.code === 200) {
+                const { list } = result.data;
+
+                if (list && list.length > 0) {
+                    // 渲染聊天记录
+                    container.innerHTML = '';
+                    list.forEach(message => {
+                        const messageElement = createMessageElement(message);
+                        container.appendChild(messageElement);
+                    });
+
+                    // 滚动到底部
+                    container.scrollTop = container.scrollHeight;
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-gray-500">
+                            <i class="fa fa-comments-o text-4xl mb-3"></i>
+                            <p>暂无聊天记录</p>
+                        </div>
+                    `;
+                }
+            } else {
+                throw new Error(result.msg || '获取聊天记录失败');
+            }
+        } catch (error) {
+            console.error('加载聊天记录失败:', error);
+            container.innerHTML = `
+                <div class="text-center py-12 text-gray-500">
+                    <i class="fa fa-exclamation-circle text-xl mb-2"></i>
+                    <p>加载失败，请稍后重试</p>
+                </div>
+            `;
+        }
+    }
+
+    // 创建消息元素
+    function createMessageElement(message) {
+        const div = document.createElement('div');
+        const isCurrentUser = message.sender_id == CURRENT_USER_ID;
+
+        // 设置消息容器样式 - 使用内联样式确保生效
+        div.style.display = 'flex';
+        div.style.marginBottom = '16px';
+        div.style.alignItems = 'flex-end';
+        div.style.justifyContent = isCurrentUser ? 'flex-end' : 'flex-start';
+        div.className = 'message-item';
+
+        // 设置头像URL
+        const avatarUrl = isCurrentUser
+            ? (window.currentUserInfo?.avatar || '/static/images/default-avatar.png')
+            : (window.otherUserInfo?.avatar || '/static/images/default-avatar.png');
+
+        // 格式化时间
+        const time = new Date(message.create_time * 1000);
+        const timeText = time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+
+        // 检查是否撤回
+        if (message.is_recalled == 1) {
+            div.innerHTML = `
+                ${!isCurrentUser ? `<img src="${avatarUrl}" alt="用户头像" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 12px; flex-shrink: 0;">` : ''}
+                <div style="background: #f5f5f5; color: #999; font-size: 13px; padding: 8px 12px; border-radius: 12px; max-width: 70%;">
+                    <i class="fa fa-undo"></i> 消息已撤回
+                </div>
+                ${isCurrentUser ? `<img src="${avatarUrl}" alt="用户头像" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-left: 12px; flex-shrink: 0;">` : ''}
+            `;
+            return div;
+        }
+
+        // 消息内容渲染
+        let contentHtml = '';
+
+        switch (parseInt(message.message_type)) {
+            case 2: // 图片消息
+                if (message.file_url) {
+                    contentHtml = `<img src="${message.file_url}" alt="图片" style="max-width: 100%; border-radius: 8px; cursor: pointer;" onclick="window.open('${message.file_url}', '_blank')">`;
+                }
+                break;
+
+            case 5: // 语音消息
+                contentHtml = voiceMessage.createHTML(message);
+                break;
+
+            case 6: // 视频消息
+                contentHtml = videoMessage.createHTML(message);
+                break;
+
+            default: // 文本消息
+                contentHtml = convertEmojiToHtml(message.content || '');
+        }
+
+        // 检查是否可以撤回（发送者且在2分钟内）
+        const currentTime = Math.floor(Date.now() / 1000);
+        const canRecall = isCurrentUser && (currentTime - message.create_time) <= 120;
+
+        // 发送方和接收方样式
+        const bubbleStyle = isCurrentUser 
+            ? `background: linear-gradient(135deg, #07c160 0%, #06ad56 100%); color: #fff; border-radius: 12px 4px 12px 12px; box-shadow: 0 2px 6px rgba(7, 193, 96, 0.2);`
+            : `background: #fff; color: #333; border-radius: 12px 12px 12px 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);`;
+
+        const timeStyle = isCurrentUser ? 'color: rgba(255, 255, 255, 0.7);' : 'color: #999;';
+        const recallStyle = isCurrentUser ? 'color: rgba(255, 255, 255, 0.7);' : 'color: #999;';
+        const recallHoverStyle = isCurrentUser ? 'color: #fff;' : 'color: #07c160;';
+
+        div.innerHTML = `
+            ${!isCurrentUser ? `<img src="${avatarUrl}" alt="用户头像" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 12px; flex-shrink: 0;">` : ''}
+            <div style="${bubbleStyle} max-width: 70%; padding: 10px 14px; position: relative; font-size: 15px; line-height: 1.5; word-wrap: break-word;">
+                ${contentHtml}
+                <div style="${timeStyle} font-size: 11px; margin-top: 4px; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                    ${timeText}
+                    ${canRecall ? `<span style="${recallStyle} font-size: 12px; cursor: pointer;" onmouseover="this.style.color='#07c160'" onmouseout="this.style.color='${isCurrentUser ? 'rgba(255,255,255,0.7)' : '#999'}'" onclick="recallMessage(${message.id})">撤回</span>` : ''}
+                </div>
+            </div>
+            ${isCurrentUser ? `<img src="${avatarUrl}" alt="用户头像" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-left: 12px; flex-shrink: 0;">` : ''}
+        `;
+
+        div.dataset.id = message.id;
+        return div;
+    }
+
+    // 撤回消息
+    async function recallMessage(messageId) {
+        if (!confirm('确定要撤回这条消息吗？')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/v1/messages/recallMessage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message_id: messageId })
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                showToast('撤回成功');
+                // 重新加载聊天记录
+                loadChatHistory();
+            } else {
+                showToast(result.msg || '撤回失败');
+            }
+        } catch (error) {
+            console.error('撤回失败:', error);
+            showToast('撤回失败，请重试');
+        }
+    }
+
+    // 发送消息
+    async function sendMessage(content = null, messageType = 1, fileUrl = '') {
+        const input = document.getElementById('message-input');
+        if (content === null) {
+            content = convertContentToText(input);
+            if (!content) return;
+            input.innerHTML = '';
+        }
+
+        // 显示发送中的消息
+        const container = document.getElementById('chat-content');
+        const sendingMessageElement = createSendingMessageElement(content, messageType, fileUrl);
+        container.appendChild(sendingMessageElement);
+
+        // 滚动到底部
+        container.scrollTop = container.scrollHeight;
+
+        try {
+            const response = await fetch('/api/v1/messages/sendMessage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    receiver_id: OTHER_USER_ID,
+                    content: content,
+                    message_type: messageType,
+                    file_url: fileUrl
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                // 移除发送中的消息
+                sendingMessageElement.remove();
+
+                // 添加发送成功的消息
+                const messageElement = createMessageElement({
+                    id: result.data.id,
+                    sender_id: CURRENT_USER_ID,
+                    receiver_id: OTHER_USER_ID,
+                    content: content,
+                    message_type: messageType,
+                    file_url: fileUrl,
+                    is_read: 0,
+                    create_time: Math.floor(Date.now() / 1000)
+                });
+                messageElement.dataset.time = result.data.create_time;
+                container.appendChild(messageElement);
+
+                // 滚动到底部
+                container.scrollTop = container.scrollHeight;
+            } else {
+                // 移除发送中的消息
+                sendingMessageElement.remove();
+
+                // 恢复输入框内容
+                if (messageType === 1) {
+                    input.value = content;
+                }
+
+                // 显示发送失败的提示
+                showToast(result.msg || '发送失败');
+            }
+        } catch (error) {
+            console.error('发送消息失败:', error);
+
+            // 移除发送中的消息
+            sendingMessageElement.remove();
+
+            // 恢复输入框内容
+            if (messageType === 1) {
+                input.value = content;
+            }
+
+            // 显示发送失败的提示
+            showToast('发送失败，请稍后重试');
+        }
+    }
+
+    // 处理文件上传
+    async function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // 验证文件类型和大小
+        if (!file.type.startsWith('image/')) {
+            showToast('只能上传图片');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) { // 5MB
+            showToast('图片大小不能超过5MB');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            showToast('上传中...');
+            const response = await fetch('/api/v1/upload/chat', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+
+            if (result.code === 200) {
+                // 发送图片消息
+                await sendMessage(result.data.url, 2, result.data.url);
+            } else {
+                showToast(result.msg || '上传失败');
+            }
+        } catch (error) {
+            console.error('上传失败:', error);
+            showToast('上传失败，请重试');
+        }
+
+        // 清空input
+        event.target.value = '';
+    }
+
+    // 创建发送中的消息元素
+    function createSendingMessageElement(content) {
+        const div = document.createElement('div');
+        div.style.display = 'flex';
+        div.style.marginBottom = '16px';
+        div.style.alignItems = 'flex-end';
+        div.style.justifyContent = 'flex-end';
+        div.className = 'message-item';
+
+        // 设置头像URL
+        const avatarUrl = window.currentUserInfo?.avatar || '/static/images/default-avatar.png';
+
+        // 文本消息：将表情标签转换为图片
+        const displayContent = convertEmojiToHtml(content);
+
+        div.innerHTML = `
+            <div style="background: linear-gradient(135deg, #07c160 0%, #06ad56 100%); color: #fff; border-radius: 12px 4px 12px 12px; box-shadow: 0 2px 6px rgba(7, 193, 96, 0.2); max-width: 70%; padding: 10px 14px; position: relative; font-size: 15px; line-height: 1.5; word-wrap: break-word; opacity: 0.8;">
+                ${displayContent}
+                <div style="color: rgba(255, 255, 255, 0.7); font-size: 11px; margin-top: 4px; text-align: right; display: flex; align-items: center; justify-content: flex-end;">
+                    <i class="fa fa-spinner fa-spin mr-1"></i>发送中...
+                </div>
+            </div>
+            <img src="${avatarUrl}" alt="用户头像" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-left: 12px; flex-shrink: 0;">
+        `;
+
+        return div;
+    }
+
+    // 将输入框内容转换为文本（表情图片转换为标签）
+    function convertContentToText(inputElement) {
+        const emojiImages = inputElement.querySelectorAll('img.inline-emoji');
+        let result = '';
+
+        // 遍历所有子节点
+        Array.from(inputElement.childNodes).forEach(node => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                result += node.textContent;
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                if (node.tagName === 'IMG' && node.classList.contains('inline-emoji')) {
+                    const emojiId = node.dataset.emojiId;
+                    result += `[emoji:${emojiId}]`;
+                } else {
+                    result += node.textContent;
+                }
+            }
+        });
+
+        return result.trim();
+    }
+
+    // 将文本转换为显示内容（表情标签转换为图片）
+    function convertEmojiToHtml(text) {
+        if (!text) return '';
+
+        // 替换表情标签为图片，使用完整的HTML img标签
+        return text.replace(/\[emoji:([^\]]+)\]/g, (match, emojiId) => {
+            const emojiUrl = getEmojiUrlById(emojiId);
+            // 确保图片正确加载，使用完整的img标签
+            return `<img src="${emojiUrl}" class="inline-emoji" data-emoji-id="${emojiId}" style="display: inline-block; vertical-align: middle; width: 24px; height: 24px; margin: 0 2px;" alt="" />`;
+        });
+    }
+
+    // 根据表情ID获取表情URL
+    function getEmojiUrlById(emojiId) {
+        // 如果是默认表情，使用本地路径
+        if (emojiId.startsWith('default_')) {
+            return `/static/emojis/default/${emojiId.replace('default_', '')}.gif`;
+        }
+        // 否则从表情数据中查找
+        return '/static/emojis/default/default.gif'; // 默认表情
+    }
+
+    // 显示聊天选项
+    function showChatOptions() {
+        // 创建弹窗
+        const popup = document.createElement('div');
+        popup.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm';
+        
+        popup.innerHTML = `
+            <div class="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold">聊天选项</h3>
+                    <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <button class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-3" onclick="markAllRead()">
+                        <i class="fa fa-check-circle text-primary"></i>
+                        <span>标记所有消息为已读</span>
+                    </button>
+                    <button class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-3" onclick="deleteChat()">
+                        <i class="fa fa-trash text-red-500"></i>
+                        <span>删除聊天记录</span>
+                    </button>
+                    <button class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-3" onclick="goToUserCard(${OTHER_USER_ID})">
+                        <i class="fa fa-user text-gray-500"></i>
+                        <span>查看用户名片</span>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(popup);
+        
+        // 点击弹窗外部关闭
+        popup.addEventListener('click', (e) => {
+            if (e.target === popup) {
+                popup.remove();
+            }
+        });
+    }
+
+    // 标记所有消息为已读
+    async function markAllRead() {
+        try {
+            const response = await fetch('/api/v1/messages/markAsRead', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: OTHER_USER_ID })
+            });
+            
+            const result = await response.json();
+            
+            if (result.code === 200) {
+                showToast('标记已读成功');
+            } else {
+                throw new Error(result.msg || '标记已读失败');
+            }
+        } catch (error) {
+            console.error('标记已读失败:', error);
+            showToast('标记已读失败，请稍后重试');
+        }
+    }
+
+    // 删除聊天记录
+    async function deleteChat() {
+        if (!confirm('确定要删除与该用户的所有聊天记录吗？')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/v1/messages/deleteMessage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: OTHER_USER_ID })
+            });
+            
+            const result = await response.json();
+            
+            if (result.code === 200) {
+                showToast('删除成功');
+                // 重定向到消息页面
+                window.location.href = '/messages';
+            } else {
+                throw new Error(result.msg || '删除失败');
+            }
+        } catch (error) {
+            console.error('删除聊天记录失败:', error);
+            showToast('删除失败，请稍后重试');
+        }
+    }
+
+    // 跳转到用户名片
+    function goToUserCard(userId) {
+        window.location.href = `/card/${userId}`;
+    }
+
+    // 显示提示（美化版）
+    function showToast(message, type = 'success') {
+        // 移除已存在的toast
+        const existingToast = document.querySelector('.chat-toast');
+        if (existingToast) {
+            existingToast.remove();
+        }
+
+        // 创建提示元素
+        const toast = document.createElement('div');
+        toast.className = 'chat-toast fixed top-20 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl transition-all duration-300 opacity-0 translate-y-[-20px]';
+
+        // 根据类型设置颜色和图标
+        const styles = {
+            success: { bg: 'bg-gradient-to-r from-green-500 to-green-600', icon: 'fa-check-circle' },
+            error: { bg: 'bg-gradient-to-r from-red-500 to-red-600', icon: 'fa-times-circle' },
+            info: { bg: 'bg-gradient-to-r from-blue-500 to-blue-600', icon: 'fa-info-circle' },
+            warning: { bg: 'bg-gradient-to-r from-yellow-500 to-yellow-600', icon: 'fa-exclamation-circle' }
+        };
+        const style = styles[type] || styles.info;
+
+        toast.classList.add(style.bg);
+        toast.innerHTML = `
+            <i class="fa ${style.icon} text-white text-lg"></i>
+            <span class="text-white text-sm font-medium">${message}</span>
+        `;
+
+        // 添加到页面
+        document.body.appendChild(toast);
+
+        // 显示提示
+        requestAnimationFrame(() => {
+            toast.classList.remove('opacity-0', 'translate-y-[-20px]');
+        });
+
+        // 2.5秒后隐藏提示
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-y-[-20px]');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 2500);
+    }
+
+    // 将文本中的表情标签转换为HTML
+    function convertEmojiToHtml(text) {
+        if (!text) return '';
+
+        // 替换表情标签为图片
+        return text.replace(/\[emoji:([^\]]+)\]/g, (match, emojiId) => {
+            let emojiUrl;
+            if (emojiId.startsWith('default_')) {
+                emojiUrl = `/static/emojis/default/${emojiId.replace('default_', '')}.gif`;
+            } else {
+                emojiUrl = '/static/emojis/default/default.gif';
+            }
+            return `<img src="${emojiUrl}" class="inline-emoji" style="width: 24px; height: 24px; vertical-align: middle; margin: 0 2px;">`;
+        });
+    }
+</script>
+{/block}
+
+{block name="contentMobile"}
+<!-- 存储当前用户信息到JavaScript变量 -->
+<script>
+    window.currentUserInfo = <?php echo isset($isLogin) && $isLogin && $currentUser ? json_encode([
+        'id' => $currentUser['id'] ?? '',
+        'username' => $currentUser['username'] ?? '',
+        'nickname' => $currentUser['nickname'] ?? '',
+        'avatar' => $currentUser['avatar'] ?? '/static/images/default-avatar.png'
+    ]) : 'null'; ?>;
+    window.otherUserInfo = <?php echo isset($otherUser) ? json_encode([
+        'id' => $otherUser['id'] ?? '',
+        'nickname' => $otherUser['nickname'] ?? '用户',
+        'avatar' => $otherUser['avatar'] ?? '/static/images/default-avatar.png',
+        'level' => $otherUser['level'] ?? 0,
+        'bio' => $otherUser['bio'] ?? ''
+    ]) : 'null'; ?>;
+</script>
+
+<!-- 表情配置模块 -->
+<script src="/static/js/emoji-config.js"></script>
+<!-- 语音和视频消息组件 -->
+<script src="/static/js/voice-message.js"></script>
+<script src="/static/js/video-message.js"></script>
+
+<style>
+    /* 移动端聊天样式 - 参考微信/抖音 */
+    .mobile-chat-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #f5f5f5;
+        display: flex;
+        flex-direction: column;
+        z-index: 100;
+    }
+
+    .mobile-chat-header {
+        background: #fff;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        position: relative;
+        z-index: 10;
+    }
+
+    .mobile-chat-header .user-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .mobile-chat-header .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .mobile-chat-header .user-details h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .mobile-chat-header .user-details p {
+        font-size: 12px;
+        color: #999;
+        margin: 2px 0 0 0;
+    }
+
+    .mobile-chat-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        background: #f5f5f5;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .message-item {
+        display: flex;
+        margin-bottom: 16px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .message-item.sent {
+        justify-content: flex-end;
+    }
+
+    .message-item .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .message-item.sent .avatar {
+        margin-left: 10px;
+    }
+
+    .message-item.received .avatar {
+        margin-right: 10px;
+    }
+
+    .message-bubble {
+        max-width: 70%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        position: relative;
+        font-size: 15px;
+        line-height: 1.5;
+        word-wrap: break-word;
+    }
+
+    .message-item.sent .message-bubble {
+        background: linear-gradient(135deg, #07c160 0%, #06ad56 100%);
+        color: #fff;
+        border-bottom-right-radius: 4px;
+        box-shadow: 0 2px 6px rgba(7, 193, 96, 0.2);
+    }
+
+    .message-item.received .message-bubble {
+        background: #fff;
+        color: #333;
+        border-bottom-left-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .message-time {
+        font-size: 11px;
+        color: #999;
+        margin-top: 4px;
+        text-align: right;
+    }
+
+    .recall-btn {
+        color: #999;
+        font-size: 12px;
+        margin-left: 8px;
+        cursor: pointer;
+    }
+
+    .recall-btn:active {
+        color: #07c160;
+    }
+
+    .mobile-chat-footer {
+        background: #fff;
+        padding: 10px 16px;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom));
+        border-top: 1px solid #eee;
+        position: relative;
+        z-index: 10;
+    }
+
+    .mobile-input-row {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+    }
+
+    .mobile-action-btn {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f5f5f5;
+        border-radius: 50%;
+        color: #666;
+        font-size: 20px;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+
+    .mobile-action-btn:active {
+        background: #e0e0e0;
+        transform: scale(0.95);
+    }
+
+    .mobile-input-wrapper {
+        flex: 1;
+        background: #f5f5f5;
+        border-radius: 20px;
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+    }
+
+    .mobile-input {
+        width: 100%;
+        border: none;
+        background: transparent;
+        font-size: 15px;
+        color: #333;
+        outline: none;
+        resize: none;
+        max-height: 100px;
+        min-height: 20px;
+        line-height: 20px;
+    }
+
+    .mobile-send-btn {
+        width: 50px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #07c160 0%, #06ad56 100%);
+        border-radius: 18px;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: all 0.2s;
+    }
+
+    .mobile-send-btn:active {
+        opacity: 0.8;
+        transform: scale(0.95);
+    }
+
+    /* 表情选择器 */
+    .mobile-emoji-picker {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #fff;
+        border-top: 1px solid #eee;
+        z-index: 200;
+        padding: 16px;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        display: none;
+    }
+
+    .mobile-emoji-picker.show {
+        display: block;
+        animation: slideUp 0.3s ease;
+    }
+
+    .emoji-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 8px;
+    }
+
+    .emoji-item {
+        font-size: 24px;
+        text-align: center;
+        padding: 8px 0;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background 0.2s;
+    }
+
+    .emoji-item:active {
+        background: #f5f5f5;
+    }
+
+    /* 加载动画 */
+    .loading-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #999;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #999;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(100%);
+        }
+        to {
+            transform: translateY(0);
+        }
+    }
+
+    /* 图片消息 */
+    .message-image {
+        max-width: 100%;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    /* 撤回消息 */
+    .recalled-message {
+        background: #f5f5f5 !important;
+        color: #999 !important;
+        font-size: 13px;
+        padding: 8px 12px;
+    }
+</style>
+
+<!-- 移动端聊天容器 -->
+<div class="mobile-chat-container">
+    <!-- 聊天头部 -->
+    <div class="mobile-chat-header">
+        <div class="user-info">
+            <a href="/messages" style="color: #333; font-size: 24px;">
+                <i class="fa fa-arrow-left"></i>
+            </a>
+            <img src="<?php echo $otherUser['avatar'] ?? '/static/images/default-avatar.png'; ?>" alt="用户头像" class="user-avatar">
+            <div class="user-details">
+                <h3><?php echo $otherUser['nickname'] ?? '用户'; ?></h3>
+                <p>等级 <?php echo $otherUser['level'] ?? 0; ?></p>
+            </div>
+        </div>
+        <a href="/card/<?php echo $otherUser['id'] ?? 0; ?>" style="color: #333; font-size: 20px;">
+            <i class="fa fa-user"></i>
+        </a>
+    </div>
+
+    <!-- 聊天内容区 -->
+    <div class="mobile-chat-content" id="mobile-chat-content">
+        <div class="loading-state">
+            <i class="fa fa-spinner fa-spin text-2xl mb-2"></i>
+            <p>加载中...</p>
+        </div>
+    </div>
+
+    <!-- 表情选择器 -->
+    <div class="mobile-emoji-picker" id="mobile-emoji-picker">
+        <div class="emoji-grid" id="mobile-emoji-grid"></div>
+    </div>
+
+    <!-- 消息输入区 -->
+    <div class="mobile-chat-footer">
+        <div class="mobile-input-row">
+            <button class="mobile-action-btn" id="mobile-emoji-btn">
+                <i class="fa fa-smile-o"></i>
+            </button>
+            <button class="mobile-action-btn" onclick="document.getElementById('mobile-file-input').click()">
+                <i class="fa fa-picture-o"></i>
+            </button>
+            <input type="file" id="mobile-file-input" accept="image/*" hidden onchange="handleMobileFileUpload(event)">
+            <div class="mobile-input-wrapper">
+                <input type="text" id="mobile-message-input" class="mobile-input" placeholder="输入消息...">
+            </div>
+            <button class="mobile-send-btn" id="mobile-send-btn">
+                发送
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 获取当前用户ID和对方用户ID
+    if (typeof window.CHAT_USER_ID === 'undefined') {
+        if (window.currentUserInfo && window.currentUserInfo.id) {
+            window.CHAT_USER_ID = parseInt(window.currentUserInfo.id);
+        } else {
+            // 未登录则跳转到登录页
+            window.location.href = '/login';
+            return;
+        }
+    }
+    const CURRENT_USER_ID = window.CHAT_USER_ID;
+    const OTHER_USER_ID = window.otherUserInfo ? parseInt(window.otherUserInfo.id) : null;
+
+    // 轮询定时器
+    let mobilePollingTimer = null;
+
+    // 页面加载完成后获取数据
+    window.addEventListener('DOMContentLoaded', function() {
+        if (!OTHER_USER_ID) {
+            // 缺少对方用户ID，重定向到消息页面
+            window.location.href = '/messages';
+            return;
+        }
+
+        // 动态生成表情选择器
+        const mobileEmojiPicker = document.getElementById('mobile-emoji-picker');
+        const mobileEmojiGrid = document.getElementById('mobile-emoji-grid');
+        mobileEmojiGrid.innerHTML = EMOJI_CONFIG.emojis.map(emoji =>
+            `<div class="emoji-item" onclick="insertMobileEmoji('${emoji}')">${emoji}</div>`
+        ).join('');
+
+        // 加载聊天记录
+        loadMobileChatHistory();
+
+        // 绑定发送按钮点击事件
+        document.getElementById('mobile-send-btn').addEventListener('click', sendMobileMessage);
+
+        // 绑定消息输入框回车事件
+        document.getElementById('mobile-message-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMobileMessage();
+            }
+        });
+
+        // 绑定表情按钮点击事件
+        document.getElementById('mobile-emoji-btn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const picker = document.getElementById('mobile-emoji-picker');
+            picker.classList.toggle('show');
+        });
+
+        // 点击页面其他地方关闭表情选择器
+        document.addEventListener('click', function(e) {
+            const picker = document.getElementById('mobile-emoji-picker');
+            const button = document.getElementById('mobile-emoji-btn');
+            if (!picker.contains(e.target) && !button.contains(e.target)) {
+                picker.classList.remove('show');
+            }
+        });
+
+        // 启动轮询，实时获取新消息
+        startMobilePolling();
+    });
+
+    // 页面卸载时停止轮询和清理播放状态
+    window.addEventListener('beforeunload', function() {
+        stopMobilePolling();
+        if (typeof voiceMessage !== 'undefined') voiceMessage.destroy();
+        if (typeof videoMessage !== 'undefined') videoMessage.destroy();
+    });
+
+    // 启动轮询
+    function startMobilePolling() {
+        if (mobilePollingTimer) return;
+
+        mobilePollingTimer = setInterval(async () => {
+            const container = document.getElementById('mobile-chat-content');
+            const lastMessage = container.lastElementChild;
+            const lastMessageId = lastMessage?.dataset?.id || 0;
+
+            try {
+                const response = await fetch(`/api/v1/messages/getNewMessages?other_user_id=${OTHER_USER_ID}&last_message_id=${lastMessageId}`);
+                const result = await response.json();
+
+                if (result.code === 200 && result.data.list && result.data.list.length > 0) {
+                    result.data.list.forEach(msg => {
+                        const element = createMobileMessageElement(msg);
+                        element.dataset.id = msg.id;
+                        container.appendChild(element);
+                    });
+                    container.scrollTop = container.scrollHeight;
+                }
+            } catch (error) {
+                console.error('轮询新消息失败:', error);
+            }
+        }, 3000);
+    }
+
+    // 停止轮询
+    function stopMobilePolling() {
+        if (mobilePollingTimer) {
+            clearInterval(mobilePollingTimer);
+            mobilePollingTimer = null;
+        }
+    }
+
+    // 插入表情
+    function insertMobileEmoji(emoji) {
+        const input = document.getElementById('mobile-message-input');
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const text = input.value;
+
+        input.value = text.substring(0, start) + emoji + text.substring(end);
+        input.focus();
+        input.setSelectionRange(start + emoji.length, start + emoji.length);
+
+        // 关闭表情选择器
+        document.getElementById('mobile-emoji-picker').classList.remove('show');
+    }
+
+    // 加载聊天记录
+    async function loadMobileChatHistory(page = 1) {
+        const container = document.getElementById('mobile-chat-content');
+
+        try {
+            const response = await fetch(`/api/v1/messages/getChatHistory?other_user_id=${OTHER_USER_ID}&page=${page}`);
+            const result = await response.json();
+
+            if (result.code === 200) {
+                const { list } = result.data;
+
+                if (list && list.length > 0) {
+                    // 渲染聊天记录
+                    container.innerHTML = '';
+                    list.forEach(message => {
+                        const messageElement = createMobileMessageElement(message);
+                        container.appendChild(messageElement);
+                    });
+
+                    // 滚动到底部
+                    container.scrollTop = container.scrollHeight;
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa fa-comments-o text-4xl mb-3"></i>
+                            <p>暂无聊天记录</p>
+                        </div>
+                    `;
+                }
+            } else {
+                throw new Error(result.msg || '获取聊天记录失败');
+            }
+        } catch (error) {
+            console.error('加载聊天记录失败:', error);
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fa fa-exclamation-circle text-2xl mb-2"></i>
+                    <p>加载失败，请稍后重试</p>
+                </div>
+            `;
+        }
+    }
+
+    // 创建消息元素（移动端）
+    function createMobileMessageElement(message) {
+        const div = document.createElement('div');
+        const isCurrentUser = message.sender_id == CURRENT_USER_ID;
+
+        // 设置消息容器样式
+        div.className = `message-item ${isCurrentUser ? 'sent' : 'received'}`;
+
+        // 设置头像URL
+        const avatarUrl = isCurrentUser
+            ? (window.currentUserInfo?.avatar || '/static/images/default-avatar.png')
+            : (window.otherUserInfo?.avatar || '/static/images/default-avatar.png');
+
+        // 格式化时间
+        const time = new Date(message.create_time * 1000);
+        const timeText = time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+
+        // 检查是否撤回
+        if (message.is_recalled == 1) {
+            div.innerHTML = `
+                <img src="${avatarUrl}" alt="用户头像" class="avatar">
+                <div class="message-bubble recalled-message">
+                    <i class="fa fa-undo"></i> 消息已撤回
+                </div>
+            `;
+            return div;
+        }
+
+        // 消息内容渲染
+        let contentHtml = '';
+
+        switch (parseInt(message.message_type)) {
+            case 2: // 图片消息
+                if (message.file_url) {
+                    contentHtml = `<img src="${message.file_url}" alt="图片" class="message-image" onclick="window.open('${message.file_url}', '_blank')">`;
+                }
+                break;
+
+            case 5: // 语音消息
+                contentHtml = typeof voiceMessage !== 'undefined' ? voiceMessage.createHTML(message) : '语音消息';
+                break;
+
+            case 6: // 视频消息
+                contentHtml = typeof videoMessage !== 'undefined' ? videoMessage.createHTML(message) : '视频消息';
+                break;
+
+            default: // 文本消息
+                contentHtml = convertEmojiToHtml(message.content || '');
+        }
+
+        // 检查是否可以撤回（发送者且在2分钟内）
+        const currentTime = Math.floor(Date.now() / 1000);
+        const canRecall = isCurrentUser && (currentTime - message.create_time) <= 120;
+
+        div.innerHTML = `
+            ${!isCurrentUser ? `<img src="${avatarUrl}" alt="用户头像" class="avatar">` : ''}
+            <div class="message-bubble">
+                ${contentHtml}
+                <div class="message-time">
+                    ${timeText}
+                    ${canRecall ? `<span class="recall-btn" onclick="recallMobileMessage(${message.id})">撤回</span>` : ''}
+                </div>
+            </div>
+            ${isCurrentUser ? `<img src="${avatarUrl}" alt="用户头像" class="avatar">` : ''}
+        `;
+
+        div.dataset.id = message.id;
+        return div;
+    }
+
+    // 撤回消息（移动端）
+    async function recallMobileMessage(messageId) {
+        if (!confirm('确定要撤回这条消息吗？')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/v1/messages/recallMessage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message_id: messageId })
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                showToast('撤回成功');
+                // 重新加载聊天记录
+                loadMobileChatHistory();
+            } else {
+                showToast(result.msg || '撤回失败');
+            }
+        } catch (error) {
+            console.error('撤回失败:', error);
+            showToast('撤回失败，请重试');
+        }
+    }
+
+    // 发送消息（移动端）
+    async function sendMobileMessage(content = null, messageType = 1, fileUrl = '') {
+        const input = document.getElementById('mobile-message-input');
+        if (content === null) {
+            content = input.value.trim();
+            if (!content) return;
+            input.value = '';
+        }
+
+        // 显示发送中的消息
+        const container = document.getElementById('mobile-chat-content');
+        const sendingMessageElement = createMobileSendingMessageElement(content, messageType, fileUrl);
+        container.appendChild(sendingMessageElement);
+
+        // 滚动到底部
+        container.scrollTop = container.scrollHeight;
+
+        try {
+            const response = await fetch('/api/v1/messages/sendMessage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    receiver_id: OTHER_USER_ID,
+                    content: content,
+                    message_type: messageType,
+                    file_url: fileUrl
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                // 移除发送中的消息
+                sendingMessageElement.remove();
+
+                // 添加发送成功的消息
+                const messageElement = createMobileMessageElement({
+                    id: result.data.id,
+                    sender_id: CURRENT_USER_ID,
+                    receiver_id: OTHER_USER_ID,
+                    content: content,
+                    message_type: messageType,
+                    file_url: fileUrl,
+                    is_read: 0,
+                    create_time: Math.floor(Date.now() / 1000)
+                });
+                messageElement.dataset.time = result.data.create_time;
+                container.appendChild(messageElement);
+
+                // 滚动到底部
+                container.scrollTop = container.scrollHeight;
+            } else {
+                // 移除发送中的消息
+                sendingMessageElement.remove();
+
+                // 恢复输入框内容
+                if (messageType === 1) {
+                    input.value = content;
+                }
+
+                // 显示发送失败的提示
+                showToast(result.msg || '发送失败');
+            }
+        } catch (error) {
+            console.error('发送消息失败:', error);
+
+            // 移除发送中的消息
+            sendingMessageElement.remove();
+
+            // 恢复输入框内容
+            if (messageType === 1) {
+                input.value = content;
+            }
+
+            // 显示发送失败的提示
+            showToast('发送失败，请稍后重试');
+        }
+    }
+
+    // 处理文件上传（移动端）
+    async function handleMobileFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // 验证文件类型和大小
+        if (!file.type.startsWith('image/')) {
+            showToast('只能上传图片');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) { // 5MB
+            showToast('图片大小不能超过5MB');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            showToast('上传中...');
+            const response = await fetch('/api/v1/upload/chat', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+
+            if (result.code === 200) {
+                // 发送图片消息
+                await sendMobileMessage(result.data.url, 2, result.data.url);
+            } else {
+                showToast(result.msg || '上传失败');
+            }
+        } catch (error) {
+            console.error('上传失败:', error);
+            showToast('上传失败，请重试');
+        }
+
+        // 清空input
+        event.target.value = '';
+    }
+
+    // 创建发送中的消息元素（移动端）
+    function createMobileSendingMessageElement(content) {
+        const div = document.createElement('div');
+        div.className = 'message-item sent';
+
+        // 设置头像URL
+        const avatarUrl = window.currentUserInfo?.avatar || '/static/images/default-avatar.png';
+
+        div.innerHTML = `
+            <div class="message-bubble" style="opacity: 0.7;">
+                ${content}
+                <div class="message-time">
+                    <i class="fa fa-spinner fa-spin"></i> 发送中...
+                </div>
+            </div>
+            <img src="${avatarUrl}" alt="用户头像" class="avatar">
+        `;
+
+        return div;
+    }
+
+    // 显示提示
+    function showToast(message) {
+        // 创建提示元素
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity duration-300 opacity-0 text-sm';
+        toast.style.whiteSpace = 'nowrap';
+        toast.textContent = message;
+
+        // 添加到页面
+        document.body.appendChild(toast);
+
+        // 显示提示
+        setTimeout(() => {
+            toast.classList.remove('opacity-0');
+        }, 100);
+
+        // 3秒后隐藏提示
+        setTimeout(() => {
+            toast.classList.add('opacity-0');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 3000);
+    }
+</script>
+{/block}

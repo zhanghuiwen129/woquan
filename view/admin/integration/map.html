@@ -1,0 +1,264 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地图集成 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'integration';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">地图集成</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name|default='管理员'}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <!-- 返回按钮 -->
+            <div class="mb-6">
+                <a href="/admin/integration" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>返回集成管理
+                </a>
+            </div>
+
+            <!-- 地图集成表单 -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-6">地图服务集成设置</h2>
+                
+                <form id="mapIntegrationForm" class="space-y-6">
+                    <!-- 地图服务商设置 -->
+                    <div class="border border-gray-200 rounded-lg p-6">
+                        <h3 class="text-md font-medium text-gray-800 mb-4">地图服务商</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">选择地图</label>
+                                <select name="map_type" class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="tencent">腾讯地图</option>
+                                    <option value="amap">高德地图</option>
+                                    <option value="baidu">百度地图</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">应用Key</label>
+                                <input type="text" name="map_key" placeholder="请输入地图应用Key"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">安全密钥</label>
+                                <input type="password" name="map_secret" placeholder="请输入安全密钥(可选)"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">启用状态</label>
+                                <select name="map_enabled" class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="0">禁用</option>
+                                    <option value="1">启用</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 地图配置 -->
+                    <div class="border border-gray-200 rounded-lg p-6">
+                        <h3 class="text-md font-medium text-gray-800 mb-4">地图配置</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">默认缩放级别</label>
+                                <input type="number" name="map_zoom" min="1" max="18" value="13"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">默认中心点</label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <input type="text" name="map_center_lat" placeholder="纬度" value="39.9042"
+                                           class="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <input type="text" name="map_center_lng" placeholder="经度" value="116.4074"
+                                           class="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">地图语言</label>
+                                <select name="map_language" class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="zh-CN">中文</option>
+                                    <option value="en">英文</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">地图主题</label>
+                                <select name="map_theme" class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="default">默认</option>
+                                    <option value="dark">暗色</option>
+                                    <option value="light">亮色</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 地图功能 -->
+                    <div class="border border-gray-200 rounded-lg p-6">
+                        <h3 class="text-md font-medium text-gray-800 mb-4">地图功能</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="flex items-center">
+                                <input type="checkbox" name="map_control_nav" value="1" checked
+                                       class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <label class="ml-2 block text-sm text-gray-700">启用导航控件</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" name="map_control_scale" value="1" checked
+                                       class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <label class="ml-2 block text-sm text-gray-700">启用比例尺</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" name="map_control_zoom" value="1" checked
+                                       class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <label class="ml-2 block text-sm text-gray-700">启用缩放控件</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" name="map_control_rotate" value="1"
+                                       class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <label class="ml-2 block text-sm text-gray-700">启用旋转控件</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API版本 -->
+                    <div class="border border-gray-200 rounded-lg p-6">
+                        <h3 class="text-md font-medium text-gray-800 mb-4">API版本</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">API版本</label>
+                                <input type="text" name="map_api_version" placeholder="请输入API版本(可选)"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">加载方式</label>
+                                <select name="map_load_type" class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="async">异步加载</option>
+                                    <option value="sync">同步加载</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 保存按钮 -->
+                    <div class="flex gap-4">
+                        <button type="button" onclick="saveMapIntegration()" 
+                                class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                            <i class="fas fa-save mr-2"></i>保存设置
+                        </button>
+                        <button type="reset" 
+                                class="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors">
+                            <i class="fas fa-undo mr-2"></i>重置
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        function saveMapIntegration() {
+            const form = document.getElementById('mapIntegrationForm');
+            const formData = new FormData(form);
+            
+            fetch('/admin/integration/saveMap', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 200) {
+                    alert('保存成功');
+                } else {
+                    alert('保存失败：' + data.msg);
+                }
+            })
+            .catch(error => {
+                alert('保存失败：网络错误');
+            });
+        }
+    </script>
+</body>
+</html>

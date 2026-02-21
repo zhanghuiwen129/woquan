@@ -1,0 +1,656 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="content"}
+<style>
+    .draft-card {
+        transition: all 0.3s ease;
+    }
+    .draft-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<!-- 主内容区 -->
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-2xl mx-auto">
+        <!-- 顶部操作栏 -->
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-text-primary">
+                我的草稿
+                <span id="draft-count" class="text-sm text-text-secondary font-normal ml-2">(0)</span>
+            </h2>
+            <button onclick="clearExpiredDrafts()" class="text-sm text-text-secondary hover:text-primary transition-colors">
+                <i class="fa fa-trash-o mr-1"></i>清理过期草稿
+            </button>
+        </div>
+
+        <!-- 草稿列表 -->
+        <div id="draft-list" class="space-y-4">
+            <!-- 草稿列表由JS加载 -->
+        </div>
+
+        <!-- 空状态 -->
+        <div id="empty-state" class="hidden text-center py-12">
+            <i class="fa fa-file-text text-5xl text-text-tertiary mb-4"></i>
+            <h3 class="text-lg font-medium text-text-primary mb-2">暂无草稿</h3>
+            <p class="text-sm text-text-secondary mb-4">未发布的动态会自动保存到草稿箱</p>
+            <button onclick="goToPublish()" class="px-6 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-darkPrimary transition-colors shadow-soft">
+                <i class="fa fa-plus mr-1"></i>创建动态
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认弹窗 -->
+<div id="delete-modal" class="hidden fixed inset-0 z-[3000]">
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-card rounded-2xl shadow-2xl p-6 w-80 md:w-96 animate-fadeIn">
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 mx-auto mb-4 bg-danger/10 rounded-full flex items-center justify-center">
+                <i class="fa fa-trash text-2xl text-danger"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-text-primary mb-2">确认删除</h3>
+            <p class="text-sm text-text-secondary">删除后草稿将无法恢复，确定要删除吗？</p>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all">
+                取消
+            </button>
+            <button onclick="confirmDelete()" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-md hover:shadow-lg">
+                删除
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+    }
+    .animate-fadeIn {
+        animation: fadeIn 0.2s ease-out;
+    }
+</style>
+
+<script>
+    // 使用立即执行函数表达式 (IIFE) 包装代码，避免变量重复声明
+    (function() {
+        // 当前用户信息
+        let draftCurrentUser = null;
+        let allDrafts = [];
+        let deleteDraftId = null;
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserInfo();
+            loadDrafts();
+        });
+
+        // 加载用户信息
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/user/info');
+                const data = await response.json();
+
+                if (data.code === 200) {
+                    draftCurrentUser = data.data;
+                }
+            } catch (error) {
+                console.error('加载用户信息失败:', error);
+            }
+        }
+
+        // 加载草稿列表
+        async function loadDrafts() {
+            try {
+                const response = await fetch('/api/drafts/list');
+                const data = await response.json();
+
+                if (data.code === 200) {
+                    allDrafts = data.data && data.data.list ? data.data.list : [];
+                    renderDrafts();
+                } else {
+                    // 未登录或其他错误，显示空状态
+                    allDrafts = [];
+                    renderDrafts();
+                }
+            } catch (error) {
+                console.error('加载草稿失败:', error);
+                // 网络错误，显示空状态
+                allDrafts = [];
+                renderDrafts();
+            }
+        }
+
+        // 渲染草稿列表
+        function renderDrafts() {
+            const container = document.getElementById('draft-list');
+            const emptyState = document.getElementById('empty-state');
+            const countEl = document.getElementById('draft-count');
+
+            // 确保 allDrafts 是数组
+            if (!Array.isArray(allDrafts)) {
+                allDrafts = [];
+            }
+
+            countEl.textContent = `(${allDrafts.length})`;
+
+            if (allDrafts.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.innerHTML = allDrafts.map(draft => `
+                <div class="draft-card bg-bg-card rounded-xl shadow-soft p-4 border border-border-color">
+                    <div class="flex gap-3">
+                        <!-- 图片预览 -->
+                        ${draft.images && draft.images.length > 0 ? `
+                            <div class="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border border-border-color">
+                                <img src="${draft.images[0]}" alt="" class="w-full h-full object-cover">
+                            </div>
+                        ` : `
+                            <div class="w-20 h-20 flex-shrink-0 rounded-lg bg-lightBlue flex items-center justify-center border border-border-color">
+                                <i class="fa fa-file-text text-2xl text-text-tertiary"></i>
+                            </div>
+                        `}
+
+                        <!-- 草稿内容 -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-start justify-between gap-2">
+                                <h4 class="text-sm font-medium text-text-primary truncate">${draft.content || '无内容'}</h4>
+                                <div class="flex items-center gap-1 flex-shrink-0">
+                                    <button onclick="editDraft(${draft.id})" class="p-1.5 text-text-secondary hover:text-primary transition-colors" title="编辑">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button onclick="showDeleteModal(${draft.id})" class="p-1.5 text-text-secondary hover:text-danger transition-colors" title="删除">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 mt-2 text-xs text-text-secondary">
+                                <span><i class="fa fa-clock-o mr-1"></i>${formatTime(draft.create_time)}</span>
+                                ${draft.images && draft.images.length > 0 ? `<span><i class="fa fa-image mr-1"></i>${draft.images.length}张图片</span>` : ''}
+                                ${draft.topic ? `<span><i class="fa fa-hashtag mr-1"></i>${draft.topic}</span>` : ''}
+                            </div>
+                            <div class="mt-2 text-xs text-text-tertiary">
+                                <i class="fa fa-hourglass-half mr-1"></i>
+                                ${getTimeRemaining(draft.create_time)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 编辑草稿
+        function editDraft(draftId) {
+            // 将草稿数据保存到localStorage
+            const draft = allDrafts.find(d => d.id === draftId);
+            if (draft) {
+                localStorage.setItem('edit_draft', JSON.stringify(draft));
+                window.location.href = '/';
+            }
+        }
+
+        // 显示删除确认弹窗
+        function showDeleteModal(draftId) {
+            deleteDraftId = draftId;
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+
+        // 关闭删除确认弹窗
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.add('hidden');
+            deleteDraftId = null;
+        }
+
+        // 确认删除草稿
+        async function confirmDelete() {
+            if (!deleteDraftId) return;
+
+            try {
+                const response = await fetch('/api/drafts/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ draft_id: deleteDraftId })
+                });
+                const data = await response.json();
+
+                if (data.code === 200) {
+                    showToast('草稿已删除');
+                    allDrafts = allDrafts.filter(d => d.id !== deleteDraftId);
+                    renderDrafts();
+                    closeDeleteModal();
+                } else {
+                    showToast(data.msg || '删除失败', 'error');
+                }
+            } catch (error) {
+                showToast('删除失败，请重试', 'error');
+            }
+        }
+
+        // 清理过期草稿
+        async function clearExpiredDrafts() {
+            if (allDrafts.length === 0) {
+                showToast('暂无草稿', 'error');
+                return;
+            }
+
+            const expiredDrafts = allDrafts.filter(d => {
+                const age = Date.now() / 1000 - d.create_time;
+                return age > 3 * 24 * 3600; // 超过3天
+            });
+
+            if (expiredDrafts.length === 0) {
+                showToast('暂无过期草稿');
+                return;
+            }
+
+            if (!confirm(`确定要清理 ${expiredDrafts.length} 个过期草稿吗？`)) return;
+
+            try {
+                const response = await fetch('/api/drafts/clear-expired', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.code === 200) {
+                    showToast(`已清理 ${expiredDrafts.length} 个过期草稿`);
+                    loadDrafts();
+                } else {
+                    showToast(data.msg || '清理失败', 'error');
+                }
+            } catch (error) {
+                showToast('清理失败，请重试', 'error');
+            }
+        }
+
+        // 前往发布页面
+        function goToPublish() {
+            window.location.href = '/';
+        }
+
+        // 格式化时间
+        function formatTime(timestamp) {
+            const date = new Date(timestamp * 1000);
+            const now = new Date();
+            const diff = now - date;
+
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+            if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
+
+            return date.toLocaleDateString('zh-CN');
+        }
+
+        // 计算剩余时间
+        function getTimeRemaining(timestamp) {
+            const created = timestamp;
+            const now = Date.now() / 1000;
+            const age = now - created;
+            const remaining = 3 * 24 * 3600 - age; // 3天有效期
+
+            if (remaining <= 0) return '已过期';
+
+            const days = Math.floor(remaining / 86400);
+            const hours = Math.floor((remaining % 86400) / 3600);
+
+            if (days > 0) return `${days}天后过期`;
+            if (hours > 0) return `${hours}小时后过期`;
+            return '即将过期';
+        }
+
+        // 显示提示
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            if (toast) {
+                toast.textContent = message;
+                toast.style.display = 'block';
+
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // 将函数暴露到全局作用域，以便HTML中的onclick事件可以调用
+        window.editDraft = editDraft;
+        window.showDeleteModal = showDeleteModal;
+        window.closeDeleteModal = closeDeleteModal;
+        window.confirmDelete = confirmDelete;
+        window.clearExpiredDrafts = clearExpiredDrafts;
+        window.goToPublish = goToPublish;
+    })();
+</script>
+{/block}
+
+{block name="contentMobile"}
+<style>
+    .draft-card {
+        transition: all 0.3s ease;
+    }
+    .draft-card:hover {
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<!-- 移动端主内容区 -->
+<div class="container mx-auto px-3 py-4">
+    <!-- 顶部操作栏 -->
+    <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-semibold text-text-primary">
+            我的草稿
+            <span id="mobile-draft-count" class="text-sm text-text-secondary font-normal ml-2">(0)</span>
+        </h2>
+        <button onclick="clearExpiredDrafts()" class="text-xs text-text-secondary hover:text-primary transition-colors">
+            <i class="fa fa-trash-o mr-1"></i>清理
+        </button>
+    </div>
+
+    <!-- 草稿列表 -->
+    <div id="mobile-draft-list" class="space-y-3">
+        <!-- 草稿列表由JS加载 -->
+    </div>
+
+    <!-- 空状态 -->
+    <div id="mobile-empty-state" class="hidden text-center py-10">
+        <i class="fa fa-file-text text-4xl text-text-tertiary mb-3"></i>
+        <h3 class="text-base font-medium text-text-primary mb-2">暂无草稿</h3>
+        <p class="text-xs text-text-secondary mb-4">未发布的动态会自动保存到草稿箱</p>
+        <button onclick="goToPublish()" class="px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-darkPrimary transition-colors shadow-soft">
+            <i class="fa fa-plus mr-1"></i>创建动态
+        </button>
+    </div>
+</div>
+
+<!-- 删除确认弹窗 -->
+<div id="mobile-delete-modal" class="hidden fixed inset-0 z-[3000]">
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-card rounded-2xl shadow-2xl p-5 w-72 animate-fadeIn">
+        <div class="text-center mb-5">
+            <div class="w-14 h-14 mx-auto mb-3 bg-danger/10 rounded-full flex items-center justify-center">
+                <i class="fa fa-trash text-xl text-danger"></i>
+            </div>
+            <h3 class="text-base font-semibold text-text-primary mb-2">确认删除</h3>
+            <p class="text-xs text-text-secondary">删除后草稿将无法恢复，确定要删除吗？</p>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all text-sm">
+                取消
+            </button>
+            <button onclick="confirmDelete()" class="flex-1 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-md text-sm">
+                删除
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+    }
+    .animate-fadeIn {
+        animation: fadeIn 0.2s ease-out;
+    }
+</style>
+
+<script>
+    (function() {
+        // 当前用户信息
+        let draftCurrentUser = null;
+        let allDrafts = [];
+        let deleteDraftId = null;
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserInfo();
+            loadDrafts();
+        });
+
+        // 加载用户信息
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/user/info');
+                const data = await response.json();
+
+                if (data.code === 200) {
+                    draftCurrentUser = data.data;
+                }
+            } catch (error) {
+                console.error('加载用户信息失败:', error);
+            }
+        }
+
+        // 加载草稿列表
+        async function loadDrafts() {
+            try {
+                const response = await fetch('/api/drafts/list');
+                const data = await response.json();
+
+                if (data.code === 200) {
+                    allDrafts = data.data && data.data.list ? data.data.list : [];
+                    renderDrafts();
+                } else {
+                    allDrafts = [];
+                    renderDrafts();
+                }
+            } catch (error) {
+                console.error('加载草稿失败:', error);
+                allDrafts = [];
+                renderDrafts();
+            }
+        }
+
+        // 渲染草稿列表
+        function renderDrafts() {
+            const container = document.getElementById('mobile-draft-list');
+            const emptyState = document.getElementById('mobile-empty-state');
+            const countEl = document.getElementById('mobile-draft-count');
+
+            if (!Array.isArray(allDrafts)) {
+                allDrafts = [];
+            }
+
+            countEl.textContent = `(${allDrafts.length})`;
+
+            if (allDrafts.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.innerHTML = allDrafts.map(draft => `
+                <div class="draft-card bg-bg-card rounded-xl shadow-soft p-3 border border-border-color">
+                    <div class="flex gap-3">
+                        ${draft.images && draft.images.length > 0 ? `
+                            <div class="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-border-color">
+                                <img src="${draft.images[0]}" alt="" class="w-full h-full object-cover">
+                            </div>
+                        ` : `
+                            <div class="w-16 h-16 flex-shrink-0 rounded-lg bg-lightBlue flex items-center justify-center border border-border-color">
+                                <i class="fa fa-file-text text-xl text-text-tertiary"></i>
+                            </div>
+                        `}
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-start justify-between gap-2">
+                                <h4 class="text-sm font-medium text-text-primary truncate">${draft.content || '无内容'}</h4>
+                                <div class="flex items-center gap-1 flex-shrink-0">
+                                    <button onclick="editDraft(${draft.id})" class="p-1 text-text-secondary hover:text-primary transition-colors text-sm" title="编辑">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button onclick="showDeleteModal(${draft.id})" class="p-1 text-text-secondary hover:text-danger transition-colors text-sm" title="删除">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 mt-2 text-xs text-text-secondary">
+                                <span><i class="fa fa-clock-o mr-1"></i>${formatTime(draft.create_time)}</span>
+                                ${draft.images && draft.images.length > 0 ? `<span><i class="fa fa-image mr-1"></i>${draft.images.length}</span>` : ''}
+                            </div>
+                            <div class="mt-1 text-xs text-text-tertiary">
+                                ${getTimeRemaining(draft.create_time)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 编辑草稿
+        function editDraft(draftId) {
+            const draft = allDrafts.find(d => d.id === draftId);
+            if (draft) {
+                localStorage.setItem('edit_draft', JSON.stringify(draft));
+                window.location.href = '/';
+            }
+        }
+
+        // 显示删除确认弹窗
+        function showDeleteModal(draftId) {
+            deleteDraftId = draftId;
+            document.getElementById('mobile-delete-modal').classList.remove('hidden');
+        }
+
+        // 关闭删除确认弹窗
+        function closeDeleteModal() {
+            document.getElementById('mobile-delete-modal').classList.add('hidden');
+            deleteDraftId = null;
+        }
+
+        // 确认删除草稿
+        async function confirmDelete() {
+            if (!deleteDraftId) return;
+
+            try {
+                const response = await fetch('/api/drafts/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ draft_id: deleteDraftId })
+                });
+                const data = await response.json();
+
+                if (data.code === 200) {
+                    showToast('草稿已删除');
+                    allDrafts = allDrafts.filter(d => d.id !== deleteDraftId);
+                    renderDrafts();
+                    closeDeleteModal();
+                } else {
+                    showToast(data.msg || '删除失败', 'error');
+                }
+            } catch (error) {
+                showToast('删除失败，请重试', 'error');
+            }
+        }
+
+        // 清理过期草稿
+        async function clearExpiredDrafts() {
+            if (allDrafts.length === 0) {
+                showToast('暂无草稿', 'error');
+                return;
+            }
+
+            const expiredDrafts = allDrafts.filter(d => {
+                const age = Date.now() / 1000 - d.create_time;
+                return age > 3 * 24 * 3600;
+            });
+
+            if (expiredDrafts.length === 0) {
+                showToast('暂无过期草稿');
+                return;
+            }
+
+            if (!confirm(`确定要清理 ${expiredDrafts.length} 个过期草稿吗？`)) return;
+
+            try {
+                const response = await fetch('/api/drafts/clear-expired', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.code === 200) {
+                    showToast(`已清理 ${expiredDrafts.length} 个过期草稿`);
+                    loadDrafts();
+                } else {
+                    showToast(data.msg || '清理失败', 'error');
+                }
+            } catch (error) {
+                showToast('清理失败，请重试', 'error');
+            }
+        }
+
+        // 前往发布页面
+        function goToPublish() {
+            window.location.href = '/';
+        }
+
+        // 格式化时间
+        function formatTime(timestamp) {
+            const date = new Date(timestamp * 1000);
+            const now = new Date();
+            const diff = now - date;
+
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+            if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
+
+            return date.toLocaleDateString('zh-CN');
+        }
+
+        // 计算剩余时间
+        function getTimeRemaining(timestamp) {
+            const created = timestamp;
+            const now = Date.now() / 1000;
+            const age = now - created;
+            const remaining = 3 * 24 * 3600 - age;
+
+            if (remaining <= 0) return '已过期';
+
+            const days = Math.floor(remaining / 86400);
+            const hours = Math.floor((remaining % 86400) / 3600);
+
+            if (days > 0) return `${days}天后过期`;
+            if (hours > 0) return `${hours}小时后过期`;
+            return '即将过期';
+        }
+
+        // 显示提示
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            if (toast) {
+                toast.textContent = message;
+                toast.style.display = 'block';
+
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        window.editDraft = editDraft;
+        window.showDeleteModal = showDeleteModal;
+        window.closeDeleteModal = closeDeleteModal;
+        window.confirmDelete = confirmDelete;
+        window.clearExpiredDrafts = clearExpiredDrafts;
+        window.goToPublish = goToPublish;
+    })();
+</script>
+{/block}

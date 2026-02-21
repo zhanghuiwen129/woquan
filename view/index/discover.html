@@ -1,0 +1,429 @@
+{extend name="index/main-layout" /}
+
+{block name="content"}
+<style>
+    .hot-topics::-webkit-scrollbar {
+        display: none;
+    }
+    .hot-topics {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
+
+<!-- 主内容区 -->
+<main class="container mx-auto px-4 py-6 max-w-4xl">
+    <!-- 热门话题 -->
+    <section class="mb-6" id="hot-topics-section">
+        <h2 class="text-lg font-bold text-text-primary mb-4 flex items-center gap-2">
+            <i class="fa fa-fire text-warning"></i>
+            热门话题
+        </h2>
+        <div class="flex gap-4 overflow-x-auto pb-2">
+            <div id="loading-topics" class="w-full text-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+            </div>
+            <div id="topics-container" class="hot-topics flex gap-4 overflow-x-auto pb-2" style="display: none;"></div>
+        </div>
+    </section>
+
+    <!-- 趋势榜单 -->
+    <section class="mb-6">
+        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fa fa-chart-line text-primary"></i>
+            热门话题
+        </h2>
+        <div class="bg-bg-card rounded-lg shadow-soft overflow-hidden">
+            <div id="loading-trending" class="text-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+            </div>
+            <div id="trending-container" style="display: none;"></div>
+        </div>
+    </section>
+
+    <!-- 推荐用户 -->
+    <section id="recommended">
+        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fa fa-user-plus text-primary"></i>
+            推荐用户
+        </h2>
+        <div class="bg-bg-card rounded-lg shadow-soft overflow-hidden">
+            <div id="loading-users" class="text-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+            </div>
+            <div id="users-container" style="display: none;"></div>
+        </div>
+    </section>
+</main>
+{/block}
+
+{block name="contentMobile"}
+<style>
+    .hot-topics::-webkit-scrollbar {
+        display: none;
+    }
+    .hot-topics {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
+
+<!-- 主内容区 -->
+<main class="px-4 py-4 pb-20">
+    <!-- 热门话题 -->
+    <section class="mb-6" id="hot-topics-section-mobile">
+        <h2 class="text-lg font-bold text-text-primary mb-4 flex items-center gap-2">
+            <i class="fa fa-fire text-warning"></i>
+            热门话题
+        </h2>
+        <div class="flex gap-4 overflow-x-auto pb-2">
+            <div id="loading-topics-mobile" class="w-full text-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+            </div>
+            <div id="topics-container-mobile" class="hot-topics flex gap-4 overflow-x-auto pb-2" style="display: none;"></div>
+        </div>
+    </section>
+
+    <!-- 趋势榜单 -->
+    <section class="mb-6">
+        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fa fa-chart-line text-primary"></i>
+            热门话题
+        </h2>
+        <div class="bg-white rounded-lg shadow-soft overflow-hidden">
+            <div id="loading-trending-mobile" class="text-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+            </div>
+            <div id="trending-container-mobile" style="display: none;"></div>
+        </div>
+    </section>
+
+    <!-- 推荐用户 -->
+    <section id="recommended-mobile">
+        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fa fa-user-plus text-primary"></i>
+            推荐用户
+        </h2>
+        <div class="bg-white rounded-lg shadow-soft overflow-hidden">
+            <div id="loading-users-mobile" class="text-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+            </div>
+            <div id="users-container-mobile" style="display: none;"></div>
+        </div>
+    </section>
+</main>
+{/block}
+
+{block name="script"}
+<script>
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg z-50';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(function() {
+            toast.remove();
+        }, 2000);
+    }
+
+    // 获取话题图标和颜色
+    function getTopicIcon(name) {
+        const icons = {
+            '今日热点': 'fa-hashtag',
+            '美照分享': 'fa-camera',
+            '美食探店': 'fa-utensils',
+            '旅行日记': 'fa-plane',
+            '健身打卡': 'fa-heartbeat',
+            '读书分享': 'fa-book',
+            '宠物日常': 'fa-paw',
+            '音乐分享': 'fa-music',
+            '影视推荐': 'fa-film',
+            '游戏天地': 'fa-gamepad',
+        };
+        return icons[name] || 'fa-hashtag';
+    }
+
+    function getTopicGradient(index) {
+        const gradients = [
+            'from-purple-500 to-indigo-600',
+            'from-pink-500 to-rose-600',
+            'from-cyan-500 to-blue-600',
+            'from-orange-500 to-red-600',
+            'from-green-500 to-teal-600',
+            'from-yellow-500 to-orange-600',
+        ];
+        return gradients[index % gradients.length];
+    }
+
+    // 格式化数字
+    function formatNumber(num) {
+        if (num >= 10000) {
+            return (num / 10000).toFixed(1) + 'w';
+        } else if (num >= 1000) {
+            return (num / 1000).toFixed(1) + 'k';
+        }
+        return num.toString();
+    }
+
+    // 检测是否为移动端
+    function isMobile() {
+        // 使用 CSS 媒体查询检测，而不是窗口宽度
+        return window.getComputedStyle(document.body).getPropertyValue('--is-mobile') === 'true';
+    }
+
+    // 加载热门话题
+    async function loadHotTopics() {
+        try {
+            const isMobileDevice = window.innerWidth < 768;
+            const suffix = isMobileDevice ? '-mobile' : '';
+
+            const response = await fetch('/moments/getTopics', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_hot: 1 })
+            });
+            const result = await response.json();
+
+            const loading = document.getElementById(`loading-topics${suffix}`);
+            const container = document.getElementById(`topics-container${suffix}`);
+
+            if (!loading || !container) {
+                return;
+            }
+
+            if (result.code === 200 && result.data && result.data.length > 0) {
+                loading.style.display = 'none';
+                container.style.display = 'flex';
+
+                container.innerHTML = result.data.slice(0, 4).map((topic, index) => {
+                    const gradient = getTopicGradient(index);
+                    const icon = getTopicIcon(topic.name);
+                    return `
+                        <div class="flex-shrink-0 w-36 bg-gradient-to-br ${gradient} rounded-xl p-4 text-white cursor-pointer hover:shadow-lg transition-shadow"
+                             onclick="location.href='/topic?id=${topic.id}'">
+                            <i class="fa ${icon} text-2xl mb-2 opacity-90"></i>
+                            <div class="font-semibold truncate">${topic.name}</div>
+                            <div class="text-xs opacity-80">${formatNumber(topic.post_count || 0)} 动态</div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                loading.innerHTML = '<p class="text-gray-500 text-sm">暂无热门话题</p>';
+            }
+        } catch (error) {
+            const isMobileDevice = window.innerWidth < 768;
+            const suffix = isMobileDevice ? '-mobile' : '';
+            const loading = document.getElementById(`loading-topics${suffix}`);
+            if (loading) {
+                loading.innerHTML = '<p class="text-gray-500 text-sm">加载失败: ' + error.message + '</p>';
+            }
+        }
+    }
+
+    // 加载话题榜单
+    async function loadTopicTrending() {
+        try {
+            const isMobileDevice = window.innerWidth < 768;
+            const suffix = isMobileDevice ? '-mobile' : '';
+
+            const response = await fetch('/moments/getTopics', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            const result = await response.json();
+
+            const loading = document.getElementById(`loading-trending${suffix}`);
+            const container = document.getElementById(`trending-container${suffix}`);
+
+            if (!loading || !container) {
+                return;
+            }
+
+            if (result.code === 200 && result.data && result.data.length > 0) {
+                loading.style.display = 'none';
+                container.style.display = 'block';
+
+                container.innerHTML = result.data.slice(0, 5).map((topic, index) => {
+                    const rankColors = ['text-red-500', 'text-orange-500', 'text-green-500', 'text-gray-400', 'text-gray-400'];
+                    const rankColor = rankColors[index];
+                    const icon = getTopicIcon(topic.name);
+                    return `
+                        <div class="flex items-center p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50"
+                             onclick="location.href='/topic?id=${topic.id}'">
+                            <span class="w-8 text-xl font-bold ${rankColor} italic">${index + 1}</span>
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-800 flex items-center gap-2">
+                                    <i class="fa ${icon} text-sm text-primary"></i>
+                                    ${topic.name}
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    ${formatNumber(topic.post_count || 0)} 动态 · ${formatNumber(topic.follower_count || 0)} 关注
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                loading.innerHTML = '<p class="text-gray-500 text-sm py-4">暂无话题</p>';
+            }
+        } catch (error) {
+            const isMobileDevice = window.innerWidth < 768;
+            const suffix = isMobileDevice ? '-mobile' : '';
+            const loading = document.getElementById(`loading-trending${suffix}`);
+            if (loading) {
+                loading.innerHTML = '<p class="text-gray-500 text-sm py-4">加载失败</p>';
+            }
+        }
+    }
+
+    // 加载推荐用户
+    async function loadRecommendedUsers() {
+        try {
+            const userId = getCookie('user_id');
+            const isMobileDevice = window.innerWidth < 768;
+            const suffix = isMobileDevice ? '-mobile' : '';
+
+            const response = await fetch('/users/recommended?limit=10', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const result = await response.json();
+
+            const loading = document.getElementById(`loading-users${suffix}`);
+            const container = document.getElementById(`users-container${suffix}`);
+
+            if (!loading || !container) {
+                return;
+            }
+
+            if (result.code === 200 && result.data && result.data.length > 0) {
+                loading.style.display = 'none';
+                container.style.display = 'block';
+
+                container.innerHTML = result.data.map(user => {
+                    const isFollowing = !!user.is_following;
+                    return `
+                    <div class="flex items-center p-4 border-b border-gray-100 hover:bg-gray-50 last:border-b-0">
+                        <a href="/card/${user.id}" class="flex items-center gap-3 flex-1">
+                            <img src="${user.avatar || '/static/images/default-avatar.png'}" class="w-12 h-12 rounded-lg object-cover" alt="">
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-800">${user.nickname || user.username}</div>
+                                <div class="text-sm text-gray-500">
+                                    粉丝 <span class="text-primary">${formatNumber(user.follower_count || 0)}</span>
+                                    ${user.moments_count ? ` · 动态 ${formatNumber(user.moments_count)}` : ''}
+                                </div>
+                            </div>
+                        </a>
+                        <button class="follow-user-btn ${isFollowing ? 'bg-white text-primary border border-primary' : 'bg-primary text-white'} px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-80 transition-opacity ${isFollowing ? 'followed' : ''}"
+                                onclick="handleFollowClick(this, ${user.id}, '${user.nickname || user.username}')">
+                            ${isFollowing ? '已关注' : '关注'}
+                        </button>
+                    </div>
+                `;
+                }).join('');
+            } else {
+                console.log('没有推荐用户数据:', result);
+                loading.innerHTML = '<p class="text-gray-500 text-sm py-4">暂无推荐用户</p>';
+            }
+        } catch (error) {
+            console.error('加载推荐用户失败:', error);
+            const isMobileDevice = window.innerWidth < 768;
+            const suffix = isMobileDevice ? '-mobile' : '';
+            const loading = document.getElementById(`loading-users${suffix}`);
+            if (loading) {
+                loading.innerHTML = '<p class="text-gray-500 text-sm py-4">加载失败: ' + error.message + '</p>';
+            }
+        }
+    }
+
+    // 处理关注/取消关注
+    async function handleFollowClick(btn, targetUserId, username) {
+        const isFollowing = btn.classList.contains('followed');
+        const action = isFollowing ? 'unfollow' : 'follow';
+
+        try {
+            const response = await fetch('/user/follow', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    target_id: targetUserId,
+                    action: action
+                })
+            });
+            const result = await response.json();
+
+            if (result.code === 200) {
+                const isNowFollowing = result.data && (result.data.following === true || result.data.following === 1);
+
+                if (isNowFollowing) {
+                    btn.classList.add('followed', 'bg-white', 'text-primary', 'border', 'border-primary');
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.textContent = '已关注';
+                    showToast(`已关注 ${username}`);
+                } else {
+                    btn.classList.remove('followed', 'bg-white', 'text-primary', 'border', 'border-primary');
+                    btn.classList.add('bg-primary', 'text-white');
+                    btn.textContent = '关注';
+                    showToast(`已取消关注 ${username}`);
+                }
+            } else if (result.code === 401) {
+                showToast('请先登录');
+                window.location.href = '/login';
+            } else {
+                showToast(result.msg || '操作失败');
+            }
+        } catch (error) {
+            console.error('关注操作失败:', error);
+            showToast('操作失败，请重试');
+        }
+    }
+
+    // 页面加载时获取数据
+    document.addEventListener('DOMContentLoaded', () => {
+        loadHotTopics();
+        loadTopicTrending();
+        loadRecommendedUsers();
+
+        // 处理锚点跳转
+        const hash = window.location.hash;
+        if (hash === '#recommended') {
+            setTimeout(() => {
+                const isMobileDevice = window.innerWidth < 768;
+                const elementId = isMobileDevice ? 'recommended-mobile' : 'recommended';
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 300);
+        }
+    });
+
+    // 监听窗口大小变化，当从PC切换到移动端或反之时重新加载数据
+    let lastDeviceType = window.innerWidth < 768 ? 'mobile' : 'desktop';
+    let resizeTimeout;
+
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            const currentDeviceType = window.innerWidth < 768 ? 'mobile' : 'desktop';
+
+            // 当设备类型改变时重新加载数据
+            if (currentDeviceType !== lastDeviceType) {
+                console.log('设备类型改变:', lastDeviceType, '->', currentDeviceType, '，重新加载数据');
+                loadHotTopics();
+                loadTopicTrending();
+                loadRecommendedUsers();
+                lastDeviceType = currentDeviceType;
+            }
+        }, 300); // 防抖，避免频繁触发
+    });
+</script>
+{/block}

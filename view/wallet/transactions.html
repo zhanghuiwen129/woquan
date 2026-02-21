@@ -1,0 +1,160 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>交易记录 - {$name}</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/css/font-awesome.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4A90E2',
+                        secondary: '#6AA9F2',
+                        lightBlue: '#E8F3FF',
+                        success: '#52C480',
+                        danger: '#F04848',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 min-h-screen pb-20">
+    <div class="container mx-auto px-4 py-6">
+        <!-- 页面头部 -->
+        <div class="flex items-center justify-between mb-6">
+            <a href="/wallet" class="text-gray-600 hover:text-gray-800">
+                <i class="fa fa-arrow-left text-xl"></i>
+            </a>
+            <h1 class="text-xl font-bold text-gray-800">交易记录</h1>
+            <button onclick="loadTransactions()" class="text-gray-600 hover:text-gray-800">
+                <i class="fa fa-refresh"></i>
+            </button>
+        </div>
+
+        <!-- 筛选器 -->
+        <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+            <div class="flex gap-2 overflow-x-auto">
+                <button class="filter-btn px-4 py-2 rounded-full bg-primary text-white text-sm font-medium" data-type="all">全部</button>
+                <button class="filter-btn px-4 py-2 rounded-full bg-gray-100 text-gray-600 text-sm" data-type="recharge">充值</button>
+                <button class="filter-btn px-4 py-2 rounded-full bg-gray-100 text-gray-600 text-sm" data-type="withdraw">提现</button>
+                <button class="filter-btn px-4 py-2 rounded-full bg-gray-100 text-gray-600 text-sm" data-type="consume">消费</button>
+                <button class="filter-btn px-4 py-2 rounded-full bg-gray-100 text-gray-600 text-sm" data-type="reward">奖励</button>
+            </div>
+        </div>
+
+        <!-- 交易列表 -->
+        <div class="bg-white rounded-xl shadow-sm">
+            {if $transactions && count($transactions) > 0}
+            <div class="transaction-list">
+                {volist name="transactions" id="item"}
+                <div class="transaction-item flex justify-between items-center py-4 px-4 border-b border-gray-50" data-type="{$item.type}">
+                    <div class="flex items-center gap-3">
+                        <div class="transaction-icon w-10 h-10 rounded-full flex items-center justify-center {if $item.type == 'recharge'}bg-green-100 text-green-500{elseif $item.type == 'withdraw'/}bg-red-100 text-red-500{elseif $item.type == 'consume'/}bg-blue-100 text-blue-500{else/}bg-orange-100 text-orange-500{/if}">
+                            {if $item.type == 'recharge'}
+                            <i class="fa fa-plus"></i>
+                            {elseif $item.type == 'withdraw'/}
+                            <i class="fa fa-minus"></i>
+                            {elseif $item.type == 'consume'/}
+                            <i class="fa fa-shopping-cart"></i>
+                            {elseif $item.type == 'reward'/}
+                            <i class="fa fa-gift"></i>
+                            {else/}
+                            <i class="fa fa-exchange"></i>
+                            {/if}
+                        </div>
+                        <div>
+                            <div class="text-gray-800 font-medium">{$item.description}</div>
+                            <div class="text-gray-400 text-xs">{$item.create_time|date='Y-m-d H:i:s'}</div>
+                        </div>
+                    </div>
+                    <div class="text-{$item.amount > 0 ? 'green-500' : 'red-500'} font-semibold">
+                        {if $item.amount > 0}+{/if}¥{$item.amount|number_format=2}
+                    </div>
+                </div>
+                {/volist}
+            </div>
+            {else/}
+            <div class="empty-state text-center py-16">
+                <i class="fa fa-inbox text-6xl text-gray-200 mb-4"></i>
+                <p class="text-gray-400">暂无交易记录</p>
+            </div>
+            {/if}
+        </div>
+
+        <!-- 分页 -->
+        {if $total > 0}
+        <div class="pagination mt-6 flex justify-center gap-2">
+            {if $page > 1}
+            <a href="/wallet/transactions?page={$page-1}" class="px-4 py-2 rounded-lg bg-white text-gray-600 hover:bg-gray-50">
+                <i class="fa fa-angle-left"></i>
+            </a>
+            {/if}
+            
+            <span class="px-4 py-2 rounded-lg bg-primary text-white">
+                {$page}
+            </span>
+            
+            {if $page * $limit < $total}
+            <a href="/wallet/transactions?page={$page+1}" class="px-4 py-2 rounded-lg bg-white text-gray-600 hover:bg-gray-50">
+                <i class="fa fa-angle-right"></i>
+            </a>
+            {/if}
+        </div>
+        
+        <div class="text-center mt-4 text-gray-400 text-sm">
+            共 {$total} 条记录
+        </div>
+        {/if}
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/80 text-white px-6 py-3 rounded-lg hidden z-[2000]"></div>
+
+    <script>
+        // 筛选功能
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 更新按钮样式
+                document.querySelectorAll('.filter-btn').forEach(b => {
+                    b.classList.remove('bg-primary', 'text-white');
+                    b.classList.add('bg-gray-100', 'text-gray-600');
+                });
+                
+                this.classList.remove('bg-gray-100', 'text-gray-600');
+                this.classList.add('bg-primary', 'text-white');
+                
+                // 筛选交易记录
+                const type = this.dataset.type;
+                const items = document.querySelectorAll('.transaction-item');
+                
+                items.forEach(item => {
+                    if (type === 'all' || item.dataset.type === type) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // 显示提示
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 2000);
+        }
+
+        function loadTransactions() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>

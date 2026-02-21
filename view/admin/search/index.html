@@ -1,0 +1,127 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>搜索管理 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">搜索管理</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        管理用户搜索记录和搜索日志
+    </p>
+</div>
+
+<!-- 搜索筛选区域 -->
+<div class="card rounded-lg p-4 mb-6">
+    <div class="flex items-center gap-4 flex-wrap">
+        <div class="flex items-center gap-2">
+            <label class="text-sm text-modern-gray">关键词:</label>
+            <input type="text" id="keyword" placeholder="搜索关键词..." class="px-3 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary">
+        </div>
+        <div class="flex items-center gap-2">
+            <label class="text-sm text-modern-gray">开始日期:</label>
+            <input type="date" id="startDate" class="px-3 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary">
+        </div>
+        <div class="flex items-center gap-2">
+            <label class="text-sm text-modern-gray">结束日期:</label>
+            <input type="date" id="endDate" class="px-3 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary">
+        </div>
+        <button onclick="search()" class="px-4 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors">
+            <i class="fas fa-search mr-1"></i>搜索
+        </button>
+        <button onclick="resetSearch()" class="px-4 py-2 bg-modern-light border border-modern-lightGray text-modern-gray rounded-md hover:border-modern-primary transition-colors">
+            <i class="fas fa-redo mr-1"></i>重置
+        </button>
+    </div>
+</div>
+
+<!-- 搜索日志列表 -->
+<div class="card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">ID</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">关键词</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">搜索次数</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">最后搜索时间</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {volist name="searches" id="item"}
+                <tr class="hover:bg-modern-light/50 transition-colors">
+                    <td class="py-4 px-6 text-sm text-modern-gray">{$item.id}</td>
+                    <td class="py-4 px-6">
+                        <span class="text-sm font-medium text-modern-dark">{$item.keyword}</span>
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">{$item.count}</span>
+                    </td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">
+                        {$item.last_search_time ? date('Y-m-d H:i:s', $item.last_search_time) : '-'}
+                    </td>
+                    <td class="py-4 px-6">
+                        <a href="javascript:void(0)" onclick="deleteSearchLog({$item.id})" class="text-modern-gray hover:text-modern-danger transition-colors" title="删除">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {/volist}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页 -->
+    <div class="bg-modern-light px-6 py-4 flex items-center justify-between border-t border-modern-lightGray">
+        <div class="text-sm text-modern-gray">
+            共 {$searches->total()} 条记录
+        </div>
+        <div class="flex items-center gap-2">
+            {$searches|raw}
+        </div>
+    </div>
+</div>
+
+<script>
+function search() {
+    const keyword = document.getElementById('keyword').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    window.location.href = '/admin/search?keyword=' + encodeURIComponent(keyword) + '&start_date=' + startDate + '&end_date=' + endDate;
+}
+
+function resetSearch() {
+    document.getElementById('keyword').value = '';
+    document.getElementById('startDate').value = '';
+    document.getElementById('endDate').value = '';
+    window.location.href = '/admin/search';
+}
+
+function deleteSearchLog(id) {
+    if (confirm('确定要删除该搜索记录吗？')) {
+        fetch('/admin/search/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: id })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.code === 200) {
+                alert('删除成功');
+                window.location.reload();
+            } else {
+                alert('删除失败: ' + result.msg);
+            }
+        })
+        .catch(error => {
+            console.error('删除失败:', error);
+            alert('网络错误，请稍后重试');
+        });
+    }
+}
+</script>
+{/block}

@@ -1,0 +1,648 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="content"}
+<style>
+    .level-badge {
+        background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    }
+    .level-1 { background: linear-gradient(135deg, #C0C0C0 0%, #A9A9A9 100%); }
+    .level-2 { background: linear-gradient(135deg, #CD7F32 0%, #B87333 100%); }
+    .level-3 { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); }
+    .level-4 { background: linear-gradient(135deg, #E5E4E2 0%, #BCC6CC 100%); }
+    .level-5 { background: linear-gradient(135deg, #4A90E2 0%, #3A7BC8 100%); }
+</style>
+
+<!-- 主内容区 -->
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- 当前等级卡片 -->
+        <div class="bg-gradient-to-r from-primary to-darkPrimary rounded-xl p-6 text-white mb-6">
+            <div class="flex items-center gap-4 mb-4">
+                <div id="current-level-badge" class="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg level-badge">
+                    <span id="current-level-num">1</span>
+                </div>
+                <div>
+                    <h2 class="text-lg font-semibold">当前等级</h2>
+                    <p id="level-name" class="text-sm opacity-80">新手用户</p>
+                </div>
+            </div>
+
+            <!-- 升级进度 -->
+            <div class="mb-2">
+                <div class="flex justify-between text-sm mb-1">
+                    <span id="current-exp">0 经验值</span>
+                    <span id="next-level-exp">Lv2: 100 经验值</span>
+                </div>
+                <div class="bg-white/20 rounded-full h-4">
+                    <div id="exp-progress" class="bg-white rounded-full h-4 transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="text-center mt-2">
+                    <span class="text-sm">还需 <span id="exp-needed" class="font-bold">100</span> 经验值升级到 Lv2</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 等级特权 -->
+        <div class="bg-bg-card rounded-xl p-4 mb-6">
+            <h3 class="text-sm font-semibold text-text-primary mb-3">
+                <i class="fa fa-star text-primary mr-2"></i>当前等级特权
+            </h3>
+            <div id="current-privileges" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- 特权列表由JS加载 -->
+            </div>
+        </div>
+
+        <!-- 快捷操作 -->
+        <div class="flex gap-2 mb-6 overflow-x-auto">
+            <button onclick="loadTab('levels')" class="tab-btn flex-1 min-w-[120px] bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                <i class="fa fa-list-ol mr-2"></i>等级说明
+            </button>
+            <button onclick="loadTab('rights')" class="tab-btn flex-1 min-w-[120px] bg-bg-card text-text-primary px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                <i class="fa fa-gift mr-2"></i>等级权益
+            </button>
+            <button onclick="loadTab('ranking')" class="tab-btn flex-1 min-w-[120px] bg-bg-card text-text-primary px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                <i class="fa fa-trophy mr-2"></i>排行榜
+            </button>
+        </div>
+
+        <!-- 内容区域 -->
+        <div id="content-area">
+            <!-- 等级说明 (默认显示) -->
+            <div id="levels-tab" class="tab-content">
+                <div class="bg-bg-card rounded-xl p-4">
+                    <h3 class="text-sm font-semibold text-text-primary mb-4">等级体系说明</h3>
+                    <div id="level-list" class="space-y-3">
+                        <!-- 等级列表由JS加载 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 等级权益 -->
+            <div id="rights-tab" class="tab-content hidden">
+                <div class="bg-bg-card rounded-xl p-4">
+                    <h3 class="text-sm font-semibold text-text-primary mb-4">等级权益对比</h3>
+                    <div id="rights-comparison" class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-gray-300">
+                                    <th class="py-2 px-3 text-left">权益项目</th>
+                                    <th class="py-2 px-3 text-center">Lv1</th>
+                                    <th class="py-2 px-3 text-center">Lv2</th>
+                                    <th class="py-2 px-3 text-center">Lv3</th>
+                                    <th class="py-2 px-3 text-center">Lv4</th>
+                                    <th class="py-2 px-3 text-center">Lv5</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rights-table">
+                                <!-- 权益对比表由JS加载 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 排行榜 -->
+            <div id="ranking-tab" class="tab-content hidden">
+                <div class="bg-bg-card rounded-xl p-4">
+                    <h3 class="text-sm font-semibold text-text-primary mb-4">等级排行榜</h3>
+                    <div id="ranking-list" class="space-y-3">
+                        <!-- 排行榜由JS加载 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 升级提示弹窗 -->
+<div id="upgrade-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-6 max-w-sm mx-4 text-center">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center text-white text-2xl font-bold level-badge">
+            <span id="modal-level">2</span>
+        </div>
+        <h3 class="text-lg font-semibold text-text-primary mb-2">恭喜升级！</h3>
+        <p id="modal-message" class="text-sm text-text-secondary mb-4">您已升级到Lv2，解锁了新特权！</p>
+        <button onclick="closeUpgradeModal()" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-darkPrimary transition-colors">
+            我知道了
+        </button>
+    </div>
+</div>
+{/block}
+
+{block name="contentMobile"}
+<style>
+    .level-badge {
+        background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    }
+    .level-1 { background: linear-gradient(135deg, #C0C0C0 0%, #A9A9A9 100%); }
+    .level-2 { background: linear-gradient(135deg, #CD7F32 0%, #B87333 100%); }
+    .level-3 { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); }
+    .level-4 { background: linear-gradient(135deg, #E5E4E2 0%, #BCC6CC 100%); }
+    .level-5 { background: linear-gradient(135deg, #4A90E2 0%, #3A7BC8 100%); }
+</style>
+
+<!-- 移动端主内容区 -->
+<div class="container mx-auto px-3 py-4">
+    <!-- 当前等级卡片 -->
+    <div class="bg-gradient-to-r from-primary to-darkPrimary rounded-xl p-5 text-white mb-4">
+        <div class="flex items-center gap-3 mb-3">
+            <div id="mobile-current-level-badge" class="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shadow-lg level-badge">
+                <span id="mobile-current-level-num">1</span>
+            </div>
+            <div>
+                <h2 class="text-base font-semibold">当前等级</h2>
+                <p id="mobile-level-name" class="text-xs opacity-80">新手用户</p>
+            </div>
+        </div>
+
+        <!-- 升级进度 -->
+        <div class="mb-2">
+            <div class="flex justify-between text-xs mb-1">
+                <span id="mobile-current-exp">0 经验</span>
+                <span id="mobile-next-level-exp">Lv2: 100 经验</span>
+            </div>
+            <div class="bg-white/20 rounded-full h-3">
+                <div id="mobile-exp-progress" class="bg-white rounded-full h-3 transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div class="text-center mt-2">
+                <span class="text-xs">还需 <span id="mobile-exp-needed" class="font-bold">100</span> 经验升级</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 等级特权 -->
+    <div class="bg-bg-card rounded-xl p-3 mb-4">
+        <h3 class="text-xs font-semibold text-text-primary mb-2">
+            <i class="fa fa-star text-primary mr-1"></i>当前特权
+        </h3>
+        <div id="mobile-current-privileges" class="grid grid-cols-1 gap-2">
+            <!-- 特权列表由JS加载 -->
+        </div>
+    </div>
+
+    <!-- 快捷操作 -->
+    <div class="flex gap-2 mb-4 overflow-x-auto">
+        <button onclick="mobileLoadTab('levels')" class="mobile-tab-btn flex-1 min-w-[80px] bg-primary text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+            <i class="fa fa-list-ol"></i>说明
+        </button>
+        <button onclick="mobileLoadTab('rights')" class="mobile-tab-btn flex-1 min-w-[80px] bg-bg-card text-text-primary px-3 py-2 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors">
+            <i class="fa fa-gift"></i>权益
+        </button>
+        <button onclick="mobileLoadTab('ranking')" class="mobile-tab-btn flex-1 min-w-[80px] bg-bg-card text-text-primary px-3 py-2 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors">
+            <i class="fa fa-trophy"></i>排行
+        </button>
+    </div>
+
+    <!-- 内容区域 -->
+    <div id="mobile-content-area">
+        <!-- 等级说明 (默认显示) -->
+        <div id="mobile-levels-tab" class="mobile-tab-content">
+            <div class="bg-bg-card rounded-xl p-3">
+                <h3 class="text-xs font-semibold text-text-primary mb-3">等级体系说明</h3>
+                <div id="mobile-level-list" class="space-y-2">
+                    <!-- 等级列表由JS加载 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 等级权益 -->
+        <div id="mobile-rights-tab" class="mobile-tab-content hidden">
+            <div class="bg-bg-card rounded-xl p-3">
+                <h3 class="text-xs font-semibold text-text-primary mb-3">等级权益对比</h3>
+                <div id="mobile-rights-comparison" class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead>
+                            <tr class="border-b border-gray-300">
+                                <th class="py-2 px-2 text-left">权益</th>
+                                <th class="py-2 px-1 text-center">Lv1</th>
+                                <th class="py-2 px-1 text-center">Lv2</th>
+                                <th class="py-2 px-1 text-center">Lv3</th>
+                                <th class="py-2 px-1 text-center">Lv4</th>
+                                <th class="py-2 px-1 text-center">Lv5</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mobile-rights-table">
+                            <!-- 权益对比表由JS加载 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 排行榜 -->
+        <div id="mobile-ranking-tab" class="mobile-tab-content hidden">
+            <div class="bg-bg-card rounded-xl p-3">
+                <h3 class="text-xs font-semibold text-text-primary mb-3">等级排行榜</h3>
+                <div id="mobile-ranking-list" class="space-y-2">
+                    <!-- 排行榜由JS加载 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 升级提示弹窗 -->
+<div id="mobile-upgrade-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-5 max-w-sm mx-4 text-center">
+        <div class="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center text-white text-xl font-bold level-badge">
+            <span id="mobile-modal-level">2</span>
+        </div>
+        <h3 class="text-base font-semibold text-text-primary mb-2">恭喜升级！</h3>
+        <p id="mobile-modal-message" class="text-xs text-text-secondary mb-3">您已升级到Lv2，解锁了新特权！</p>
+        <button onclick="closeUpgradeModal()" class="px-5 py-2 bg-primary text-white rounded-lg hover:bg-darkPrimary transition-colors text-sm">
+            我知道了
+        </button>
+    </div>
+</div>
+{/block}
+
+<script>
+    // 当前用户信息
+    let currentUser = null;
+    let levelInfo = null;
+
+    // 等级配置
+    const levelConfig = {
+        1: { name: '新手用户', exp: 0, color: 'level-1', icon: 'fa-seedling' },
+        2: { name: '初级用户', exp: 100, color: 'level-2', icon: 'fa-leaf' },
+        3: { name: '中级用户', exp: 300, color: 'level-3', icon: 'fa-star' },
+        4: { name: '高级用户', exp: 600, color: 'level-4', icon: 'fa-crown' },
+        5: { name: '超级用户', exp: 1000, color: 'level-5', icon: 'fa-gem' }
+    };
+
+    // 等级权益
+    const levelRights = {
+        1: ['发布动态', '评论互动', '点赞收藏'],
+        2: ['发布动态', '评论互动', '点赞收藏', '每日签到', '查看访客'],
+        3: ['发布动态', '评论互动', '点赞收藏', '每日签到', '查看访客', '置顶动态', '自定义主题'],
+        4: ['发布动态', '评论互动', '点赞收藏', '每日签到', '查看访客', '置顶动态', '自定义主题', '私信功能', '热门话题'],
+        5: ['发布动态', '评论互动', '点赞收藏', '每日签到', '查看访客', '置顶动态', '自定义主题', '私信功能', '热门话题', '免审核发布', '专属客服']
+    };
+
+    // 页面加载时初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        loadUserInfo();
+        loadLevelInfo();
+        loadLevelList();
+        loadRightsComparison();
+        loadRanking();
+    });
+
+    // 加载用户信息
+    async function loadUserInfo() {
+        try {
+            const response = await fetch('/api/user/info');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                currentUser = data.data;
+            }
+        } catch (error) {
+            console.error('加载用户信息失败:', error);
+        }
+    }
+
+    // 加载等级信息
+    async function loadLevelInfo() {
+        try {
+            const response = await fetch('/api/levels/info');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                levelInfo = data.data;
+                renderLevelInfo();
+                renderCurrentPrivileges();
+                renderMobileLevelInfo();
+                renderMobileCurrentPrivileges();
+            }
+        } catch (error) {
+            console.error('加载等级信息失败:', error);
+        }
+    }
+
+    // 渲染等级信息（桌面端）
+    function renderLevelInfo() {
+        if (!levelInfo) return;
+
+        const currentLevel = levelInfo.level || 1;
+        const currentExp = levelInfo.total_exp || 0;
+        const config = levelConfig[currentLevel];
+        const nextConfig = levelConfig[currentLevel + 1];
+
+        // 更新当前等级显示
+        document.getElementById('current-level-num').textContent = currentLevel;
+        document.getElementById('level-name').textContent = config.name;
+
+        // 更新等级徽章样式
+        const badge = document.getElementById('current-level-badge');
+        if (badge) {
+            badge.className = `w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg ${config.color}`;
+        }
+
+        // 更新经验值进度
+        const levelExp = config.exp;
+        const nextLevelExp = nextConfig ? nextConfig.exp : levelExp;
+        const progress = nextConfig ? ((currentExp - levelExp) / (nextLevelExp - levelExp)) * 100 : 100;
+
+        document.getElementById('current-exp').textContent = `${currentExp} 经验值`;
+        document.getElementById('next-level-exp').textContent = nextConfig ? `Lv${currentLevel + 1}: ${nextLevelExp} 经验值` : '已达到最高等级';
+        document.getElementById('exp-progress').style.width = Math.min(progress, 100) + '%';
+        document.getElementById('exp-needed').textContent = nextConfig ? Math.max(nextLevelExp - currentExp, 0) : 0;
+    }
+
+    // 渲染当前等级特权（桌面端）
+    function renderCurrentPrivileges() {
+        if (!levelInfo) return;
+
+        const currentLevel = levelInfo.level || 1;
+        const privileges = levelRights[currentLevel] || [];
+
+        const container = document.getElementById('current-privileges');
+        if (container) {
+            container.innerHTML = privileges.map(privilege => `
+                <div class="flex items-center gap-2 p-2 bg-white rounded-lg">
+                    <i class="fa fa-check-circle text-green-500"></i>
+                    <span class="text-sm text-text-primary">${privilege}</span>
+                </div>
+            `).join('');
+        }
+    }
+
+    // 加载等级列表（桌面端）
+    function loadLevelList() {
+        const container = document.getElementById('level-list');
+        if (!container) return;
+
+        container.innerHTML = Object.entries(levelConfig).map(([level, config]) => `
+            <div class="flex items-center justify-between p-4 bg-white rounded-lg">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold ${config.color}">
+                        ${level}
+                    </div>
+                    <div>
+                        <div class="font-medium text-text-primary">${config.name}</div>
+                        <div class="text-xs text-text-secondary">需要 ${config.exp} 经验值</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm font-bold text-primary">${levelRights[level].length} 项特权</div>
+                    <div class="text-xs text-text-secondary">
+                        ${levelRights[level].slice(0, 2).join('、')}...
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 加载权益对比（桌面端）
+    function loadRightsComparison() {
+        const container = document.getElementById('rights-table');
+        if (!container) return;
+
+        const allRights = Array.from(new Set(Object.values(levelRights).flat()));
+
+        container.innerHTML = allRights.map(right => `
+            <tr class="border-b border-gray-200">
+                <td class="py-2 px-3 text-text-primary">${right}</td>
+                ${[1, 2, 3, 4, 5].map(level => `
+                    <td class="py-2 px-3 text-center">
+                        ${levelRights[level].includes(right)
+                            ? '<i class="fa fa-check text-green-500"></i>'
+                            : '<span class="text-text-tertiary">-</span>'
+                        }
+                    </td>
+                `).join('')}
+            </tr>
+        `).join('');
+    }
+
+    // 加载排行榜（桌面端）
+    async function loadRanking() {
+        try {
+            const response = await fetch('/api/levels/ranking');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                const ranking = data.data || [];
+                renderRanking(ranking);
+                renderMobileRanking(ranking);
+            }
+        } catch (error) {
+            console.error('加载排行榜失败:', error);
+        }
+    }
+
+    // 渲染排行榜（桌面端）
+    function renderRanking(ranking) {
+        const container = document.getElementById('ranking-list');
+        if (!container) return;
+
+        if (ranking.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-8 text-text-secondary">
+                    <i class="fa fa-trophy text-4xl mb-3"></i>
+                    <p>暂无排行数据</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = ranking.map((user, index) => `
+            <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 ${index < 3 ? 'bg-yellow-400' : 'bg-gray-300'} rounded-full flex items-center justify-center text-white font-bold text-sm">
+                        ${index + 1}
+                    </div>
+                    <img src="${user.avatar || '/public/images/default-avatar.png'}" alt="" class="w-10 h-10 rounded-full object-cover">
+                    <div>
+                        <div class="text-sm font-medium text-text-primary">${user.nickname || user.username}</div>
+                        <div class="text-xs text-text-secondary">Lv${user.level}</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm font-bold text-primary">${user.total_exp || 0} 经验</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 切换标签（桌面端）
+    function loadTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        const tab = document.getElementById(tabName + '-tab');
+        if (tab) tab.classList.remove('hidden');
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('bg-primary', 'text-white');
+            btn.classList.add('bg-bg-card', 'text-text-primary');
+        });
+        if (event && event.target) {
+            event.target.classList.remove('bg-bg-card', 'text-text-primary');
+            event.target.classList.add('bg-primary', 'text-white');
+        }
+    }
+
+    // 渲染移动端等级信息
+    function renderMobileLevelInfo() {
+        if (!levelInfo) return;
+
+        const currentLevel = levelInfo.level || 1;
+        const currentExp = levelInfo.total_exp || 0;
+        const config = levelConfig[currentLevel];
+        const nextConfig = levelConfig[currentLevel + 1];
+
+        document.getElementById('mobile-current-level-num').textContent = currentLevel;
+        document.getElementById('mobile-level-name').textContent = config.name;
+
+        const badge = document.getElementById('mobile-current-level-badge');
+        if (badge) {
+            badge.className = `w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shadow-lg ${config.color}`;
+        }
+
+        const levelExp = config.exp;
+        const nextLevelExp = nextConfig ? nextConfig.exp : levelExp;
+        const progress = nextConfig ? ((currentExp - levelExp) / (nextLevelExp - levelExp)) * 100 : 100;
+
+        document.getElementById('mobile-current-exp').textContent = `${currentExp} 经验`;
+        document.getElementById('mobile-next-level-exp').textContent = nextConfig ? `Lv${currentLevel + 1}: ${nextLevelExp} 经验` : '已达到最高等级';
+        document.getElementById('mobile-exp-progress').style.width = Math.min(progress, 100) + '%';
+        document.getElementById('mobile-exp-needed').textContent = nextConfig ? Math.max(nextLevelExp - currentExp, 0) : 0;
+    }
+
+    // 渲染移动端当前等级特权
+    function renderMobileCurrentPrivileges() {
+        if (!levelInfo) return;
+
+        const currentLevel = levelInfo.level || 1;
+        const privileges = levelRights[currentLevel] || [];
+
+        const container = document.getElementById('mobile-current-privileges');
+        if (container) {
+            container.innerHTML = privileges.map(privilege => `
+                <div class="flex items-center gap-2 p-2 bg-white rounded-lg">
+                    <i class="fa fa-check-circle text-green-500 text-xs"></i>
+                    <span class="text-xs text-text-primary">${privilege}</span>
+                </div>
+            `).join('');
+        }
+    }
+
+    // 加载移动端等级列表
+    function loadMobileLevelList() {
+        const container = document.getElementById('mobile-level-list');
+        if (!container) return;
+
+        container.innerHTML = Object.entries(levelConfig).map(([level, config]) => `
+            <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${config.color}">
+                        ${level}
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium text-text-primary">${config.name}</div>
+                        <div class="text-xs text-text-secondary">需要 ${config.exp} 经验</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs font-bold text-primary">${levelRights[level].length} 项特权</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 加载移动端权益对比
+    function loadMobileRightsComparison() {
+        const container = document.getElementById('mobile-rights-table');
+        if (!container) return;
+
+        const allRights = Array.from(new Set(Object.values(levelRights).flat()));
+
+        container.innerHTML = allRights.map(right => `
+            <tr class="border-b border-gray-200">
+                <td class="py-2 px-2 text-text-primary text-xs">${right}</td>
+                ${[1, 2, 3, 4, 5].map(level => `
+                    <td class="py-2 px-1 text-center">
+                        ${levelRights[level].includes(right)
+                            ? '<i class="fa fa-check text-green-500 text-xs"></i>'
+                            : '<span class="text-text-tertiary text-xs">-</span>'
+                        }
+                    </td>
+                `).join('')}
+            </tr>
+        `).join('');
+    }
+
+    // 渲染移动端排行榜
+    function renderMobileRanking(ranking) {
+        const container = document.getElementById('mobile-ranking-list');
+        if (!container) return;
+
+        if (ranking.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-6 text-text-secondary">
+                    <i class="fa fa-trophy text-3xl mb-2"></i>
+                    <p class="text-xs">暂无排行数据</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = ranking.map((user, index) => `
+            <div class="flex items-center justify-between p-2 bg-white rounded-lg">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 ${index < 3 ? 'bg-yellow-400' : 'bg-gray-300'} rounded-full flex items-center justify-center text-white font-bold text-xs">
+                        ${index + 1}
+                    </div>
+                    <img src="${user.avatar || '/public/images/default-avatar.png'}" alt="" class="w-8 h-8 rounded-full object-cover">
+                    <div>
+                        <div class="text-xs font-medium text-text-primary truncate">${user.nickname || user.username}</div>
+                        <div class="text-xs text-text-secondary">Lv${user.level}</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs font-bold text-primary">${user.total_exp || 0} 经验</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 切换标签（移动端）
+    function mobileLoadTab(tabName) {
+        document.querySelectorAll('.mobile-tab-content').forEach(el => el.classList.add('hidden'));
+        const tab = document.getElementById('mobile-' + tabName + '-tab');
+        if (tab) tab.classList.remove('hidden');
+
+        document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+            btn.classList.remove('bg-primary', 'text-white');
+            btn.classList.add('bg-bg-card', 'text-text-primary');
+        });
+        if (event && event.target) {
+            event.target.classList.remove('bg-bg-card', 'text-text-primary');
+            event.target.classList.add('bg-primary', 'text-white');
+        }
+    }
+
+    // 关闭升级弹窗
+    function closeUpgradeModal() {
+        const modal = document.getElementById('upgrade-modal');
+        const mobileModal = document.getElementById('mobile-upgrade-modal');
+        if (modal) modal.classList.add('hidden');
+        if (mobileModal) mobileModal.classList.add('hidden');
+    }
+
+    // 显示提示
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+
+        if (toast && toastMessage) {
+            toast.className = `fixed top-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} text-white`;
+            toastMessage.textContent = message;
+            toast.classList.remove('hidden');
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+    }
+</script>

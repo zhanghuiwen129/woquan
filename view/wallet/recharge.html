@@ -1,0 +1,289 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>充值 - {$name}</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/static/css/wallet.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4A90E2',
+                        secondary: '#6AA9F2',
+                        lightBlue: '#E8F3FF',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 min-h-screen pb-20">
+    <div class="container mx-auto px-4 py-6">
+        <!-- 页面头部 -->
+        <div class="flex items-center justify-between mb-6">
+            <a href="/wallet" class="text-gray-600 hover:text-gray-800">
+                <i class="fa fa-arrow-left text-xl"></i>
+            </a>
+            <h1 class="text-xl font-bold text-gray-800">账户充值</h1>
+            <div class="w-6"></div>
+        </div>
+
+        <!-- 充值金额 -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-4">
+            <h3 class="text-gray-800 font-semibold mb-4">选择充值货币</h3>
+            
+            <!-- 货币选择 -->
+            <div class="grid grid-cols-2 gap-3 mb-6" id="currency-grid">
+                {volist name="currencies" id="currency"}
+                <button class="currency-btn border-2 border-gray-200 rounded-lg py-3 px-4 hover:border-primary transition-colors text-left {$currency.code eq 'CNY' ? 'border-primary bg-lightBlue' : ''}" data-currency-id="{$currency.id}" data-symbol="{$currency.symbol}">
+                    <div class="text-gray-800 font-bold text-lg">{$currency.name}</div>
+                    <div class="text-gray-400 text-xs">{$currency.code} - {$currency.symbol}</div>
+                </button>
+                {/volist}
+            </div>
+
+            <h3 class="text-gray-800 font-semibold mb-4">选择充值金额</h3>
+            
+            <div class="grid grid-cols-3 gap-3 mb-4" id="amount-grid">
+                <button class="amount-btn border-2 border-gray-200 rounded-lg py-4 hover:border-primary transition-colors" data-amount="10">
+                    <div class="text-gray-800 font-bold text-lg"><span class="currency-symbol">¥</span>10</div>
+                    <div class="text-gray-400 text-xs">= 1000 积分</div>
+                </button>
+                <button class="amount-btn border-2 border-gray-200 rounded-lg py-4 hover:border-primary transition-colors" data-amount="30">
+                    <div class="text-gray-800 font-bold text-lg"><span class="currency-symbol">¥</span>30</div>
+                    <div class="text-gray-400 text-xs">= 3000 积分</div>
+                </button>
+                <button class="amount-btn border-2 border-gray-200 rounded-lg py-4 hover:border-primary transition-colors" data-amount="50">
+                    <div class="text-gray-800 font-bold text-lg"><span class="currency-symbol">¥</span>50</div>
+                    <div class="text-green-500 text-xs">+500 赠送</div>
+                </button>
+                <button class="amount-btn border-2 border-gray-200 rounded-lg py-4 hover:border-primary transition-colors" data-amount="100">
+                    <div class="text-gray-800 font-bold text-lg"><span class="currency-symbol">¥</span>100</div>
+                    <div class="text-green-500 text-xs">+1000 赠送</div>
+                </button>
+                <button class="amount-btn border-2 border-gray-200 rounded-lg py-4 hover:border-primary transition-colors" data-amount="200">
+                    <div class="text-gray-800 font-bold text-lg"><span class="currency-symbol">¥</span>200</div>
+                    <div class="text-green-500 text-xs">+3000 赠送</div>
+                </button>
+                <button class="amount-btn border-2 border-gray-200 rounded-lg py-4 hover:border-primary transition-colors relative" data-amount="custom">
+                    <div class="text-gray-800 font-bold text-lg">自定义</div>
+                    <input type="number" id="custom-amount" class="absolute inset-0 bg-transparent text-center font-bold text-lg outline-none" placeholder="输入金额" min="1" max="10000">
+                </button>
+            </div>
+
+            <!-- 充值说明 -->
+            <div class="bg-lightBlue rounded-lg p-4">
+                <h4 class="text-primary font-medium mb-2"><i class="fa fa-info-circle mr-1"></i>充值说明</h4>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• 1单位货币 = 100积分</li>
+                    <li>• 充值即时到账</li>
+                    <li>• 单笔充值最低1单位</li>
+                    <li>• 充值遇到问题请联系客服</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 支付方式 -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-4">
+            <h3 class="text-gray-800 font-semibold mb-4">选择支付方式</h3>
+            
+            <div class="space-y-3">
+                <label class="payment-method flex items-center justify-between p-4 border-2 border-primary rounded-lg cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <input type="radio" name="payment" value="alipay" class="hidden" checked>
+                        <div class="payment-icon alipay"></div>
+                        <span class="text-gray-800 font-medium">支付宝支付</span>
+                    </div>
+                    <i class="fa fa-check-circle text-primary"></i>
+                </label>
+                
+                <label class="payment-method flex items-center justify-between p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-gray-300">
+                    <div class="flex items-center gap-3">
+                        <input type="radio" name="payment" value="wechat" class="hidden">
+                        <div class="payment-icon wechat"></div>
+                        <span class="text-gray-800 font-medium">微信支付</span>
+                    </div>
+                    <i class="fa fa-circle-o text-gray-300"></i>
+                </label>
+            </div>
+        </div>
+
+        <!-- 充值按钮 -->
+        <button id="recharge-btn" class="w-full bg-gradient-to-r from-primary to-secondary text-white font-semibold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all">
+            立即充值 ¥<span id="selected-amount">10</span>
+        </button>
+
+        <!-- 温馨提示 -->
+        <div class="mt-6 text-center text-sm text-gray-500">
+            <p>充值即表示您同意</p>
+            <a href="#" class="text-primary hover:underline">《充值服务协议》</a>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/80 text-white px-6 py-3 rounded-lg hidden z-[2000]"></div>
+
+    <script>
+        let selectedAmount = 10;
+        let selectedCurrencyId = null;
+        let selectedCurrencySymbol = '¥';
+        const amountBtns = document.querySelectorAll('.amount-btn');
+        const currencyBtns = document.querySelectorAll('.currency-btn');
+        const customAmountInput = document.getElementById('custom-amount');
+        const paymentMethods = document.querySelectorAll('.payment-method');
+        const rechargeBtn = document.getElementById('recharge-btn');
+        const selectedAmountDisplay = document.getElementById('selected-amount');
+
+        // 货币选择
+        if (currencyBtns.length > 0) {
+            const primaryCurrencyBtn = currencyBtns[0];
+            selectedCurrencyId = primaryCurrencyBtn.dataset.currencyId;
+            selectedCurrencySymbol = primaryCurrencyBtn.dataset.symbol;
+        }
+
+        currencyBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                currencyBtns.forEach(b => {
+                    b.classList.remove('border-primary', 'bg-lightBlue');
+                    b.classList.add('border-gray-200');
+                });
+                this.classList.remove('border-gray-200');
+                this.classList.add('border-primary', 'bg-lightBlue');
+
+                selectedCurrencyId = this.dataset.currencyId;
+                selectedCurrencySymbol = this.dataset.symbol;
+
+                document.querySelectorAll('.currency-symbol').forEach(el => {
+                    el.textContent = selectedCurrencySymbol;
+                });
+            });
+        });
+
+        // 金额选择
+        amountBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const amount = this.dataset.amount;
+                
+                if (amount === 'custom') {
+                    customAmountInput.focus();
+                    customAmountInput.addEventListener('input', function() {
+                        const value = parseFloat(this.value) || 0;
+                        if (value >= 1 && value <= 10000) {
+                            selectedAmount = value;
+                            updateSelectedBtn(this.parentElement);
+                        }
+                    });
+                } else {
+                    selectedAmount = parseFloat(amount);
+                    customAmountInput.value = '';
+                    updateSelectedBtn(btn);
+                }
+                
+                selectedAmountDisplay.textContent = selectedAmount.toFixed(2);
+            });
+        });
+
+        function updateSelectedBtn(selectedBtn) {
+            amountBtns.forEach(btn => {
+                btn.classList.remove('border-primary', 'bg-lightBlue');
+                btn.classList.add('border-gray-200');
+            });
+            selectedBtn.classList.remove('border-gray-200');
+            selectedBtn.classList.add('border-primary', 'bg-lightBlue');
+        }
+
+        // 支付方式选择
+        paymentMethods.forEach(method => {
+            method.addEventListener('click', function() {
+                paymentMethods.forEach(m => {
+                    m.classList.remove('border-primary');
+                    m.classList.add('border-gray-200');
+                    m.querySelector('.fa-check-circle')?.classList.replace('fa-check-circle', 'fa-circle-o');
+                    m.querySelector('.fa-check-circle')?.classList.remove('text-primary');
+                    m.querySelector('.fa-circle-o')?.classList.add('text-gray-300');
+                });
+                
+                this.classList.remove('border-gray-200');
+                this.classList.add('border-primary');
+                
+                const icon = this.querySelector('i');
+                icon.classList.remove('fa-circle-o', 'text-gray-300');
+                icon.classList.add('fa-check-circle', 'text-primary');
+            });
+        });
+
+        // 充值按钮
+        rechargeBtn.addEventListener('click', function() {
+            if (selectedAmount < 1) {
+                showToast('充值金额不能小于1');
+                return;
+            }
+
+            if (selectedAmount > 10000) {
+                showToast('单笔充值不能超过10000');
+                return;
+            }
+
+            // 创建充值订单
+            const formData = new FormData();
+            formData.append('amount', selectedAmount);
+            formData.append('currency_id', selectedCurrencyId);
+
+            fetch('/wallet/createRechargeOrder', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.code === 200) {
+                    showToast('订单创建成功，请完成支付');
+                    setTimeout(() => {
+                        alert('订单号: ' + result.data.order_no + '\n金额: ' + result.data.symbol + result.data.amount + '\n\n（实际项目应跳转到支付页面）');
+                    }, 500);
+                } else {
+                    showToast(result.msg || '订单创建失败');
+                }
+            })
+            .catch(error => {
+                console.error('充值失败:', error);
+                showToast('网络错误，请重试');
+            });
+        });
+
+        // 显示提示
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 2000);
+        }
+    </script>
+
+    <style>
+        .payment-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+        }
+        .payment-icon.alipay {
+            background: linear-gradient(135deg, #1677FF 0%, #096DD9 100%);
+        }
+        .payment-icon.wechat {
+            background: linear-gradient(135deg, #09BB07 0%, #07C160 100%);
+        }
+        .payment-method {
+            transition: all 0.2s;
+        }
+        .payment-method:hover {
+            transform: translateX(4px);
+        }
+    </style>
+</body>
+</html>

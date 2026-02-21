@@ -1,0 +1,145 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="page_title"}访客记录{/block}
+
+{block name="content"}
+<!-- 统计信息 -->
+<div class="bg-gradient-to-r from-primary to-secondary rounded-xl shadow-soft p-6 mb-4 text-white text-center">
+    <h2 class="text-4xl font-bold mb-2" id="total-visitors">0</h2>
+    <p class="opacity-90">累计访客</p>
+</div>
+
+<!-- 加载状态 -->
+<div id="loading" class="text-center py-8">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+    <p class="text-gray-500 mt-2">加载中...</p>
+</div>
+
+<!-- 空状态 -->
+<div id="empty-state" class="text-center py-12 text-gray-500" style="display: none;">
+    <i class="fa fa-eye-slash text-4xl mb-4 opacity-50"></i>
+    <p>还没有访客</p>
+</div>
+
+<!-- 访客列表 -->
+<div id="visitors-list" class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft overflow-hidden" style="display: none;"></div>
+
+<!-- 加载更多 -->
+<div id="load-more" class="text-center py-4" style="display: none;">
+    <button onclick="loadMore()" class="bg-white dark:bg-dark-bg-card border border-primary text-primary px-6 py-2 rounded-full hover:bg-primary hover:text-white transition-colors">
+        <i class="fa fa-chevron-down mr-2"></i>加载更多
+    </button>
+</div>
+
+<script>
+    let currentPage = 1;
+    let hasMore = true;
+    const pageSize = 20;
+
+    function formatTime(timestamp) {
+        const now = Date.now() / 1000;
+        const diff = now - timestamp;
+
+        if (diff < 60) return '刚刚';
+        else if (diff < 3600) return Math.floor(diff / 60) + '分钟前';
+        else if (diff < 86400) return Math.floor(diff / 3600) + '小时前';
+        else if (diff < 2592000) return Math.floor(diff / 86400) + '天前';
+        else {
+            const date = new Date(timestamp * 1000);
+            return date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // 页面加载时获取访客列表
+    async function loadVisitors(page = 1, append = false) {
+        try {
+            const response = await fetch(`/user/cardVisitors?page=${page}&limit=${pageSize}`);
+            const result = await response.json();
+
+            if (result.code === 200) {
+                const data = result.data || {};
+                const visitors = data.list || [];
+                const total = data.total || 0;
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('total-visitors').textContent = total;
+
+                if (visitors.length === 0 && !append) {
+                    document.getElementById('empty-state').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('visitors-list').style.display = 'block';
+                renderVisitors(visitors, append);
+
+                hasMore = visitors.length >= pageSize;
+                document.getElementById('load-more').style.display = hasMore ? 'block' : 'none';
+            } else {
+                if (result.code === 401) {
+                    alert('请先登录');
+                    location.href = '/login';
+                    return;
+                }
+                showError(result.msg || '加载失败');
+            }
+        } catch (error) {
+            console.error('加载访客列表失败:', error);
+            showError('加载失败，请稍后重试');
+        }
+    }
+
+    // 渲染访客列表
+    function renderVisitors(visitors, append) {
+        const container = document.getElementById('visitors-list');
+
+        const html = visitors.map(visitor => `
+            <div class="flex items-center gap-3 p-4 border-b border-gray-100 dark:border-dark-border-color hover:bg-gray-50 dark:hover:bg-dark-bg-main transition-colors cursor-pointer"
+                 onclick="viewCard(${visitor.visitor_id})">
+                <img src="${visitor.avatar || '/static/images/default-avatar.png'}" alt="头像" class="w-12 h-12 rounded-lg object-cover">
+                <div class="flex-1">
+                    <div class="font-medium text-gray-800 dark:text-dark-text-primary">${escapeHtml(visitor.nickname || visitor.username)}</div>
+                    <div class="text-sm text-gray-500 truncate">${escapeHtml(visitor.bio || '暂无个性签名')}</div>
+                </div>
+                <div class="text-sm text-gray-400">${formatTime(visitor.visit_time)}</div>
+            </div>
+        `).join('');
+
+        if (append) {
+            container.innerHTML += html;
+        } else {
+            container.innerHTML = html;
+        }
+    }
+
+    // 加载更多
+    function loadMore() {
+        if (!hasMore) return;
+        currentPage++;
+        loadVisitors(currentPage, true);
+    }
+
+    // 查看名片
+    function viewCard(userId) {
+        location.href = `/card/${userId}`;
+    }
+
+    // 显示错误
+    function showError(message) {
+        document.getElementById('loading').innerHTML = `
+            <div class="text-gray-500">
+                <i class="fa fa-exclamation-circle text-3xl mb-2 opacity-50"></i>
+                <p>${message}</p>
+                <button onclick="location.reload()" class="mt-4 px-6 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg">重新加载</button>
+            </div>
+        `;
+    }
+
+    loadVisitors(1);
+</script>
+{/block}

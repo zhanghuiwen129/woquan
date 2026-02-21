@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户注册 - 我圈社交平台</title>
+    {if isset($config.icon) && $config.icon != ''}
+    <link rel="icon" href="{$config.icon}" type="image/x-icon" />
+    <link rel="shortcut icon" href="{$config.icon}" />
+    {else}
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    {/if}
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/css/font-awesome.min.css">
+    <!-- 网站配置 -->
+    <script src="/static/js/site-config.js"></script>
+    <style>
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #FE2C55;
+            box-shadow: 0 0 0 3px rgba(254, 44, 85, 0.1);
+        }
+
+        .input-field.error {
+            border-color: #ff4757;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #FE2C55 0%, #D81F42 100%);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(254, 44, 85, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .captcha-container img {
+            transition: all 0.3s ease;
+        }
+
+        .captcha-container img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .card-shadow {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .bg-white.rounded-2xl.card-shadow {
+            border: 2px solid rgba(254, 44, 85, 0.1);
+        }
+
+        .label-text {
+            font-weight: 500;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        /* 弹窗样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #6b7280;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: #374151;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            line-height: 1.8;
+            color: #4b5563;
+        }
+
+        .modal-body h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 16px 0 8px 0;
+        }
+
+        .modal-body h3:first-child {
+            margin-top: 0;
+        }
+
+        .modal-body p {
+            margin-bottom: 12px;
+        }
+
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .btn-agree {
+            background: linear-gradient(135deg, #FE2C55 0%, #D81F42 100%);
+            color: white;
+            padding: 10px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-agree:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(254, 44, 85, 0.3);
+        }
+
+        .btn-agree:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center py-8 px-4">
+    <div class="bg-white rounded-2xl card-shadow w-full max-w-md overflow-hidden">
+        <!-- 头部 -->
+        <div class="bg-gradient-to-r from-red-500 to-red-600 p-8 text-center">
+            {if isset($config.logo) && $config.logo != ''}
+            <img src="{$config.logo}" alt="{$config.name|default='社交平台'}" class="w-20 h-auto mx-auto mb-4 object-contain" style="max-height: 80px;">
+            {else}
+            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <i class="fa fa-comments text-3xl text-red-500"></i>
+            </div>
+            {/if}
+            <h1 class="text-2xl font-bold text-white mb-2">欢迎加入{$config.name|default='我圈'}</h1>
+            <p class="text-white/90 text-sm">创建您的社交账号，开启精彩旅程</p>
+        </div>
+
+        <!-- 表单容器 -->
+        <div class="p-8">
+            <!-- 成功消息 -->
+            <div id="successMessage" class="hidden bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 text-center">
+                <i class="fa fa-check-circle mr-2"></i>
+                注册成功！正在跳转到登录页面...
+            </div>
+
+            <!-- 错误消息 -->
+            <div id="errorMessage" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-center">
+                <i class="fa fa-exclamation-circle mr-2"></i>
+                <span id="errorText"></span>
+            </div>
+
+            <form id="registerForm" class="space-y-5">
+                <!-- 账号 -->
+                <div class="form-group">
+                    <label for="username" class="label-text block mb-2">账号</label>
+                    <div class="relative">
+                        <input type="text" id="username" name="username" placeholder="请输入账号" required
+                               class="input-field w-full px-4 py-3 border-2 border-gray-200 rounded-lg transition-all duration-300 text-gray-700 placeholder-gray-400">
+                        <i class="fa fa-user absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <div id="usernameError" class="text-red-500 text-xs mt-1 hidden"></div>
+                </div>
+
+                <!-- 手机号 -->
+                <div class="form-group" style="display: none;">
+                    <label for="mobile" class="label-text block mb-2">手机号</label>
+                    <div class="relative">
+                        <input type="tel" id="mobile" name="mobile" placeholder="请输入手机号"
+                               class="input-field w-full px-4 py-3 border-2 border-gray-200 rounded-lg transition-all duration-300 text-gray-700 placeholder-gray-400">
+                        <i class="fa fa-mobile absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <div id="mobileError" class="text-red-500 text-xs mt-1 hidden"></div>
+                </div>
+
+                <!-- 图形验证码 -->
+                <div class="form-group" style="display: none;">
+                    <label for="captcha" class="label-text block mb-2">图形验证码</label>
+                    <div class="flex gap-3 captcha-container">
+                        <input type="text" id="captcha" name="captcha" placeholder="请输入图形验证码"
+                               class="input-field flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg transition-all duration-300 text-gray-700 placeholder-gray-400">
+                        <img id="captchaImage" src="" alt="图形验证码"
+                             class="h-12 w-28 rounded-lg cursor-pointer border-2 border-gray-200 bg-gray-50"
+                             onclick="refreshCaptcha()" title="点击刷新验证码">
+                    </div>
+                    <div class="flex justify-between items-center mt-1">
+                        <div id="captchaError" class="text-red-500 text-xs hidden"></div>
+                        <button type="button" onclick="refreshCaptcha()" class="text-red-500 text-xs hover:text-red-700 transition-colors font-medium">
+                            <i class="fa fa-refresh mr-1"></i>刷新验证码
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 短信验证码 -->
+                <div class="form-group" style="display: none;">
+                    <label for="sms_code" class="label-text block mb-2">短信验证码</label>
+                    <div class="flex gap-3">
+                        <input type="text" id="sms_code" name="sms_code" placeholder="请输入短信验证码"
+                               class="input-field flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg transition-all duration-300 text-gray-700 placeholder-gray-400">
+                        <button type="button" id="sendSmsBtn" class="btn-primary px-6 py-3 rounded-lg text-white font-medium whitespace-nowrap transition-all duration-300"
+                                onclick="sendSmsCode()">
+                            获取验证码
+                        </button>
+                    </div>
+                    <div id="smsCodeError" class="text-red-500 text-xs mt-1 hidden"></div>
+                </div>
+
+                <!-- 密码 -->
+                <div class="form-group">
+                    <label for="password" class="label-text block mb-2">密码</label>
+                    <div class="relative">
+                        <input type="password" id="password" name="password" placeholder="6-16位字母数字组合" required
+                               class="input-field w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-lg transition-all duration-300 text-gray-700 placeholder-gray-400">
+                        <span class="password-toggle absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-red-500 transition-colors"
+                              onclick="togglePassword('password', this)">
+                            <i class="fa fa-eye-slash"></i>
+                        </span>
+                    </div>
+                    <div id="passwordError" class="text-red-500 text-xs mt-1 hidden"></div>
+                </div>
+
+                <!-- 昵称 -->
+                <div class="form-group">
+                    <label for="nickname" class="label-text block mb-2">昵称（可选）</label>
+                    <div class="relative">
+                        <input type="text" id="nickname" name="nickname" placeholder="显示给其他用户的名称"
+                               class="input-field w-full px-4 py-3 border-2 border-gray-200 rounded-lg transition-all duration-300 text-gray-700 placeholder-gray-400">
+                        <i class="fa fa-user absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                </div>
+
+                <!-- 用户协议 -->
+                <div class="form-group">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" id="agreement" name="agreement" required
+                               class="mt-1 w-4 h-4 text-blue-500 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
+                        <span class="text-sm text-gray-600 leading-relaxed">
+                            我已阅读并同意
+                            <a href="javascript:void(0)" onclick="showModal('agreementModal')" class="text-red-500 hover:text-red-700 transition-colors font-medium">《用户协议》</a>
+                            和
+                            <a href="javascript:void(0)" onclick="showModal('privacyModal')" class="text-red-500 hover:text-red-700 transition-colors font-medium">《隐私政策》</a>
+                        </span>
+                    </label>
+                    <div id="agreementError" class="text-red-500 text-xs mt-1 hidden"></div>
+                </div>
+
+                <!-- 注册按钮 -->
+                <button type="submit" class="btn-primary w-full py-3 rounded-lg text-white font-semibold text-base transition-all duration-300">
+                    <i class="fa fa-user-plus mr-2"></i>立即注册
+                </button>
+            </form>
+
+            <!-- 登录链接 -->
+            <div class="text-center mt-6 text-sm text-gray-600">
+                已有账号？
+                <a href="/login" class="text-red-500 font-medium hover:text-red-700 transition-colors">
+                    立即登录 <i class="fa fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 用户协议弹窗 -->
+    <div id="agreementModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">用户协议</h2>
+                <button class="modal-close" onclick="hideModal('agreementModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3>一、服务条款的接受</h3>
+                <p>欢迎使用我圈社交平台！通过访问或使用本平台的服务，即表示您同意本用户协议的所有条款。如果您不同意本协议的任何内容，请不要使用本服务。</p>
+
+                <h3>二、用户注册</h3>
+                <p>1. 用户必须提供真实、准确、完整的个人信息。</p>
+                <p>2. 用户有责任维护账户安全，妥善保管账号和密码。</p>
+                <p>3. 用户对使用该账号进行的一切活动承担责任。</p>
+
+                <h3>三、用户行为规范</h3>
+                <p>1. 用户不得利用本平台发布违法、违规、侵权或有害信息。</p>
+                <p>2. 禁止发布涉及暴力、色情、赌博等不良内容。</p>
+                <p>3. 禁止恶意攻击他人、散布谣言、侵犯他人隐私。</p>
+                <p>4. 禁止发布虚假信息、诈骗信息。</p>
+
+                <h3>四、内容发布</h3>
+                <p>1. 用户发布的所有内容应遵守相关法律法规。</p>
+                <p>2. 用户对自己发布的内容承担全部责任。</p>
+                <p>3. 平台有权删除违法违规内容，对违规用户进行处罚。</p>
+
+                <h3>五、知识产权</h3>
+                <p>1. 本平台的所有内容（包括但不限于文字、图片、软件等）受知识产权法保护。</p>
+                <p>2. 用户发布的内容，用户仍拥有知识产权，但授权平台在服务范围内使用。</p>
+
+                <h3>六、隐私保护</h3>
+                <p>1. 平台尊重用户隐私，严格保护用户个人信息。</p>
+                <p>2. 除法律法规要求外，未经用户同意，不向第三方透露用户信息。</p>
+
+                <h3>七、服务变更与终止</h3>
+                <p>1. 平台有权随时修改本协议，修改后的协议将在平台公布。</p>
+                <p>2. 用户如不同意协议修改，可以停止使用本服务。</p>
+                <p>3. 平台有权终止严重违规用户的服务。</p>
+
+                <h3>八、免责声明</h3>
+                <p>1. 平台不对用户发布的内容承担责任。</p>
+                <p>2. 因不可抗力导致的服务中断，平台不承担责任。</p>
+                <p>3. 用户使用本服务产生的风险由用户自行承担。</p>
+
+                <h3>九、争议解决</h3>
+                <p>本协议的解释和执行均适用中华人民共和国法律。如发生争议，应友好协商解决；协商不成的，任何一方可向平台所在地人民法院提起诉讼。</p>
+
+                <h3>十、其他</h3>
+                <p>本协议自用户注册之日起生效。平台保留对本协议的最终解释权。</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-agree" onclick="handleAgreeRead('agreementModal')">我已阅读并同意</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐私政策弹窗 -->
+    <div id="privacyModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">隐私政策</h2>
+                <button class="modal-close" onclick="hideModal('privacyModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3>一、引言</h3>
+                <p>欢迎您使用我圈社交平台！我们深知个人信息对您的重要性，并会尽全力保护您的个人信息安全可靠。我们致力于维持您对我们的信任，恪守以下原则，保护您的个人信息。</p>
+
+                <h3>二、信息收集</h3>
+                <p>1. 注册信息：用户注册时提供的账号、密码、手机号、昵称等基本信息。</p>
+                <p>2. 使用信息：用户使用本平台服务产生的数据，包括发布的内容、点赞、评论、关注等。</p>
+                <p>3. 设备信息：用户访问本平台时使用的设备信息、IP地址、浏览器信息等。</p>
+                <p>4. 日志信息：用户访问、浏览、使用本平台的操作日志。</p>
+
+                <h3>三、信息使用</h3>
+                <p>1. 提供服务：为用户提供平台服务，保障账号安全。</p>
+                <p>2. 改进服务：分析用户行为，优化产品功能和服务体验。</p>
+                <p>3. 安全保护：预防、发现、调查欺诈、侵权、危害安全等行为。</p>
+                <p>4. 合规要求：根据法律法规或政府要求提供相关信息。</p>
+
+                <h3>四、信息共享</h3>
+                <p>1. 未经用户同意，我们不向任何第三方出售、出租或分享用户个人信息。</p>
+                <p>2. 以下情况除外：</p>
+                <p>   - 获得用户明确同意</p>
+                <p>   - 根据法律法规或政府要求</p>
+                <p>   - 为维护用户或社会公共利益</p>
+                <p>   - 与我们的关联公司共享（仅限必要范围内）</p>
+
+                <h3>五、信息存储</h3>
+                <p>1. 用户信息将存储在中华人民共和国境内的服务器上。</p>
+                <p>2. 我们采取合理的技术和管理措施，保障信息安全。</p>
+                <p>3. 用户注销账号后，我们将在合理期限内删除或匿名化处理用户信息。</p>
+
+                <h3>六、信息保护</h3>
+                <p>1. 我们采用加密技术保护用户信息。</p>
+                <p>2. 建立严格的数据管理制度，限制员工对用户信息的访问。</p>
+                <p>3. 定期进行安全评估和漏洞修复。</p>
+
+                <h3>七、用户权利</h3>
+                <p>1. 用户有权查阅、更正自己的个人信息。</p>
+                <p>2. 用户有权删除自己发布的内容。</p>
+                <p>3. 用户有权注销账号，注销后个人信息将被删除或匿名化处理。</p>
+                <p>4. 用户有权撤回对信息收集和使用的同意。</p>
+
+                <h3>八、Cookie使用</h3>
+                <p>1. 我们使用Cookie技术改善用户体验。</p>
+                <p>2. 用户可以通过浏览器设置管理Cookie。</p>
+                <p>3. 禁用Cookie可能影响部分功能使用。</p>
+
+                <h3>九、未成年人保护</h3>
+                <p>1. 我们特别关注未成年人的个人信息保护。</p>
+                <p>2. 未满18周岁的未成年人，应在监护人指导下使用本服务。</p>
+                <p>3. 如发现未成年人提供了个人信息，我们将依法处理。</p>
+
+                <h3>十、隐私政策更新</h3>
+                <p>1. 我们可能适时修订本隐私政策。</p>
+                <p>2. 修订后的政策将在平台公布。</p>
+                <p>3. 用户继续使用服务即视为同意修订后的政策。</p>
+
+                <h3>十一、联系我们</h3>
+                <p>如您对本隐私政策有任何疑问，可通过平台客服或邮箱联系我们，我们将尽快回复。</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-agree" onclick="handleAgreeRead('privacyModal')">我已阅读并同意</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量存储注册配置（默认值都为0，即关闭验证）
+        let registerConfig = { register_phone_verify: '0', register_sms_verify: '0', register_captcha_verify: '0' };
+
+        // 页面加载完成后获取注册配置
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const response = await fetch('/user/register-config');
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    registerConfig = result.data;
+
+                    // 根据配置显示或隐藏手机号字段
+                    const mobileField = document.querySelector('.form-group:nth-of-type(2)');
+                    const mobileInput = document.getElementById('mobile');
+
+                    if (registerConfig.register_phone_verify === '0') {
+                        mobileField.style.display = 'none';
+                        mobileInput.removeAttribute('required');
+                    } else {
+                        mobileField.style.display = 'block';
+                        mobileInput.setAttribute('required', 'required');
+                    }
+
+                    // 根据配置显示或隐藏图形验证码字段
+                    const captchaField = document.querySelector('.form-group:nth-of-type(3)');
+                    const captchaInput = document.getElementById('captcha');
+
+                    if (registerConfig.register_captcha_verify === '0') {
+                        captchaField.style.display = 'none';
+                        captchaInput.removeAttribute('required');
+                    } else {
+                        captchaField.style.display = 'block';
+                        captchaInput.setAttribute('required', 'required');
+                    }
+
+                    // 根据配置显示或隐藏短信验证码字段
+                    const smsField = document.querySelector('.form-group:nth-of-type(4)');
+                    const smsInput = document.getElementById('sms_code');
+
+                    if (registerConfig.register_phone_verify === '0' || registerConfig.register_sms_verify === '0') {
+                        smsField.style.display = 'none';
+                        smsInput.removeAttribute('required');
+                    } else {
+                        smsField.style.display = 'block';
+                        smsInput.setAttribute('required', 'required');
+                    }
+                }
+            } catch (error) {
+                console.error('获取注册配置失败:', error);
+            }
+        });
+
+        // 刷新图形验证码
+        function refreshCaptcha() {
+            // 只有在验证码功能开启时才刷新
+            if (registerConfig.register_captcha_verify === '1') {
+                const captchaImage = document.getElementById('captchaImage');
+                if (captchaImage) {
+                    captchaImage.src = '/user/captcha?' + Math.random();
+                }
+            }
+        }
+
+        // 发送短信验证码
+        let smsCountdown = 0;
+        let countdownTimer = null;
+
+        function sendSmsCode() {
+            const mobile = document.getElementById('mobile').value;
+            const captcha = document.getElementById('captcha').value;
+            const sendBtn = document.getElementById('sendSmsBtn');
+
+            // 验证手机号
+            if (!mobile) {
+                showFieldError('mobile', '请输入手机号');
+                return;
+            }
+
+            if (!/^1[3-9]\d{9}$/.test(mobile)) {
+                showFieldError('mobile', '请输入有效的手机号');
+                return;
+            }
+
+            // 条件化验证图形验证码
+            if (registerConfig.register_captcha_verify === '1') {
+                if (!captcha) {
+                    showFieldError('captcha', '请输入图形验证码');
+                    return;
+                }
+            }
+
+            // 开始倒计时
+            smsCountdown = 60;
+            updateSmsBtn();
+            countdownTimer = setInterval(updateSmsBtn, 1000);
+
+            // 发送请求
+            fetch('/user/sendSms', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    mobile: mobile,
+                    captcha: captcha
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.code !== 200) {
+                    // 发送失败，停止倒计时
+                    clearInterval(countdownTimer);
+                    smsCountdown = 0;
+                    updateSmsBtn();
+                    showError(result.msg);
+                    // 刷新图形验证码
+                    refreshCaptcha();
+                } else {
+                    // 清除可能存在的错误信息
+                    clearFieldError('mobile');
+                    clearFieldError('captcha');
+                }
+            })
+            .catch(error => {
+                // 发送失败，停止倒计时
+                clearInterval(countdownTimer);
+                smsCountdown = 0;
+                updateSmsBtn();
+                showError('短信发送失败，请稍后重试');
+                // 刷新图形验证码
+                refreshCaptcha();
+            });
+        }
+
+        function updateSmsBtn() {
+            const sendBtn = document.getElementById('sendSmsBtn');
+            if (smsCountdown > 0) {
+                sendBtn.disabled = true;
+                sendBtn.style.background = '#9ca3af';
+                sendBtn.style.cursor = 'not-allowed';
+                sendBtn.innerHTML = `<i class="fa fa-clock-o mr-1"></i>${smsCountdown}秒后重试`;
+                smsCountdown--;
+            } else {
+                clearInterval(countdownTimer);
+                sendBtn.disabled = false;
+                sendBtn.style.background = 'linear-gradient(135deg, #FE2C55 0%, #D81F42 100%)';
+                sendBtn.style.cursor = 'pointer';
+                sendBtn.innerHTML = '<i class="fa fa-paper-plane mr-1"></i>获取验证码';
+            }
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // 清除之前的错误信息
+            clearErrors();
+
+            // 表单验证
+            const username = document.getElementById('username').value;
+            const mobile = document.getElementById('mobile').value;
+            const captcha = document.getElementById('captcha').value;
+            const smsCode = document.getElementById('sms_code').value;
+            const password = document.getElementById('password').value;
+            const agreement = document.getElementById('agreement').checked;
+
+            // 验证账号
+            if (!username) {
+                showFieldError('username', '请输入账号');
+                return;
+            }
+
+            if (!/^[\u4e00-\u9fa5a-zA-Z0-9_]{2,20}$/.test(username)) {
+                showFieldError('username', '账号必须为2-20位中文、字母、数字或下划线组合');
+                return;
+            }
+
+            // 验证手机号
+            if (registerConfig.register_phone_verify === '1') {
+                if (!mobile) {
+                    showFieldError('mobile', '请输入手机号');
+                    return;
+                }
+
+                if (!/^1[3-9]\d{9}$/.test(mobile)) {
+                    showFieldError('mobile', '请输入有效的手机号');
+                    return;
+                }
+            }
+
+            // 验证图形验证码
+            if (registerConfig.register_captcha_verify === '1') {
+                if (!captcha) {
+                    showFieldError('captcha', '请输入图形验证码');
+                    return;
+                }
+            }
+
+            // 验证短信验证码
+            if (registerConfig.register_phone_verify === '1' && registerConfig.register_sms_verify === '1') {
+                if (!smsCode) {
+                    showFieldError('sms_code', '请输入短信验证码');
+                    return;
+                }
+
+                if (!/^\d{6}$/.test(smsCode)) {
+                    showFieldError('sms_code', '请输入6位数字的短信验证码');
+                    return;
+                }
+            }
+
+            // 验证密码
+            if (!password) {
+                showFieldError('password', '请输入密码');
+                return;
+            }
+
+            if (!/^[a-zA-Z0-9]{6,16}$/.test(password)) {
+                showFieldError('password', '密码必须为6-16位字母数字组合');
+                return;
+            }
+
+            // 验证用户协议
+            if (!agreement) {
+                showFieldError('agreement', '请阅读并同意用户协议和隐私政策');
+                return;
+            }
+
+            const formData = new FormData(this);
+            const data = {
+                username: formData.get('username'),
+                mobile: formData.get('mobile'),
+                captcha: formData.get('captcha'),
+                sms_code: formData.get('sms_code'),
+                password: formData.get('password'),
+                nickname: formData.get('nickname')
+            };
+
+            try {
+                const response = await fetch('/user/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams(data)
+                });
+
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    // 注册成功
+                    showSuccess('注册成功！正在跳转到登录页面...');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else {
+                    // 显示错误信息
+                    showError(result.msg);
+
+                    // 显示具体字段错误
+                    if (result.msg.includes('手机号')) {
+                        showFieldError('mobile', result.msg);
+                    } else if (result.msg.includes('图形验证码')) {
+                        showFieldError('captcha', result.msg);
+                        // 刷新图形验证码
+                        refreshCaptcha();
+                    } else if (result.msg.includes('短信验证码')) {
+                        showFieldError('sms_code', result.msg);
+                    } else if (result.msg.includes('密码')) {
+                        showFieldError('password', result.msg);
+                    }
+                }
+            } catch (error) {
+                console.error('注册失败，详细错误:', error);
+                // 检查是否是数据库连接错误
+                let errorMsg = '网络错误，请稍后重试';
+                if (error.message && (error.message.includes('SQLSTATE') || error.message.includes('Access denied'))) {
+                    errorMsg = '数据库连接失败，请检查数据库配置是否正确';
+                } else if (error.message && error.message.includes('Failed to fetch')) {
+                    errorMsg = '服务器连接失败，请稍后重试';
+                }
+                showError(errorMsg);
+            }
+        });
+
+        function clearErrors() {
+            document.getElementById('errorMessage').classList.add('hidden');
+            document.querySelectorAll('.text-red-500').forEach(el => {
+                el.classList.add('hidden');
+                el.textContent = '';
+            });
+            document.querySelectorAll('.input-field').forEach(input => {
+                input.classList.remove('error');
+            });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            document.getElementById('errorText').textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.innerHTML = `<i class="fa fa-check-circle mr-2"></i>${message}`;
+            successDiv.classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+        }
+
+        function showFieldError(fieldName, message) {
+            const input = document.getElementById(fieldName);
+            const errorDiv = document.getElementById(fieldName + 'Error');
+
+            input.classList.add('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        function clearFieldError(fieldName) {
+            const input = document.getElementById(fieldName);
+            const errorDiv = document.getElementById(fieldName + 'Error');
+
+            input.classList.remove('error');
+            errorDiv.textContent = '';
+            errorDiv.classList.add('hidden');
+        }
+
+        // 实时验证
+        document.getElementById('mobile').addEventListener('blur', function() {
+            const mobile = this.value;
+            if (mobile && !/^1[3-9]\d{9}$/.test(mobile)) {
+                showFieldError('mobile', '请输入有效的手机号');
+            } else if (mobile && /^1[3-9]\d{9}$/.test(mobile)) {
+                clearFieldError('mobile');
+            }
+        });
+
+        document.getElementById('captcha').addEventListener('blur', function() {
+            const captcha = this.value;
+            if (captcha && captcha.length < 4) {
+                showFieldError('captcha', '请输入正确的图形验证码');
+            } else if (captcha && captcha.length >= 4) {
+                clearFieldError('captcha');
+            }
+        });
+
+        document.getElementById('sms_code').addEventListener('blur', function() {
+            const smsCode = this.value;
+            if (smsCode && !/^\d{6}$/.test(smsCode)) {
+                showFieldError('sms_code', '请输入6位数字的短信验证码');
+            } else if (smsCode && /^\d{6}$/.test(smsCode)) {
+                clearFieldError('sms_code');
+            }
+        });
+
+        document.getElementById('password').addEventListener('blur', function() {
+            const password = this.value;
+            if (password && !/^[a-zA-Z0-9]{6,16}$/.test(password)) {
+                showFieldError('password', '密码必须为6-16位字母数字组合');
+            } else if (password && /^[a-zA-Z0-9]{6,16}$/.test(password)) {
+                clearFieldError('password');
+            }
+        });
+
+        function togglePassword(inputId, toggleElement) {
+            const passwordInput = document.getElementById(inputId);
+            const icon = toggleElement.querySelector('i');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        }
+
+        // 页面加载完成后刷新验证码（仅在验证码功能开启时）
+        document.addEventListener('DOMContentLoaded', function() {
+            // 延迟执行，确保配置已加载
+            setTimeout(function() {
+                if (registerConfig.register_captcha_verify === '1') {
+                    refreshCaptcha();
+                }
+            }, 100);
+        });
+
+        // 弹窗控制函数
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // 处理已阅读并同意
+        function handleAgreeRead(modalId) {
+            hideModal(modalId);
+            // 标记该文档已阅读
+            if (modalId === 'agreementModal') {
+                document.getElementById('agreementModal').dataset.read = 'true';
+            } else if (modalId === 'privacyModal') {
+                document.getElementById('privacyModal').dataset.read = 'true';
+            }
+            // 检查是否都已阅读
+            checkBothAgreementsRead();
+        }
+
+        // 检查两个协议是否都已阅读
+        function checkBothAgreementsRead() {
+            const agreementRead = document.getElementById('agreementModal').dataset.read === 'true';
+            const privacyRead = document.getElementById('privacyModal').dataset.read === 'true';
+
+            if (agreementRead && privacyRead) {
+                // 两个都已阅读，自动勾选复选框并清空错误提示
+                const checkbox = document.getElementById('agreement');
+                checkbox.checked = true;
+                clearFieldError('agreement');
+            }
+        }
+
+        // 点击遮罩层关闭弹窗
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    hideModal(this.id);
+                }
+            });
+        });
+
+        // ESC键关闭弹窗
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(modal => {
+                    hideModal(modal.id);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

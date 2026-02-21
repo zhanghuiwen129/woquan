@@ -1,0 +1,103 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>搜索历史 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">搜索历史</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        用户搜索历史记录
+    </p>
+</div>
+
+<!-- 搜索历史列表 -->
+<div class="card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">ID</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">用户ID</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">关键词</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">搜索时间</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {volist name="history" id="item"}
+                <tr class="hover:bg-modern-light/50 transition-colors">
+                    <td class="py-4 px-6 text-sm text-modern-gray">{$item.id}</td>
+                    <td class="py-4 px-6">
+                        <span class="text-sm font-medium text-modern-dark">{$item.user_id}</span>
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="text-sm text-modern-primary">{$item.keyword}</span>
+                    </td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">
+                        {$item.create_time ? date('Y-m-d H:i:s', strtotime($item.create_time)) : '-'}
+                    </td>
+                    <td class="py-4 px-6">
+                        <a href="javascript:void(0)" onclick="deleteSearchHistory({$item.id})" class="text-modern-gray hover:text-modern-danger transition-colors" title="删除">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {/volist}
+                {if $history->count() == 0}
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center text-modern-gray">暂无搜索历史数据</td>
+                </tr>
+                {/if}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页 -->
+    <div class="bg-modern-light px-6 py-4 flex items-center justify-between border-t border-modern-lightGray">
+        <div class="text-sm text-modern-gray">
+            共 {$history->total()} 条记录
+        </div>
+        <div class="flex items-center gap-2">
+            {$history|raw}
+        </div>
+    </div>
+</div>
+
+<!-- 快捷操作 -->
+<div class="flex items-center gap-4 mt-6">
+    <a href="/admin/search" class="px-4 py-2 bg-modern-light border border-modern-lightGray text-modern-gray rounded-md hover:border-modern-primary transition-colors">
+        <i class="fas fa-list mr-1"></i>搜索日志
+    </a>
+    <a href="/admin/search/hot" class="px-4 py-2 bg-modern-light border border-modern-lightGray text-modern-gray rounded-md hover:border-modern-primary transition-colors">
+        <i class="fas fa-fire mr-1"></i>热门搜索
+    </a>
+</div>
+
+<script>
+function deleteSearchHistory(id) {
+    if (confirm('确定要删除该搜索记录吗？')) {
+        fetch('/admin/search/history/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: id })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.code === 200) {
+                alert('删除成功');
+                window.location.reload();
+            } else {
+                alert('删除失败: ' + result.msg);
+            }
+        })
+        .catch(error => {
+            console.error('删除失败:', error);
+            alert('网络错误，请稍后重试');
+        });
+    }
+}
+</script>
+{/block}

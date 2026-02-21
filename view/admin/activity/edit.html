@@ -1,0 +1,118 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>编辑活动 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">编辑活动</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        修改活动信息
+    </p>
+</div>
+
+<div class="card rounded-lg p-6 max-w-3xl">
+    <form id="activityForm" class="space-y-6">
+        <input type="hidden" name="id" value="{$activity.id}">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-modern-gray mb-2">
+                    活动标题 <span class="text-modern-danger">*</span>
+                </label>
+                <input type="text" name="title" value="{$activity.title}" required placeholder="请输入活动标题" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-modern-gray mb-2">
+                    活动状态 <span class="text-modern-danger">*</span>
+                </label>
+                <select name="status" required class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+                    <option value="">请选择</option>
+                    <option value="1" {$activity.status == 1 ? 'selected' : ''}>进行中</option>
+                    <option value="2" {$activity.status == 2 ? 'selected' : ''}>已结束</option>
+                </select>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-modern-gray mb-2">
+                活动描述
+            </label>
+            <textarea name="description" rows="4" placeholder="请输入活动描述" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">{$activity.description}</textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-modern-gray mb-2">
+                    开始时间 <span class="text-modern-danger">*</span>
+                </label>
+                <input type="datetime-local" name="start_time" value="{$activity.start_time|date='Y-m-d\TH:i',###}" required class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-modern-gray mb-2">
+                    结束时间 <span class="text-modern-danger">*</span>
+                </label>
+                <input type="datetime-local" name="end_time" value="{$activity.end_time|date='Y-m-d\TH:i',###}" required class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-modern-gray mb-2">
+                    最大参与人数
+                </label>
+                <input type="number" name="max_participants" value="{$activity.max_participants}" placeholder="0表示不限制" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-modern-gray mb-2">
+                    活动图片
+                </label>
+                <input type="text" name="image" value="{$activity.image}" placeholder="请输入图片URL" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 pt-4">
+            <button type="submit" class="px-6 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern">
+                <i class="fas fa-save mr-2"></i>保存
+            </button>
+            <a href="/admin/activity" class="px-6 py-2 bg-modern-light border border-modern-lightGray rounded-md hover:border-modern-primary transition-colors">
+                <i class="fas fa-times mr-2"></i>取消
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.getElementById('activityForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const data = {};
+    formData.forEach((value, key) => {
+        data[key] = value;
+    });
+
+    fetch(`/admin/activity/update/${data.id}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.code === 200) {
+            alert('更新成功');
+            window.location.href = '/admin/activity';
+        } else {
+            alert('更新失败: ' + result.msg);
+        }
+    })
+    .catch(error => {
+        console.error('更新失败:', error);
+        alert('网络错误，请稍后重试');
+    });
+});
+</script>
+{/block}

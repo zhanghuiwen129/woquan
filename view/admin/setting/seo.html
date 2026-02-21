@@ -1,0 +1,51 @@
+<!-- SEO设置 -->
+<div class="tab-content" id="seo">
+    <h3 class="text-lg font-medium text-gray-800">SEO设置</h3>
+    <form id="seoForm" class="space-y-6">
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+            <h4 class="text-md font-semibold text-gray-700 mb-4">搜索引擎优化</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">网站标题</label>
+                    <input type="text" name="site_title" value="{$config.site_title ?? ''}"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                    <p class="text-xs text-gray-500 mt-2">建议长度：60个字符以内</p>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">网站关键词</label>
+                    <input type="text" name="site_keywords" value="{$config.site_keywords ?? ''}"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                           placeholder="多个关键词用逗号分隔">
+                    <p class="text-xs text-gray-500 mt-2">多个关键词用英文逗号分隔</p>
+                </div>
+            </div>
+            <div class="mt-6">
+                <label class="block text-sm text-gray-500 mb-2">网站描述</label>
+                <textarea name="site_description"
+                          class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500" rows="3"
+                          placeholder="网站的简要描述，用于搜索引擎结果展示">{$config.site_description ?? ''}</textarea>
+                <p class="text-xs text-gray-500 mt-2">建议长度：150-160个字符以内</p>
+            </div>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+            <h4 class="text-md font-semibold text-gray-700 mb-4">分享功能设置</h4>
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">是否开启分享功能</label>
+                <div class="flex items-center">
+                    <input type="radio" id="share_enabled_yes" name="share_enabled" value="1" {if isset($config.share_enabled) && $config.share_enabled == 1}checked{/if} class="mr-2">
+                    <label for="share_enabled_yes" class="mr-4">开启</label>
+                    <input type="radio" id="share_enabled_no" name="share_enabled" value="0" {if isset($config.share_enabled) && $config.share_enabled == 0}checked{/if} class="mr-2">
+                    <label for="share_enabled_no">关闭</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 mt-8">
+            <button type="button" onclick="saveSeo()"
+                    class="px-5 py-2.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                保存配置
+            </button>
+        </div>
+    </form>
+</div>

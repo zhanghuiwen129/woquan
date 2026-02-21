@@ -1,0 +1,100 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="content"}
+<div class="container mx-auto px-4 py-6 max-w-4xl">
+    <h1 class="text-2xl font-bold mb-6">消息收藏</h1>
+    <div id="favorites-list">
+        <div class="text-center py-8 text-gray-500">
+            <i class="fa fa-spinner fa-spin text-2xl"></i>
+            <p class="mt-2">加载中...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+    loadFavorites();
+});
+
+async function loadFavorites() {
+    try {
+        const response = await fetch('/api/v1/messages/getFavorites');
+        const result = await response.json();
+
+        if (result.code === 200) {
+            const list = result.data.list;
+            const container = document.getElementById('favorites-list');
+
+            if (list.length > 0) {
+                let html = '';
+                list.forEach(item => {
+                    const time = new Date(item.create_time * 1000);
+                    const timeText = time.toLocaleString('zh-CN');
+
+                    let content = '';
+                    switch (item.message_type) {
+                        case 2:
+                            content = '[图片]';
+                            break;
+                        case 3:
+                            content = '[视频]';
+                            break;
+                        case 4:
+                            content = `[文件] ${item.file_name || ''}`;
+                            break;
+                        case 5:
+                            content = '[语音]';
+                            break;
+                        case 6:
+                            content = '[位置]';
+                            break;
+                        case 7:
+                            content = '[名片]';
+                            break;
+                        default:
+                            content = item.content || '';
+                    }
+
+                    html += `
+                        <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
+                            <div class="flex items-center gap-3 mb-2">
+                                <img src="${item.avatar}" class="w-8 h-8 rounded-full">
+                                <div>
+                                    <div class="font-medium">${item.nickname || '用户'}</div>
+                                    <div class="text-xs text-gray-500">${timeText}</div>
+                                </div>
+                            </div>
+                            <div class="text-gray-800">${content}</div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        <i class="fa fa-star-o text-4xl mb-3"></i>
+                        <p>暂无收藏的消息</p>
+                    </div>
+                `;
+            }
+        } else {
+            document.getElementById('favorites-list').innerHTML = `
+                <div class="text-center py-12 text-red-500">
+                    <i class="fa fa-exclamation-circle text-4xl mb-3"></i>
+                    <p>${result.msg || '加载失败'}</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('加载失败:', error);
+        document.getElementById('favorites-list').innerHTML = `
+            <div class="text-center py-12 text-red-500">
+                <i class="fa fa-exclamation-circle text-4xl mb-3"></i>
+                <p>加载失败，请稍后重试</p>
+            </div>
+        `;
+    }
+}
+</script>
+{/block}

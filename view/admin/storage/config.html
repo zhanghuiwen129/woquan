@@ -1,0 +1,347 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>存储配置 - 存储管理</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'storage';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">存储配置</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name|default='管理员'}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <!-- 返回按钮 -->
+            <div class="mb-6">
+                <a href="/admin/storage" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>返回存储管理
+                </a>
+            </div>
+
+            <!-- 存储配置表单 -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-6">存储设置</h2>
+                
+                <form id="storageConfigForm" class="space-y-6">
+                    <!-- 本地存储设置 -->
+                    <div class="border border-gray-200 rounded-lg p-6">
+                        <h3 class="text-md font-medium text-gray-800 mb-4">本地存储设置</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">上传目录</label>
+                                <input type="text" name="storage_upload_dir" value="{$config.storage_upload_dir ?? 'uploads'}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <p class="text-xs text-gray-500 mt-1">相对于public目录的路径</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">最大上传文件大小(MB)</label>
+                                <input type="number" name="storage_max_size" value="{$config.storage_max_size ?? 50}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 云存储设置 -->
+                    <div class="border border-gray-200 rounded-lg p-6">
+                        <h3 class="text-md font-medium text-gray-800 mb-4">云存储设置</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">存储类型</label>
+                                <select name="storage_type" class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="local" {if isset($config.storage_type) && $config.storage_type == 'local'}selected{/if}>本地存储</option>
+                                    <option value="oss" {if isset($config.storage_type) && $config.storage_type == 'oss'}selected{/if}>阿里云OSS</option>
+                                    <option value="cos" {if isset($config.storage_type) && $config.storage_type == 'cos'}selected{/if}>腾讯云COS</option>
+                                    <option value="qiniu" {if isset($config.storage_type) && $config.storage_type == 'qiniu'}selected{/if}>七牛云</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">CDN 域名</label>
+                                <input type="text" name="storage_cdn_url" value="{$config.storage_cdn_url ?? ''}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="例如：https://cdn.example.com">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 阿里云OSS设置 -->
+                    <div class="border border-gray-200 rounded-lg p-6" id="ossSettings">
+                        <h3 class="text-md font-medium text-gray-800 mb-4">阿里云OSS设置</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">AccessKeyId</label>
+                                <input type="text" name="storage_oss_access_key" value="{$config.storage_oss_access_key ?? ''}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">AccessKeySecret</label>
+                                <input type="text" name="storage_oss_secret_key" value="{$config.storage_oss_secret_key ?? ''}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Bucket名称</label>
+                                <input type="text" name="storage_oss_bucket" value="{$config.storage_oss_bucket ?? ''}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Endpoint</label>
+                                <input type="text" name="storage_oss_endpoint" value="{$config.storage_oss_endpoint ?? ''}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="例如：oss-cn-hangzhou.aliyuncs.com">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 腾讯云COS设置 -->
+                    <div class="border border-gray-200 rounded-lg p-6" id="cosSettings">
+                        <h3 class="text-md font-medium text-gray-800 mb-4">腾讯云COS设置</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">SecretId</label>
+                                <input type="text" name="storage_cos_secret_id" value="{$config.storage_cos_secret_id ?? ''}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">SecretKey</label>
+                                <input type="text" name="storage_cos_secret_key" value="{$config.storage_cos_secret_key ?? ''}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Bucket名称</label>
+                                <input type="text" name="storage_cos_bucket" value="{$config.storage_cos_bucket ?? ''}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Region</label>
+                                <input type="text" name="storage_cos_region" value="{$config.storage_cos_region ?? ''}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="例如：ap-guangzhou">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 七牛云设置 -->
+                    <div class="border border-gray-200 rounded-lg p-6" id="qiniuSettings">
+                        <h3 class="text-md font-medium text-gray-800 mb-4">七牛云设置</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">AccessKey</label>
+                                <input type="text" name="storage_qiniu_access_key" value="{$config.storage_qiniu_access_key ?? ''}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">SecretKey</label>
+                                <input type="text" name="storage_qiniu_secret_key" value="{$config.storage_qiniu_secret_key ?? ''}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Bucket名称</label>
+                                <input type="text" name="storage_qiniu_bucket" value="{$config.storage_qiniu_bucket ?? ''}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">域名</label>
+                                <input type="text" name="storage_qiniu_domain" value="{$config.storage_qiniu_domain ?? ''}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="例如：example.qiniudns.com">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 文件类型设置 -->
+                    <div class="border border-gray-200 rounded-lg p-6">
+                        <h3 class="text-md font-medium text-gray-800 mb-4">文件类型设置</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">允许的文件扩展名</label>
+                                <input type="text" name="storage_allow_extensions" value="{$config.storage_allow_extensions ?? 'jpg,png,gif,jpeg,doc,docx,xls,xlsx,pdf,zip,rar'}"
+                                       class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="例如：jpg,png,gif,jpeg,doc,docx,xls,xlsx,pdf,zip,rar">
+                                <p class="text-xs text-gray-500 mt-1">多个扩展名用逗号分隔，不包含点号</p>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">是否开启图片压缩</label>
+                                    <div class="flex items-center">
+                                        <input type="radio" id="image_compress_yes" name="storage_image_compress" value="1" {if isset($config.storage_image_compress) && $config.storage_image_compress == 1}checked{/if} class="mr-2">
+                                        <label for="image_compress_yes" class="mr-4">开启</label>
+                                        <input type="radio" id="image_compress_no" name="storage_image_compress" value="0" {if (!isset($config.storage_image_compress) || $config.storage_image_compress == 0)}checked{/if} class="mr-2">
+                                        <label for="image_compress_no">关闭</label>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">图片压缩质量</label>
+                                    <input type="number" name="storage_image_quality" value="{$config.storage_image_quality ?? 80}"
+                                           class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                           min="1" max="100">
+                                    <p class="text-xs text-gray-500 mt-1">1-100，数值越大质量越好</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 保存按钮 -->
+                    <div class="flex gap-4">
+                        <button type="button" onclick="saveStorageConfig()" 
+                                class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                            <i class="fas fa-save mr-2"></i>保存配置
+                        </button>
+                        <button type="reset" 
+                                class="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors">
+                            <i class="fas fa-undo mr-2"></i>重置
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化存储类型设置显示
+            updateStorageSettingsVisibility();
+            
+            // 监听存储类型变化
+            document.querySelector('select[name="storage_type"]').addEventListener('change', function() {
+                updateStorageSettingsVisibility();
+            });
+        });
+        
+        // 更新存储设置区域的显示/隐藏
+        function updateStorageSettingsVisibility() {
+            const storageType = document.querySelector('select[name="storage_type"]').value;
+            
+            // 隐藏所有存储设置区域
+            document.getElementById('ossSettings').classList.add('hidden');
+            document.getElementById('cosSettings').classList.add('hidden');
+            document.getElementById('qiniuSettings').classList.add('hidden');
+            
+            // 显示对应的存储设置区域
+            if (storageType === 'oss') {
+                document.getElementById('ossSettings').classList.remove('hidden');
+            } else if (storageType === 'cos') {
+                document.getElementById('cosSettings').classList.remove('hidden');
+            } else if (storageType === 'qiniu') {
+                document.getElementById('qiniuSettings').classList.remove('hidden');
+            }
+        }
+        
+        // 保存存储配置
+        function saveStorageConfig() {
+            const form = document.getElementById('storageConfigForm');
+            const formData = new FormData(form);
+            
+            // 添加加载状态
+            const saveButton = document.querySelector('button[onclick="saveStorageConfig()"]');
+            const originalText = saveButton.innerHTML;
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>保存中...';
+            saveButton.disabled = true;
+            
+            fetch('/admin/storage/saveConfig', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 200) {
+                    alert('保存成功');
+                } else {
+                    alert('保存失败：' + data.msg);
+                }
+            })
+            .catch(error => {
+                alert('保存失败：网络错误');
+            })
+            .finally(() => {
+                // 恢复按钮状态
+                saveButton.innerHTML = originalText;
+                saveButton.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>

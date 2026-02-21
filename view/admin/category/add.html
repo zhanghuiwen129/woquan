@@ -1,0 +1,257 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加分类 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .bg-modern-white {
+            background-color: #ffffff;
+        }
+        .bg-modern-light {
+            background-color: #f8fafc;
+        }
+        .text-modern-dark {
+            color: #1e293b;
+        }
+        .text-modern-gray {
+            color: #64748b;
+        }
+        .bg-modern-primary {
+            background-color: #3b82f6;
+        }
+        .text-modern-primary {
+            color: #3b82f6;
+        }
+        .bg-modern-secondary {
+            background-color: #2563eb;
+        }
+        .bg-modern-success {
+            background-color: #10b981;
+        }
+        .text-modern-success {
+            color: #10b981;
+        }
+        .bg-modern-gray {
+            background-color: #64748b;
+        }
+        .bg-modern-darkGray {
+            background-color: #475569;
+        }
+        .bg-modern-lightGray {
+            background-color: #e2e8f0;
+        }
+        .border-modern-lightGray {
+            border-color: #e2e8f0;
+        }
+        .shadow-modern {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'category';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">添加分类</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-modern-dark">添加分类</h2>
+                <p class="text-modern-gray text-sm mt-1">创建新的内容分类</p>
+            </div>
+
+            <!-- 表单 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                <form id="categoryForm" class="space-y-6">
+                    <!-- 分类名称 -->
+                    <div>
+                        <label class="block text-sm font-medium text-modern-dark mb-2">分类名称 <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" id="name" required
+                               placeholder="请输入分类名称"
+                               class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                    </div>
+
+                    <!-- 分类描述 -->
+                    <div>
+                        <label class="block text-sm font-medium text-modern-dark mb-2">分类描述</label>
+                        <textarea name="description" id="description" rows="4"
+                                  placeholder="请输入分类描述"
+                                  class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all resize-none"></textarea>
+                    </div>
+
+                    <!-- 分类图标 -->
+                    <div>
+                        <label class="block text-sm font-medium text-modern-dark mb-2">分类图标</label>
+                        <div class="flex items-center gap-4">
+                            <input type="text" name="icon" id="icon"
+                                   placeholder="请输入图标URL"
+                                   class="flex-1 bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                            <button type="button" id="uploadIcon" class="px-4 py-2 bg-modern-gray text-white text-sm rounded-lg hover:bg-modern-darkGray transition-colors">
+                                <i class="fas fa-upload mr-1"></i>上传图标
+                            </button>
+                        </div>
+                        <div id="iconPreview" class="mt-2 hidden">
+                            <img id="iconImg" src="" class="w-16 h-16 rounded object-cover" alt="图标预览">
+                        </div>
+                    </div>
+
+                    <!-- 排序 -->
+                    <div>
+                        <label class="block text-sm font-medium text-modern-dark mb-2">排序</label>
+                        <input type="number" name="sort_order" id="sort_order" value="0"
+                               placeholder="请输入排序值，数值越小越靠前"
+                               class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                    </div>
+
+                    <!-- 状态 -->
+                    <div>
+                        <label class="block text-sm font-medium text-modern-dark mb-2">状态</label>
+                        <div class="flex items-center gap-6">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="radio" name="status" value="1" checked class="w-4 h-4 text-modern-primary focus:ring-modern-primary">
+                                <span class="ml-2 text-sm text-modern-dark">启用</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="radio" name="status" value="0" class="w-4 h-4 text-modern-primary focus:ring-modern-primary">
+                                <span class="ml-2 text-sm text-modern-dark">禁用</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="flex items-center gap-4 pt-4 border-t border-modern-lightGray">
+                        <button type="submit" class="px-6 py-2 bg-modern-primary text-white text-sm rounded-lg hover:bg-modern-secondary transition-colors shadow-sm">
+                            <i class="fas fa-save mr-1"></i>保存
+                        </button>
+                        <a href="/admin/category" class="px-6 py-2 bg-modern-gray text-white text-sm rounded-lg hover:bg-modern-darkGray transition-colors shadow-sm">
+                            <i class="fas fa-times mr-1"></i>取消
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 图标预览
+        $('#icon').on('input', function() {
+            var url = $(this).val();
+            if (url) {
+                $('#iconPreview').removeClass('hidden');
+                $('#iconImg').attr('src', url);
+            } else {
+                $('#iconPreview').addClass('hidden');
+            }
+        });
+
+        // 表单提交
+        $('#categoryForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            var formData = $(this).serialize();
+            
+            $.ajax({
+                url: '/admin/category/save',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function(res) {
+                    if (res.code == 200) {
+                        alert('添加成功！');
+                        window.location.href = '/admin/category';
+                    } else {
+                        alert('添加失败：' + res.msg);
+                    }
+                },
+                error: function() {
+                    alert('网络错误，请重试！');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

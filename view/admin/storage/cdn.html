@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDN配置 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'storage';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">CDN配置</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name|default='管理员'}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <!-- 返回按钮 -->
+            <div class="mb-6">
+                <a href="/admin/storage" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>返回存储管理
+                </a>
+            </div>
+
+            <!-- CDN配置表单 -->
+            <div class="card p-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">CDN配置</h3>
+                <form id="cdnForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">CDN域名</label>
+                        <input type="text" name="cdn_domain" placeholder="https://cdn.example.com" value="{$config.cdn_domain|default=''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">CDN类型</label>
+                        <select name="cdn_type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="aliyun" {$config.cdn_type == 'aliyun' ? 'selected' : ''}>阿里云CDN</option>
+                            <option value="tencent" {$config.cdn_type == 'tencent' ? 'selected' : ''}>腾讯云CDN</option>
+                            <option value="qiniu" {$config.cdn_type == 'qiniu' ? 'selected' : ''}>七牛云</option>
+                            <option value="custom" {$config.cdn_type == 'custom' ? 'selected' : ''}>自定义</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">AccessKey ID</label>
+                        <input type="text" name="access_key_id" value="{$config.access_key_id|default=''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">AccessKey Secret</label>
+                        <input type="password" name="access_key_secret" value="{$config.access_key_secret|default=''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">存储桶名称</label>
+                        <input type="text" name="bucket_name" value="{$config.bucket_name|default=''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">区域</label>
+                        <input type="text" name="region" value="{$config.region|default=''}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div class="flex items-center space-x-4 pt-4">
+                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-save mr-2"></i>保存配置
+                        </button>
+                        <button type="button" id="testCdn" class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+                            <i class="fas fa-test mr-2"></i>测试连接
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- CDN使用说明 -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">CDN使用说明</h3>
+                <div class="space-y-3">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                        <div>
+                            <p class="text-gray-800 font-medium">阿里云CDN</p>
+                            <p class="text-gray-500 text-sm mt-1">支持阿里云OSS对象存储，需要配置AccessKey ID和Secret</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                        <div>
+                            <p class="text-gray-800 font-medium">腾讯云CDN</p>
+                            <p class="text-gray-500 text-sm mt-1">支持腾讯云COS对象存储，需要配置SecretId和SecretKey</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                        <div>
+                            <p class="text-gray-800 font-medium">七牛云</p>
+                            <p class="text-gray-500 text-sm mt-1">支持七牛云对象存储，需要配置AccessKey和SecretKey</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                        <div>
+                            <p class="text-gray-800 font-medium">自定义</p>
+                            <p class="text-gray-500 text-sm mt-1">支持自定义CDN服务，只需配置CDN域名即可</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // 保存CDN配置
+            $('#cdnForm').on('submit', function(e) {
+                e.preventDefault();
+                var formData = $(this).serialize();
+                
+                $.ajax({
+                    url: '/admin/storage/saveCdnConfig',
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        if (response.code === 200) {
+                            alert('保存成功');
+                        } else {
+                            alert('保存失败：' + response.msg);
+                        }
+                    },
+                    error: function() {
+                        alert('网络错误，请稍后重试');
+                    }
+                });
+            });
+
+            // 测试CDN连接
+            $('#testCdn').on('click', function() {
+                var formData = $('#cdnForm').serialize();
+                
+                $.ajax({
+                    url: '/admin/storage/testCdn',
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        if (response.code === 200) {
+                            alert('连接成功');
+                        } else {
+                            alert('连接失败：' + response.msg);
+                        }
+                    },
+                    error: function() {
+                        alert('网络错误，请稍后重试');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

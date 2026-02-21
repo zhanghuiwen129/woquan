@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户货币记录管理 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .bg-modern-white {
+            background-color: #ffffff;
+        }
+        .bg-modern-light {
+            background-color: #f8fafc;
+        }
+        .text-modern-dark {
+            color: #1e293b;
+        }
+        .text-modern-gray {
+            color: #64748b;
+        }
+        .bg-modern-primary {
+            background-color: #3b82f6;
+        }
+        .text-modern-primary {
+            color: #3b82f6;
+        }
+        .bg-modern-secondary {
+            background-color: #2563eb;
+        }
+        .bg-modern-success {
+            background-color: #10b981;
+        }
+        .text-modern-success {
+            color: #10b981;
+        }
+        .bg-modern-gray {
+            background-color: #64748b;
+        }
+        .bg-modern-darkGray {
+            background-color: #475569;
+        }
+        .bg-modern-lightGray {
+            background-color: #e2e8f0;
+        }
+        .border-modern-lightGray {
+            border-color: #e2e8f0;
+        }
+        .shadow-modern {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'currency';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">用户货币记录</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name|default='管理员'}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-modern-dark">用户货币/积分记录</h2>
+                <p class="text-modern-gray text-sm mt-1">查看和管理用户的货币/积分记录</p>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-5 mb-6">
+                <div class="flex gap-3">
+                    <a href="/admin/currency" class="px-5 py-2 bg-modern-primary text-white text-sm rounded-lg hover:bg-modern-secondary transition-colors shadow-sm">
+                        <i class="fas fa-list mr-1"></i>货币类型
+                    </a>
+                    <a href="/admin/currency/logList" class="px-5 py-2 bg-modern-gray text-white text-sm rounded-lg hover:bg-modern-darkGray transition-colors shadow-sm">
+                        <i class="fas fa-file-alt mr-1"></i>变动日志
+                    </a>
+                </div>
+            </div>
+
+            <!-- 搜索栏 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-5 mb-6">
+                <form action="" method="get" class="flex flex-wrap items-center gap-4">
+                    <!-- 关键词搜索 -->
+                    <div class="flex-1 min-w-[200px]">
+                        <input type="text" name="keyword" value="<?php echo isset($keyword) ? $keyword : ''; ?>"
+                               placeholder="搜索用户名/昵称"
+                               class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                    </div>
+
+                    <!-- 货币类型筛选 -->
+                    <div class="min-w-[140px]">
+                        <select name="currency_id"
+                                class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                            <option value="0">所有货币</option>
+                            <?php foreach($currencyTypes as $type): ?>
+                            <option value="<?php echo $type['id']; ?>" <?php echo isset($currencyId) && $currencyId == $type['id'] ? 'selected' : ''; ?>>
+                                <?php echo $type['name']; ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="flex gap-3">
+                        <button type="submit" class="px-5 py-2 bg-modern-primary text-white text-sm rounded-lg hover:bg-modern-secondary transition-colors shadow-sm">
+                            <i class="fas fa-search mr-1"></i>搜索
+                        </button>
+                        <a href="/admin/currency/userCurrencyList" class="px-5 py-2 bg-modern-gray text-white text-sm rounded-lg hover:bg-modern-darkGray transition-colors shadow-sm">
+                            <i class="fas fa-redo mr-1"></i>重置
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 用户货币记录列表 -->
+            <div class="bg-modern-white rounded-lg shadow-modern overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-modern-light border-b border-modern-lightGray">
+                        <tr>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold">用户信息</th>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold">货币类型</th>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold w-[100px]">可用余额</th>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold w-[100px]">冻结金额</th>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold w-[100px]">总金额</th>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold w-[140px]">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($userCurrencies) || count($userCurrencies) == 0): ?>
+                        <tr class="border-b border-modern-lightGray">
+                            <td colspan="6" class="py-12 text-center text-modern-gray">
+                                <i class="fas fa-users text-4xl text-modern-lightGray mb-3"></i>
+                                <p class="text-sm">暂无用户货币记录</p>
+                            </td>
+                        </tr>
+                        <?php else: foreach($userCurrencies as $userCurrency): ?>
+                        <tr class="border-b border-modern-lightGray hover:bg-modern-light transition-colors">
+                            <td class="py-3 px-3">
+                                <div>
+                                    <div class="font-medium text-modern-dark text-sm"><?php echo htmlspecialchars($userCurrency['username'] ?? ''); ?></div>
+                                    <div class="text-xs text-modern-gray"><?php echo htmlspecialchars($userCurrency['nickname'] ?? ''); ?></div>
+                                </div>
+                            </td>
+                            <td class="py-3 px-3 text-modern-primary text-sm font-medium">
+                                <?php echo htmlspecialchars($userCurrency['currency_name'] ?? ''); ?>
+                                <span class="text-modern-gray text-xs ml-1"><?php echo htmlspecialchars($userCurrency['symbol'] ?? ''); ?></span>
+                            </td>
+                            <td class="py-3 px-3 text-modern-success text-sm font-medium">
+                                <?php echo bcsub($userCurrency['amount'], $userCurrency['freeze_amount'], 2); ?>
+                            </td>
+                            <td class="py-3 px-3 text-modern-gray text-sm">
+                                <?php echo $userCurrency['freeze_amount']; ?>
+                            </td>
+                            <td class="py-3 px-3 text-modern-dark text-sm font-medium">
+                                <?php echo $userCurrency['amount']; ?>
+                            </td>
+                            <td class="py-3 px-3">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <button class="adjust-currency px-2 py-1 bg-modern-primary/10 text-modern-primary hover:bg-modern-primary hover:text-white cursor-pointer text-xs rounded transition-colors"
+                                        data-user-id="<?php echo $userCurrency['user_id']; ?>" 
+                                        data-currency-id="<?php echo $userCurrency['currency_id']; ?>" 
+                                        data-currency-name="<?php echo htmlspecialchars($userCurrency['currency_name']); ?>" 
+                                        data-username="<?php echo htmlspecialchars($userCurrency['username']); ?>">
+                                        调整
+                                    </button>
+                                    <a href="/admin/currency/logList?user_id=<?php echo $userCurrency['user_id']; ?>&currency_id=<?php echo $userCurrency['currency_id']; ?>" 
+                                       class="px-2 py-1 bg-modern-lightGray text-modern-dark hover:bg-gray-300 cursor-pointer text-xs rounded transition-colors">
+                                        日志
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+
+                <!-- 分页 -->
+                <?php if (isset($userCurrencies) && $userCurrencies->total() > $userCurrencies->listRows()): ?>
+                <div class="px-5 py-4 border-t border-modern-lightGray flex justify-center bg-modern-light">
+                    <nav class="flex items-center justify-between" aria-label="Pagination">
+                        <div class="flex items-center gap-2">
+                            <p class="text-sm text-modern-gray">
+                                显示第 <span class="font-semibold text-modern-dark"><?php echo $userCurrencies->currentPage(); ?></span> 页，
+                                共 <span class="font-semibold text-modern-dark"><?php echo $userCurrencies->lastPage(); ?></span> 页
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <?php if ($userCurrencies->currentPage() > 1): ?>
+                            <a href="<?php echo $userCurrencies->previousPageUrl(); ?>" class="px-4 py-2 border border-modern-lightGray text-sm font-medium rounded-md text-modern-dark bg-modern-white hover:bg-modern-light transition-colors">
+                                上一页
+                            </a>
+                            <?php endif; ?>
+                            <?php if ($userCurrencies->currentPage() < $userCurrencies->lastPage()): ?>
+                            <a href="<?php echo $userCurrencies->nextPageUrl(); ?>" class="px-4 py-2 border border-modern-lightGray text-sm font-medium rounded-md text-modern-dark bg-modern-white hover:bg-modern-light transition-colors">
+                                下一页
+                            </a>
+                            <?php endif; ?>
+                        </div>
+                    </nav>
+                </div>
+                <?php endif; ?>
+            </div>
+        </main>
+    </div>
+
+    <!-- 调整货币模态框 -->
+    <div id="adjustModal" class="fixed inset-0 z-50 overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-gray-500 opacity-75"></div>
+            
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            
+            <div class="inline-block align-bottom bg-modern-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-modern-primary/10 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="fas fa-coins text-modern-primary"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-modern-dark">调整用户货币</h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-modern-gray">
+                                    用户：<span id="modalUsername" class="font-medium text-modern-dark"></span>
+                                </p>
+                                <p class="text-sm text-modern-gray">
+                                    货币类型：<span id="modalCurrencyName" class="font-medium text-modern-dark"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-5">
+                        <form id="adjustForm">
+                            <input type="hidden" id="adjustUserId" name="user_id">
+                            <input type="hidden" id="adjustCurrencyId" name="currency_id">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-modern-gray mb-2">调整类型</label>
+                                    <div class="flex gap-4">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" id="adjustTypeIncrease" name="type" value="increase" class="w-4 h-4 text-modern-primary focus:ring-modern-primary border-modern-lightGray" checked>
+                                            <span class="text-sm text-modern-dark">增加</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" id="adjustTypeDecrease" name="type" value="decrease" class="w-4 h-4 text-modern-primary focus:ring-modern-primary border-modern-lightGray">
+                                            <span class="text-sm text-modern-dark">减少</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="adjustAmount" class="block text-sm font-medium text-modern-gray mb-2">金额</label>
+                                    <input type="number" id="adjustAmount" name="amount" step="0.01" min="0" 
+                                           class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all" 
+                                           placeholder="请输入金额">
+                                </div>
+                                <div>
+                                    <label for="adjustRemark" class="block text-sm font-medium text-modern-gray mb-2">备注</label>
+                                    <textarea id="adjustRemark" name="remark" rows="2" 
+                                              class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all resize-none" 
+                                              placeholder="请输入备注（可选）">管理员手动调整</textarea>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="bg-modern-light px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" id="confirmAdjust" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-modern-primary text-base font-medium text-white hover:bg-modern-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-modern-primary sm:ml-3 sm:w-auto sm:text-sm">
+                        确认
+                    </button>
+                    <button type="button" id="cancelAdjust" class="mt-3 w-full inline-flex justify-center rounded-lg border border-modern-lightGray shadow-sm px-4 py-2 bg-modern-white text-base font-medium text-modern-dark hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-modern-primary sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 打开调整模态框
+        $('.adjust-currency').click(function() {
+            var userId = $(this).data('user-id');
+            var currencyId = $(this).data('currency-id');
+            var currencyName = $(this).data('currency-name');
+            var username = $(this).data('username');
+            
+            $('#adjustUserId').val(userId);
+            $('#adjustCurrencyId').val(currencyId);
+            $('#modalUsername').text(username);
+            $('#modalCurrencyName').text(currencyName);
+            $('#adjustAmount').val('');
+            $('#adjustRemark').val('管理员手动调整');
+            $('#adjustTypeIncrease').prop('checked', true);
+            
+            $('#adjustModal').removeClass('hidden');
+        });
+        
+        // 关闭调整模态框
+        $('#cancelAdjust').click(function() {
+            $('#adjustModal').addClass('hidden');
+        });
+        
+        // 点击模态框背景关闭
+        $('#adjustModal').click(function(e) {
+            if (e.target.id === 'adjustModal') {
+                $('#adjustModal').addClass('hidden');
+            }
+        });
+        
+        // 确认调整货币
+        $('#confirmAdjust').click(function() {
+            var data = $('#adjustForm').serialize();
+            
+            $.ajax({
+                url: '/admin/currency/adjustUserCurrency',
+                type: 'POST',
+                data: data,
+                dataType: 'json',
+                beforeSend: function() {
+                    $('#confirmAdjust').attr('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>处理中...');
+                },
+                success: function(res) {
+                    if (res.code == 200) {
+                        alert('调整成功！');
+                        window.location.reload();
+                    } else {
+                        alert('调整失败：' + res.msg);
+                    }
+                },
+                error: function() {
+                    alert('网络错误，请重试！');
+                },
+                complete: function() {
+                    $('#confirmAdjust').attr('disabled', false).text('确认');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

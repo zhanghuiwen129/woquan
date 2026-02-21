@@ -1,0 +1,126 @@
+﻿{extend name="admin/layout" /}
+
+{block name="title"}<title>文章管理 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="bg-white rounded-lg shadow">
+    <!-- 操作栏 -->
+    <div class="p-4 border-b flex justify-between items-center">
+        <div class="flex gap-4">
+            <input type="text" id="keyword" placeholder="搜索标题或作者"
+                   class="border rounded px-4 py-2 w-64" onkeypress="if(event.key==='Enter')loadData()">
+            <select id="category" class="border rounded px-4 py-2" onchange="loadData()">
+                <option value="">全部分类</option>
+            </select>
+            <select id="status" class="border rounded px-4 py-2" onchange="loadData()">
+                <option value="">全部状态</option>
+                <option value="0">草稿</option>
+                <option value="1">已发布</option>
+                <option value="2">已下架</option>
+            </select>
+            <button onclick="loadData()" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                <i class="fas fa-search mr-2"></i>搜索
+            </button>
+        </div>
+        <button onclick="openEditModal()" class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600">
+            <i class="fas fa-plus mr-2"></i>新建文章
+        </button>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">标题</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">作者</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">分类</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">状态</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">统计</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">发布时间</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
+                <tr>
+                    <td colspan="9" class="px-6 py-12 text-center text-gray-500">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>数据加载中...</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页 -->
+    <div class="p-4 border-t flex justify-between items-center">
+        <div class="flex gap-2">
+            <button onclick="batchDelete()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                <i class="fas fa-trash mr-2"></i>批量删除
+            </button>
+            <button onclick="batchPublish()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                <i class="fas fa-check mr-2"></i>批量发布
+            </button>
+        </div>
+        <div id="pagination" class="flex gap-2"></div>
+    </div>
+</div>
+
+<!-- 编辑模态框 -->
+<div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h2 class="text-xl font-semibold" id="modalTitle">新建文章</h2>
+                <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="articleForm" onsubmit="saveArticle(event)">
+                    <input type="hidden" id="articleId" name="id">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">文章标题</label>
+                            <input type="text" id="title" name="title" required class="w-full border rounded px-4 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">文章分类</label>
+                            <select id="categorySelect" name="category_id" class="w-full border rounded px-4 py-2">
+                                <option value="">请选择分类</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">文章内容</label>
+                            <textarea id="content" name="content" rows="15" required class="w-full border rounded px-4 py-2"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">封面图</label>
+                            <input type="text" id="coverImage" name="cover_image" class="w-full border rounded px-4 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">标签</label>
+                            <input type="text" id="tags" name="tags" class="w-full border rounded px-4 py-2">
+                        </div>
+                        <div class="flex gap-4">
+                            <label class="flex items-center"><input type="checkbox" id="status" name="status" value="1" class="mr-2">立即发布</label>
+                            <label class="flex items-center"><input type="checkbox" id="isTop" name="is_top" value="1" class="mr-2">置顶</label>
+                            <label class="flex items-center"><input type="checkbox" id="isRecommend" name="is_recommend" value="1" class="mr-2">推荐</label>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-4">
+                        <button type="button" onclick="closeEditModal()" class="px-6 py-2 border rounded hover:bg-gray-50">取消</button>
+                        <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/admin/article.js"></script>
+{/block}

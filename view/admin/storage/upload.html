@@ -1,0 +1,499 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件上传 - 存储管理</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #3b82f6;
+            background-color: #f0f9ff;
+        }
+        .upload-area.dragover {
+            border-color: #3b82f6;
+            background-color: #dbeafe;
+        }
+        .progress-bar {
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #3b82f6;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'storage';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">文件上传</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name|default='管理员'}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <!-- 返回按钮 -->
+            <div class="mb-6">
+                <a href="/admin/storage/files" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>返回文件列表
+                </a>
+            </div>
+
+            <!-- 上传区域 -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-6">上传文件</h2>
+                
+                <div class="mb-6">
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt text-5xl text-gray-400 mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">拖放文件到这里上传</h3>
+                        <p class="text-sm text-gray-500 mb-4">或点击选择文件</p>
+                        <label class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors cursor-pointer inline-block">
+                            <input type="file" id="fileInput" class="hidden" multiple>
+                            <i class="fas fa-folder-open mr-2"></i>选择文件
+                        </label>
+                        <p class="text-xs text-gray-500 mt-4">
+                            支持的文件类型：jpg, png, gif, jpeg, doc, docx, xls, xlsx, pdf, zip, rar<br>
+                            最大文件大小：50MB<br>
+                            支持多文件同时上传
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 待上传文件列表 -->
+                <div id="fileList" class="mb-6 hidden">
+                    <h3 class="text-sm font-medium text-gray-700 mb-3">待上传文件 (<span id="fileCount">0</span>)</h3>
+                    <div class="space-y-2" id="fileItems">
+                        <!-- 文件项将显示在这里 -->
+                    </div>
+                </div>
+
+                <!-- 上传进度 -->
+                <div id="uploadProgress" class="mb-6 hidden">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700">上传进度</span>
+                        <span class="text-sm text-gray-500" id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                    <div class="text-sm text-gray-500 mt-1" id="progressFileName"></div>
+                </div>
+
+                <!-- 上传结果 -->
+                <div id="uploadResult" class="mb-6 hidden">
+                    <div class="border border-gray-200 rounded-lg p-4" id="resultContent">
+                        <!-- 上传结果将显示在这里 -->
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="flex gap-4 flex-wrap">
+                    <button id="startUpload" class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors hidden">
+                        <i class="fas fa-upload mr-2"></i>开始上传
+                    </button>
+                    <button id="cancelUpload" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors hidden">
+                        <i class="fas fa-times mr-2"></i>取消
+                    </button>
+                    <button id="resetUpload" class="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors hidden">
+                        <i class="fas fa-redo mr-2"></i>上传新文件
+                    </button>
+                    <button id="clearFiles" class="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors hidden">
+                        <i class="fas fa-trash mr-2"></i>清空文件
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const startUploadBtn = document.getElementById('startUpload');
+            const cancelUploadBtn = document.getElementById('cancelUpload');
+            const resetUploadBtn = document.getElementById('resetUpload');
+            const clearFilesBtn = document.getElementById('clearFiles');
+            const uploadProgress = document.getElementById('uploadProgress');
+            const progressPercent = document.getElementById('progressPercent');
+            const progressFill = document.getElementById('progressFill');
+            const progressFileName = document.getElementById('progressFileName');
+            const uploadResult = document.getElementById('uploadResult');
+            const resultContent = document.getElementById('resultContent');
+            const fileList = document.getElementById('fileList');
+            const fileCount = document.getElementById('fileCount');
+            const fileItems = document.getElementById('fileItems');
+            
+            let selectedFiles = [];
+            let uploadXhr = null;
+            let currentUploadIndex = 0;
+            let uploadResults = [];
+            
+            // 点击选择文件
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    const newFiles = Array.from(e.target.files);
+                    selectedFiles = [...selectedFiles, ...newFiles];
+                    showFileList();
+                }
+            });
+            
+            // 拖放功能
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                uploadArea.classList.add('dragover');
+            }
+            
+            function unhighlight() {
+                uploadArea.classList.remove('dragover');
+            }
+            
+            uploadArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length > 0) {
+                    const newFiles = Array.from(files);
+                    selectedFiles = [...selectedFiles, ...newFiles];
+                    showFileList();
+                }
+            }
+            
+            // 显示文件列表
+            function showFileList() {
+                if (selectedFiles.length === 0) {
+                    fileList.classList.add('hidden');
+                    return;
+                }
+                
+                fileCount.textContent = selectedFiles.length;
+                fileItems.innerHTML = '';
+                
+                selectedFiles.forEach((file, index) => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'flex items-center justify-between p-3 border border-gray-200 rounded-md';
+                    fileItem.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center mr-3">
+                                ${getFileIcon(file.type)}
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-gray-900 truncate max-w-md">${file.name}</div>
+                                <div class="text-xs text-gray-500">${formatFileSize(file.size)}</div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="removeFile(${index})" class="text-red-600 hover:text-red-900">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    fileItems.appendChild(fileItem);
+                });
+                
+                uploadArea.classList.add('hidden');
+                fileList.classList.remove('hidden');
+                startUploadBtn.classList.remove('hidden');
+                clearFilesBtn.classList.remove('hidden');
+                cancelUploadBtn.classList.remove('hidden');
+            }
+            
+            // 获取文件图标
+            function getFileIcon(fileType) {
+                if (fileType.includes('image')) {
+                    return '<i class="fas fa-image text-blue-500"></i>';
+                } else if (fileType.includes('pdf')) {
+                    return '<i class="fas fa-file-pdf text-red-500"></i>';
+                } else if (fileType.includes('word') || fileType.includes('document')) {
+                    return '<i class="fas fa-file-word text-blue-500"></i>';
+                } else if (fileType.includes('excel') || fileType.includes('spreadsheet')) {
+                    return '<i class="fas fa-file-excel text-green-500"></i>';
+                } else if (fileType.includes('zip') || fileType.includes('archive')) {
+                    return '<i class="fas fa-file-archive text-yellow-500"></i>';
+                } else {
+                    return '<i class="fas fa-file text-gray-500"></i>';
+                }
+            }
+            
+            // 格式化文件大小
+            function formatFileSize(bytes) {
+                if (bytes < 1024) {
+                    return bytes + ' B';
+                } else if (bytes < 1024 * 1024) {
+                    return (bytes / 1024).toFixed(2) + ' KB';
+                } else {
+                    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+                }
+            }
+            
+            // 移除文件
+            window.removeFile = function(index) {
+                selectedFiles.splice(index, 1);
+                showFileList();
+            };
+            
+            // 开始上传
+            startUploadBtn.addEventListener('click', function() {
+                if (selectedFiles.length === 0) return;
+                
+                currentUploadIndex = 0;
+                uploadResults = [];
+                
+                fileList.classList.add('hidden');
+                startUploadBtn.classList.add('hidden');
+                clearFilesBtn.classList.add('hidden');
+                cancelUploadBtn.classList.remove('hidden');
+                uploadProgress.classList.remove('hidden');
+                
+                uploadNextFile();
+            });
+            
+            // 上传下一个文件
+            function uploadNextFile() {
+                if (currentUploadIndex >= selectedFiles.length) {
+                    showBatchUploadResult();
+                    return;
+                }
+                
+                const file = selectedFiles[currentUploadIndex];
+                progressFileName.textContent = `正在上传：${file.name} (${currentUploadIndex + 1}/${selectedFiles.length})`;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                uploadXhr = new XMLHttpRequest();
+                
+                uploadXhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progressPercent.textContent = Math.round(percentComplete) + '%';
+                        progressFill.style.width = percentComplete + '%';
+                    }
+                });
+                
+                uploadXhr.addEventListener('load', function() {
+                    if (uploadXhr.status === 200) {
+                        const response = JSON.parse(uploadXhr.responseText);
+                        uploadResults.push({ file: file, response: response });
+                    } else {
+                        uploadResults.push({ file: file, error: '上传失败：网络错误' });
+                    }
+                    
+                    currentUploadIndex++;
+                    uploadNextFile();
+                });
+                
+                uploadXhr.addEventListener('error', function() {
+                    uploadResults.push({ file: file, error: '上传失败：网络错误' });
+                    currentUploadIndex++;
+                    uploadNextFile();
+                });
+                
+                uploadXhr.open('POST', '/admin/storage/doUpload');
+                uploadXhr.send(formData);
+            }
+            
+            // 取消上传
+            cancelUploadBtn.addEventListener('click', function() {
+                if (uploadXhr) {
+                    uploadXhr.abort();
+                }
+                resetUpload();
+            });
+            
+            // 清空文件
+            clearFilesBtn.addEventListener('click', function() {
+                if (confirm('确定要清空所有待上传文件吗？')) {
+                    selectedFiles = [];
+                    fileInput.value = '';
+                    showFileList();
+                    uploadArea.classList.remove('hidden');
+                    startUploadBtn.classList.add('hidden');
+                    clearFilesBtn.classList.add('hidden');
+                    cancelUploadBtn.classList.add('hidden');
+                }
+            });
+            
+            // 重置上传
+            resetUploadBtn.addEventListener('click', resetUpload);
+            
+            function resetUpload() {
+                selectedFiles = [];
+                uploadXhr = null;
+                currentUploadIndex = 0;
+                uploadResults = [];
+                fileInput.value = '';
+                
+                uploadArea.classList.remove('hidden');
+                fileList.classList.add('hidden');
+                startUploadBtn.classList.add('hidden');
+                cancelUploadBtn.classList.add('hidden');
+                resetUploadBtn.classList.add('hidden');
+                clearFilesBtn.classList.add('hidden');
+                uploadProgress.classList.add('hidden');
+                uploadResult.classList.add('hidden');
+                
+                progressPercent.textContent = '0%';
+                progressFill.style.width = '0%';
+                progressFileName.textContent = '';
+            }
+            
+            // 显示批量上传结果
+            function showBatchUploadResult() {
+                const successCount = uploadResults.filter(r => r.response && r.response.code === 200).length;
+                const errorCount = uploadResults.filter(r => r.error || (r.response && r.response.code !== 200)).length;
+                
+                let resultHTML = `
+                    <div class="flex items-start mb-4">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-${successCount === selectedFiles.length ? 'check' : 'exclamation'}-circle text-${successCount === selectedFiles.length ? 'green' : 'orange'}-500 text-2xl mt-1"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-medium text-gray-900">上传完成</h4>
+                            <p class="text-sm text-gray-500 mt-1">成功：${successCount} 个文件，失败：${errorCount} 个文件</p>
+                        </div>
+                    </div>
+                `;
+                
+                if (errorCount > 0) {
+                    resultHTML += `
+                        <div class="mt-4">
+                            <h5 class="text-sm font-medium text-gray-700 mb-2">失败文件：</h5>
+                            <div class="space-y-2">
+                                ${uploadResults.filter(r => r.error || (r.response && r.response.code !== 200)).map(r => `
+                                    <div class="p-2 border border-red-200 rounded-md bg-red-50">
+                                        <div class="text-sm text-red-800">${r.file.name}</div>
+                                        <div class="text-xs text-red-600">${r.error || (r.response ? r.response.msg : '上传失败')}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                resultHTML += `
+                    <div class="mt-4 flex gap-2">
+                        <a href="/admin/storage/files" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm">
+                            <i class="fas fa-list mr-1"></i>查看文件列表
+                        </a>
+                        <button onclick="resetUpload()" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-sm">
+                            <i class="fas fa-redo mr-1"></i>继续上传
+                        </button>
+                    </div>
+                `;
+                
+                resultContent.innerHTML = resultHTML;
+                uploadResult.classList.remove('hidden');
+                cancelUploadBtn.classList.add('hidden');
+                resetUploadBtn.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

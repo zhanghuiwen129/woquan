@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统设置 - 后台管理系统</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <!-- 引入Font Awesome图标 -->
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        /* 标签导航样式 */
+        .tab-nav {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+        .tab-item {
+            padding: 10px 20px;
+            background-color: #f1f5f9;
+            color: #64748b;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .tab-item:hover {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+        .tab-item.active {
+            background-color: #3b82f6;
+            color: #ffffff;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'setting';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">系统设置</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="card p-6 mb-6">
+                <div class="mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800">系统设置</h2>
+                    <p class="text-gray-500 mt-2">配置网站基本信息和全局设置</p>
+                </div>
+
+                <!-- 横向标签导航 -->
+                <div class="tab-nav">
+                    <div class="tab-item active" data-tab="website">网站设置</div>
+                    <div class="tab-item" data-tab="site">站点运行</div>
+                    <div class="tab-item" data-tab="publish">发布设置</div>
+                    <div class="tab-item" data-tab="notification">通知消息</div>
+                    <div class="tab-item" data-tab="operation">系统运维</div>
+                    <div class="tab-item" data-tab="resource">公共资源</div>
+                    <div class="tab-item" data-tab="seo">SEO设置</div>
+                    <div class="tab-item" data-tab="tools">系统工具</div>
+                </div>
+
+                <!-- 各个设置模块 -->
+                {include file="admin/setting/website"}
+                {include file="admin/setting/site"}
+                {include file="admin/setting/publish"}
+                {include file="admin/setting/notification"}
+                {include file="admin/setting/operation"}
+                {include file="admin/setting/resource"}
+                {include file="admin/setting/seo"}
+                {include file="admin/setting/tools"}
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // 页面加载时，默认显示第一个标签
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstTab = document.querySelector('.tab-item.active');
+            if (firstTab) {
+                const tabName = firstTab.dataset.tab;
+                const tabContent = document.getElementById(tabName);
+                if (tabContent) {
+                    tabContent.classList.add('active');
+                }
+            }
+        });
+
+        // 标签切换
+        document.querySelectorAll('.tab-item').forEach(item => {
+            item.addEventListener('click', function() {
+                // 移除所有活动状态
+                document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // 添加活动状态
+                this.classList.add('active');
+                const tabName = this.dataset.tab;
+                const tabContent = document.getElementById(tabName);
+                if (tabContent) {
+                    tabContent.classList.add('active');
+                }
+            });
+        });
+
+        // 用户下拉菜单
+        const userMenuBtn = document.getElementById('userMenuBtn');
+        if (userMenuBtn) {
+            userMenuBtn.addEventListener('click', function() {
+                const dropdown = document.getElementById('userDropdown');
+                if (dropdown) {
+                    dropdown.classList.toggle('hidden');
+                    dropdown.classList.toggle('show');
+                }
+            });
+        }
+
+        // 点击其他地方关闭下拉菜单
+        document.addEventListener('click', function(e) {
+            const btn = document.getElementById('userMenuBtn');
+            const dropdown = document.getElementById('userDropdown');
+            if (btn && dropdown && !btn.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // 移动端菜单切换
+        document.querySelector('.menu-toggle')?.addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        });
+    </script>
+    <script src="/static/admin/js/setting.js"></script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加VIP等级 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .bg-modern-white {
+            background-color: #ffffff;
+        }
+        .bg-modern-light {
+            background-color: #f8fafc;
+        }
+        .text-modern-dark {
+            color: #1e293b;
+        }
+        .text-modern-gray {
+            color: #64748b;
+        }
+        .bg-modern-primary {
+            background-color: #3b82f6;
+        }
+        .text-modern-primary {
+            color: #3b82f6;
+        }
+        .bg-modern-secondary {
+            background-color: #2563eb;
+        }
+        .bg-modern-success {
+            background-color: #10b981;
+        }
+        .text-modern-success {
+            color: #10b981;
+        }
+        .bg-modern-gray {
+            background-color: #64748b;
+        }
+        .bg-modern-darkGray {
+            background-color: #475569;
+        }
+        .bg-modern-lightGray {
+            background-color: #e2e8f0;
+        }
+        .border-modern-lightGray {
+            border-color: #e2e8f0;
+        }
+        .shadow-modern {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'vip';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">添加VIP等级</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name|default='管理员'}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-modern-dark">添加VIP等级</h2>
+                <p class="text-modern-gray text-sm mt-1">设置新的VIP等级信息</p>
+            </div>
+
+            <!-- 添加VIP等级表单 -->
+            <div class="bg-modern-white rounded-lg shadow-modern overflow-hidden">
+                <div class="p-8">
+                    <form id="addLevelForm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <!-- 基本信息 -->
+                            <div>
+                                <h3 class="text-lg font-medium text-modern-dark mb-4">基本信息</h3>
+                                <div class="mb-4">
+                                    <label class="block text-sm text-modern-gray mb-2">等级名称 <span class="text-red-500">*</span></label>
+                                    <input type="text" name="name" placeholder="如：白银会员" 
+                                           class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm text-modern-gray mb-2">每日最大发布数 <span class="text-red-500">*</span></label>
+                                    <input type="number" name="max_moments" min="1" placeholder="10" 
+                                           class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm text-modern-gray mb-2">每次最大上传图片数 <span class="text-red-500">*</span></label>
+                                    <input type="number" name="max_images" min="1" placeholder="9" 
+                                           class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm text-modern-gray mb-2">排序</label>
+                                    <input type="number" name="sort" min="0" value="0" 
+                                           class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm text-modern-gray mb-2">状态</label>
+                                    <div class="flex items-center gap-4">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="status" value="1" checked 
+                                                   class="text-modern-primary focus:ring-modern-primary">
+                                            <span>启用</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="status" value="0" 
+                                                   class="text-modern-primary focus:ring-modern-primary">
+                                            <span>禁用</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 价格设置 -->
+                            <div>
+                                <h3 class="text-lg font-medium text-modern-dark mb-4">价格设置</h3>
+                                <div class="mb-4">
+                                    <label class="block text-sm text-modern-gray mb-2">月费 (元)</label>
+                                    <input type="number" name="price_month" min="0" step="0.01" placeholder="0.00" 
+                                           class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm text-modern-gray mb-2">季费 (元)</label>
+                                    <input type="number" name="price_quarter" min="0" step="0.01" placeholder="0.00" 
+                                           class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm text-modern-gray mb-2">年费 (元)</label>
+                                    <input type="number" name="price_year" min="0" step="0.01" placeholder="0.00" 
+                                           class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm text-modern-gray mb-2">永久费用 (元)</label>
+                                    <input type="number" name="price_permanent" min="0" step="0.01" placeholder="0.00" 
+                                           class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 特权设置 -->
+                        <div class="mb-8">
+                            <h3 class="text-lg font-medium text-modern-dark mb-4">特权设置</h3>
+                            <div class="mb-4">
+                                <label class="block text-sm text-modern-gray mb-2">特权列表（逗号分隔）</label>
+                                <input type="text" name="privileges" placeholder="如：去除广告,更多图片,高级功能" 
+                                       class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                                <p class="text-xs text-modern-gray mt-2">示例特权：去除广告、更多图片、高级功能、专属标识、优先推荐、专属客服</p>
+                            </div>
+                        </div>
+
+                        <!-- 操作按钮 -->
+                        <div class="flex justify-end gap-4">
+                            <a href="/admin/vip" class="px-5 py-2.5 bg-modern-lightGray text-modern-gray rounded-lg hover:bg-gray-300 transition-colors shadow-sm">
+                                <i class="fas fa-arrow-left mr-2"></i>返回列表
+                            </a>
+                            <button type="submit" class="px-5 py-2.5 bg-modern-primary text-white rounded-lg hover:bg-modern-secondary transition-colors shadow-sm">
+                                <i class="fas fa-save mr-2"></i>保存设置
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 保存VIP等级
+        $('#addLevelForm').submit(function(e) {
+            e.preventDefault();
+            
+            $.ajax({
+                url: '/admin/vip/save_level',
+                type: 'POST',
+                data: $(this).serialize(),
+                dataType: 'json',
+                success: function(res) {
+                    if (res.code == 200) {
+                        alert('添加成功！');
+                        window.location.href = '/admin/vip';
+                    } else {
+                        alert('添加失败：' + res.msg);
+                    }
+                },
+                error: function() {
+                    alert('网络错误，请重试！');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

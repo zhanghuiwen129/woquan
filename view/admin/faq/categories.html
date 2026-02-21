@@ -1,0 +1,105 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>FAQ分类管理 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">FAQ分类管理</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        管理FAQ分类
+    </p>
+</div>
+
+<!-- 操作按钮区域 -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="flex items-center gap-4">
+        <a href="/admin/faq/category/add" class="px-5 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern flex items-center gap-2">
+            <i class="fas fa-plus"></i>
+            <span>添加分类</span>
+        </a>
+        <a href="/admin/faq" class="px-5 py-2 bg-modern-light border border-modern-lightGray rounded-md hover:border-modern-primary transition-colors flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回FAQ列表</span>
+        </a>
+    </div>
+</div>
+
+<!-- 分类列表卡片 -->
+<div class="card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">ID</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">分类名称</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">描述</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">排序</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">状态</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">创建时间</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-modern-lightGray">
+                {if empty($categories)}
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-modern-gray">暂无数据</td>
+                </tr>
+                {else /}
+                {volist name="categories" id="cat"}
+                <tr class="hover:bg-modern-light/50 transition-colors">
+                    <td class="py-4 px-6 text-sm text-modern-gray">{$cat.id}</td>
+                    <td class="py-4 px-6 text-sm font-medium text-modern-dark">{$cat.name}</td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">{$cat.description|default=''}</td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">{$cat.sort_order|default=0}</td>
+                    <td class="py-4 px-6">
+                        {if $cat.status == 1}
+                        <span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">启用</span>
+                        {else /}
+                        <span class="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded">禁用</span>
+                        {/if}
+                    </td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">{$cat.create_time|date='Y-m-d H:i'}</td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-2">
+                            <a href="/admin/faq/category/edit/{$cat.id}" class="text-modern-gray hover:text-modern-primary transition-colors" title="编辑">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button onclick="deleteCategory({$cat.id})" class="text-modern-gray hover:text-modern-danger transition-colors" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {/volist}
+                {/if}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function deleteCategory(id) {
+    if (confirm('确定要删除该分类吗？')) {
+        fetch(`/admin/faq/category/delete/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.code === 200) {
+                alert('删除成功');
+                location.reload();
+            } else {
+                alert('删除失败：' + data.msg);
+            }
+        })
+        .catch(error => {
+            alert('删除失败');
+        });
+    }
+}
+</script>
+{/block}

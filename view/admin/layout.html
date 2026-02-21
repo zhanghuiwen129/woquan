@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {block name="title"}<title>{$title|default='后台管理系统'}</title>{/block}
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <!-- 引入Font Awesome图标 -->
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .user-dropdown {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 8px;
+            width: 160px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+        }
+        .user-dropdown.hidden {
+            display: none;
+        }
+        .user-dropdown.show {
+            display: block;
+        }
+        .password-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .password-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .password-modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 420px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .password-modal-overlay.show .password-modal-content {
+            transform: scale(1);
+        }
+        .password-input-group {
+            position: relative;
+        }
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .password-toggle-btn:hover {
+            color: #3b82f6;
+        }
+        .custom-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .custom-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .custom-modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .custom-modal-overlay.show .custom-modal-content {
+            transform: scale(1);
+        }
+        .custom-modal-icon {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        .custom-modal-icon.error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #dc2626;
+        }
+        .custom-modal-icon.success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #059669;
+        }
+        .custom-modal-icon.warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #d97706;
+        }
+        .custom-modal-icon.info {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #3b82f6;
+        }
+        .custom-modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.75rem;
+        }
+        .custom-modal-message {
+            font-size: 0.95rem;
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+        .custom-modal-button {
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .custom-modal-button.primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%);
+            color: white;
+        }
+        .custom-modal-button.primary:hover {
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            transform: translateY(-1px);
+        }
+        .custom-modal-button.danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        .custom-modal-button.danger:hover {
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+            transform: translateY(-1px);
+        }
+        .custom-modal-button.secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        .custom-modal-button.secondary:hover {
+            background: #d1d5db;
+        }
+        .custom-modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .custom-modal-buttons .custom-modal-button {
+            flex: 1;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        .stat-card {
+            border-left: 4px solid #60a5fa;
+        }
+        .menu-toggle {
+            display: none;
+        }
+        
+        /* Modern 颜色系统 */
+        .bg-modern-primary {
+            background-color: #3b82f6;
+        }
+        .bg-modern-secondary {
+            background-color: #4f46e5;
+        }
+        .bg-modern-success {
+            background-color: #10b981;
+        }
+        .bg-modern-warning {
+            background-color: #f59e0b;
+        }
+        .bg-modern-danger {
+            background-color: #ef4444;
+        }
+        .bg-modern-light {
+            background-color: #f3f4f6;
+        }
+        .bg-modern-white {
+            background-color: #ffffff;
+        }
+        .bg-modern-dark {
+            background-color: #1e293b;
+        }
+        
+        .text-modern-primary {
+            color: #3b82f6;
+        }
+        .text-modern-secondary {
+            color: #4f46e5;
+        }
+        .text-modern-success {
+            color: #10b981;
+        }
+        .text-modern-warning {
+            color: #f59e0b;
+        }
+        .text-modern-danger {
+            color: #ef4444;
+        }
+        .text-modern-light {
+            color: #f3f4f6;
+        }
+        .text-modern-white {
+            color: #ffffff;
+        }
+        .text-modern-dark {
+            color: #1e293b;
+        }
+        .text-modern-gray {
+            color: #6b7280;
+        }
+        .text-modern-lightGray {
+            color: #9ca3af;
+        }
+        
+        .border-modern-primary {
+            border-color: #3b82f6;
+        }
+        .border-modern-secondary {
+            border-color: #4f46e5;
+        }
+        .border-modern-success {
+            border-color: #10b981;
+        }
+        .border-modern-warning {
+            border-color: #f59e0b;
+        }
+        .border-modern-danger {
+            border-color: #ef4444;
+        }
+        .border-modern-light {
+            border-color: #f3f4f6;
+        }
+        .border-modern-lightGray {
+            border-color: #e5e7eb;
+        }
+        
+        .shadow-modern {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Modern 颜色透明度变体 */
+        .bg-modern-primary\/10 {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        .bg-modern-secondary\/10 {
+            background-color: rgba(79, 70, 229, 0.1);
+        }
+        .bg-modern-success\/10 {
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+        .bg-modern-warning\/10 {
+            background-color: rgba(245, 158, 11, 0.1);
+        }
+        
+        .hover\:bg-modern-secondary:hover {
+            background-color: #4f46e5;
+        }
+        .hover\:bg-modern-light\/50:hover {
+            background-color: rgba(243, 244, 246, 0.5);
+        }
+        .hover\:text-modern-secondary:hover {
+            color: #4f46e5;
+        }
+        .hover\:border-modern-primary:hover {
+            border-color: #3b82f6;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 1000;
+                height: 100vh;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .menu-toggle {
+                display: block;
+            }
+        }
+    </style>
+    {$block_name|raw|default=''}
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    {php}
+        // 确定当前激活的菜单项
+        $current_active = $active ?? '';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    {/php}
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 移动端菜单按钮 -->
+            <button class="menu-toggle text-gray-500 hover:text-gray-700">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">{$page_title|default='后台管理'}</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 通知 -->
+                <button class="relative text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-bell text-xl"></i>
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">3</span>
+                </button>
+                <!-- 消息 -->
+                <button class="relative text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-envelope text-xl"></i>
+                    <span class="absolute -top-1 -right-1 bg-blue-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">5</span>
+                </button>
+                <!-- 用户信息 -->
+                <div class="relative">
+                    <button id="userMenuBtn" class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 cursor-pointer">
+                        <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span class="text-sm font-medium">{$admin_name}</span>
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+                    <!-- 下拉菜单 -->
+                    <div id="userDropdown" class="user-dropdown hidden">
+                        <a href="/admin/setting/profile" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 border-b border-gray-100">
+                            <i class="fas fa-user mr-2"></i>个人中心
+                        </a>
+                        <a href="javascript:void(0)" id="changePasswordBtn" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-key mr-2"></i>修改密码
+                        </a>
+                        <a href="/admin/login/logout" class="block px-4 py-3 text-sm text-red-600 hover:bg-red-50">
+                            <i class="fas fa-sign-out-alt mr-2"></i>退出登录
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            {block name="content"}{/block}
+        </main>
+    </div>
+
+    <!-- 修改密码弹窗 -->
+    <div class="password-modal-overlay" id="passwordModal">
+        <div class="password-modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold text-gray-800">修改密码</h2>
+                <button id="closePasswordModal" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="passwordForm">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">当前密码</label>
+                    <div class="password-input-group">
+                        <input type="password" id="currentPassword" class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="请输入当前密码" required>
+                        <i class="fas fa-eye password-toggle-btn" data-target="currentPassword"></i>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">新密码</label>
+                    <div class="password-input-group">
+                        <input type="password" id="newPassword" class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="请输入新密码" required>
+                        <i class="fas fa-eye password-toggle-btn" data-target="newPassword"></i>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">确认新密码</label>
+                    <div class="password-input-group">
+                        <input type="password" id="confirmPassword" class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="请再次输入新密码" required>
+                        <i class="fas fa-eye password-toggle-btn" data-target="confirmPassword"></i>
+                    </div>
+                </div>
+                <div class="flex space-x-3">
+                    <button type="button" id="cancelPasswordBtn" class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                        取消
+                    </button>
+                    <button type="submit" class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-colors">
+                        确认修改
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 自定义提示框 -->
+    <div class="custom-modal-overlay" id="customModalOverlay">
+        <div class="custom-modal-content">
+            <div class="custom-modal-icon" id="customModalIcon">
+                <i class="fas fa-exclamation-circle text-3xl"></i>
+            </div>
+            <h3 class="custom-modal-title" id="customModalTitle">提示</h3>
+            <p class="custom-modal-message" id="customModalMessage">操作失败</p>
+            <div class="custom-modal-buttons" id="customModalButtons">
+                <button class="custom-modal-button primary" onclick="closeCustomModal()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 移动端菜单切换
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('open');
+        });
+
+        // 头部下拉菜单
+        const userMenuBtn = document.getElementById('userMenuBtn');
+        const userDropdown = document.getElementById('userDropdown');
+
+        if (userMenuBtn && userDropdown) {
+            userMenuBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                userDropdown.classList.toggle('hidden');
+                userDropdown.classList.toggle('show');
+            });
+        }
+
+        // 点击页面其他地方关闭下拉菜单
+        document.addEventListener('click', function(e) {
+            if (userDropdown && !userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+                userDropdown.classList.add('hidden');
+                userDropdown.classList.remove('show');
+            }
+        });
+
+        // 修改密码弹窗
+        const passwordModal = document.getElementById('passwordModal');
+        const changePasswordBtn = document.getElementById('changePasswordBtn');
+        const closePasswordModal = document.getElementById('closePasswordModal');
+        const cancelPasswordBtn = document.getElementById('cancelPasswordBtn');
+        const passwordForm = document.getElementById('passwordForm');
+
+        // 打开弹窗
+        changePasswordBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            passwordModal.classList.add('show');
+            userDropdown.classList.add('hidden');
+            userDropdown.classList.remove('show');
+        });
+
+        // 关闭弹窗函数
+        function closePasswordModalFunc() {
+            passwordModal.classList.remove('show');
+            passwordForm.reset();
+        }
+
+        // 关闭按钮
+        closePasswordModal.addEventListener('click', closePasswordModalFunc);
+
+        // 取消按钮
+        cancelPasswordBtn.addEventListener('click', closePasswordModalFunc);
+
+        // 点击遮罩层关闭
+        passwordModal.addEventListener('click', function(e) {
+            if (e.target === passwordModal) {
+                closePasswordModalFunc();
+            }
+        });
+
+        // ESC键关闭
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePasswordModalFunc();
+            }
+        });
+
+        // 密码显示/隐藏切换
+        document.querySelectorAll('.password-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                input.setAttribute('type', type);
+
+                // 切换图标
+                this.classList.toggle('fa-eye');
+                this.classList.toggle('fa-eye-slash');
+            });
+        });
+
+        // 自定义提示框函数
+        function showCustomModal(title, message, type = 'error', callback = null) {
+            const overlay = document.getElementById('customModalOverlay');
+            const modalTitle = document.getElementById('customModalTitle');
+            const modalMessage = document.getElementById('customModalMessage');
+            const modalIcon = document.getElementById('customModalIcon');
+            const modalButtons = document.getElementById('customModalButtons');
+
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+
+            // 设置图标类型
+            modalIcon.className = 'custom-modal-icon ' + type;
+            if (type === 'error') {
+                modalIcon.innerHTML = '<i class="fas fa-exclamation-circle text-3xl"></i>';
+            } else if (type === 'success') {
+                modalIcon.innerHTML = '<i class="fas fa-check-circle text-3xl"></i>';
+            } else if (type === 'warning') {
+                modalIcon.innerHTML = '<i class="fas fa-exclamation-triangle text-3xl"></i>';
+            } else if (type === 'info') {
+                modalIcon.innerHTML = '<i class="fas fa-info-circle text-3xl"></i>';
+            }
+
+            // 设置按钮
+            if (callback) {
+                modalButtons.innerHTML = `
+                    <button class="custom-modal-button secondary" onclick="closeCustomModal()">取消</button>
+                    <button class="custom-modal-button primary" onclick="confirmCustomModal()">确定</button>
+                `;
+                window.customModalCallback = callback;
+            } else {
+                modalButtons.innerHTML = `
+                    <button class="custom-modal-button primary" onclick="closeCustomModal()">确定</button>
+                `;
+                window.customModalCallback = null;
+            }
+
+            overlay.classList.add('show');
+        }
+
+        function closeCustomModal() {
+            document.getElementById('customModalOverlay').classList.remove('show');
+        }
+
+        function confirmCustomModal() {
+            closeCustomModal();
+            if (window.customModalCallback) {
+                window.customModalCallback();
+                window.customModalCallback = null;
+            }
+        }
+
+        // 点击遮罩层关闭提示框
+        document.getElementById('customModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCustomModal();
+            }
+        });
+
+        // ESC键关闭提示框
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeCustomModal();
+            }
+        });
+
+        // 提交密码修改
+        passwordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // 验证
+            if (newPassword !== confirmPassword) {
+                showCustomModal('验证失败', '两次输入的密码不一致', 'error');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                showCustomModal('验证失败', '新密码长度不能少于6位', 'error');
+                return;
+            }
+
+            // 发送请求
+            fetch('/admin/login/change-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    old_password: currentPassword,
+                    new_password: newPassword,
+                    confirm_password: confirmPassword
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.code === 1) {
+                    showCustomModal('修改成功', '密码修改成功，请重新登录', 'success', function() {
+                        window.location.href = '/admin/login';
+                    });
+                } else {
+                    showCustomModal('修改失败', result.msg || '密码修改失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('密码修改失败:', error);
+                showCustomModal('修改失败', '密码修改失败，请稍后重试', 'error');
+            });
+        });
+    </script>
+    {block name="script"}{/block}
+</body>
+</html>

@@ -1,0 +1,161 @@
+{extend name="index/main-layout" /}
+
+{block name="content"}
+<style>
+    .visitor-item {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .visitor-item:hover {
+        box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+        transform: translateY(-2px);
+        cursor: pointer;
+    }
+
+    .visitor-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .visitor-time {
+        font-size: 12px;
+        color: var(--text-tertiary);
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 640px) {
+        .visitor-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .visitor-item > div:first-child {
+            width: 100%;
+            margin-bottom: 12px;
+        }
+
+        .visitor-time {
+            align-self: flex-end;
+        }
+    }
+</style>
+
+{if isset($visitors) && count($visitors) > 0}
+<div id="visitors-list" class="space-y-4">
+    {volist name="visitors" id="visitor"}
+    <div class="visitor-item">
+        <a href="/card/{$visitor.visitor_id}" class="flex items-center gap-3 flex-1">
+            <img src="{$visitor.avatar|default='/static/images/default-avatar.png'}" alt="头像" class="visitor-avatar">
+            <div class="flex-1">
+                <h3 class="font-semibold text-gray-800">{$visitor.nickname|default=$visitor.username}</h3>
+                <p class="text-sm text-gray-500 truncate">{$visitor.bio|default='暂无个性签名'}</p>
+            </div>
+        </a>
+        <span class="visitor-time">访问于 {$visitor.visit_time|date='Y-m-d H:i'}</span>
+    </div>
+    {/volist}
+</div>
+{else}
+<div id="empty" class="text-center py-16">
+    <div class="w-24 h-24 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fa fa-eye text-4xl text-blue-500"></i>
+    </div>
+    <h2 class="text-xl font-bold text-gray-800 mb-2">暂无访客记录</h2>
+    <p class="text-gray-500 mb-4">多分享有趣的内容，吸引更多访客吧</p>
+    <a href="/" class="inline-block bg-primary text-white px-6 py-2 rounded-full hover:bg-secondary transition-colors">
+        发布动态
+    </a>
+</div>
+{/if}
+{/block}
+
+{block name="contentMobile"}
+<style>
+    .visitor-item {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .visitor-item:hover {
+        box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+        transform: translateY(-2px);
+        cursor: pointer;
+    }
+
+    .visitor-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .visitor-time {
+        font-size: 12px;
+        color: var(--text-tertiary);
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 640px) {
+        .visitor-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .visitor-item > div:first-child {
+            width: 100%;
+            margin-bottom: 12px;
+        }
+
+        .visitor-time {
+            align-self: flex-end;
+        }
+    }
+</style>
+
+{if isset($visitors) && count($visitors) > 0}
+<div id="mobile-visitors-list" class="space-y-4">
+    {volist name="visitors" id="visitor"}
+    <div class="visitor-item">
+        <a href="/card/{$visitor.visitor_id}" class="flex items-center gap-3 flex-1">
+            <img src="{$visitor.avatar|default='/static/images/default-avatar.png'}" alt="头像" class="visitor-avatar">
+            <div class="flex-1">
+                <h3 class="font-semibold text-gray-800">{$visitor.nickname|default=$visitor.username}</h3>
+                <p class="text-sm text-gray-500 truncate">{$visitor.bio|default='暂无个性签名'}</p>
+            </div>
+        </a>
+        <span class="visitor-time">访问于 {$visitor.visit_time|date='Y-m-d H:i'}</span>
+    </div>
+    {/volist}
+</div>
+{else}
+<div id="mobile-empty" class="text-center py-16">
+    <div class="w-24 h-24 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fa fa-eye text-4xl text-blue-500"></i>
+    </div>
+    <h2 class="text-xl font-bold text-gray-800 mb-2">暂无访客记录</h2>
+    <p class="text-gray-500 mb-4">多分享有趣的内容，吸引更多访客吧</p>
+    <a href="/" class="inline-block bg-primary text-white px-6 py-2 rounded-full hover:bg-secondary transition-colors">
+        发布动态
+    </a>
+</div>
+{/if}
+{/block}

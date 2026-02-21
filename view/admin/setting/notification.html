@@ -1,0 +1,56 @@
+﻿<!-- 通知消息设置 -->
+<div class="tab-content" id="notification">
+    <h3 class="text-lg font-medium text-gray-800">通知消息配置</h3>
+    <form id="notificationForm" class="space-y-6">
+        <!-- 消息渠道配置 -->
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+            <h4 class="text-md font-semibold text-gray-700 mb-4">消息渠道配置</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">站内通知</label>
+                    <select name="message_enabled" class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                        <option value="0" {if $config.message_enabled ?? 1 == 0}selected{/if}>关闭</option>
+                        <option value="1" {if $config.message_enabled ?? 1 == 1}selected{/if}>开启</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">邮件通知</label>
+                    <select name="email_notify" class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                        <option value="0" {if $config.email_notify ?? 0 == 0}selected{/if}>关闭</option>
+                        <option value="1" {if $config.email_notify ?? 0 == 1}selected{/if}>开启</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 通知类型配置 -->
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+            <h4 class="text-md font-semibold text-gray-700 mb-4">通知类型配置</h4>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-700">点赞通知</span>
+                    <input type="checkbox" name="notify_like" value="1" {if $config.notify_like ?? 1 == 1}checked{/if}>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-700">评论通知</span>
+                    <input type="checkbox" name="notify_comment" value="1" {if $config.notify_comment ?? 1 == 1}checked{/if}>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-700">关注通知</span>
+                    <input type="checkbox" name="notify_follow" value="1" {if $config.notify_follow ?? 1 == 1}checked{/if}>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-700">系统通知</span>
+                    <input type="checkbox" name="notify_system" value="1" {if $config.notify_system ?? 1 == 1}checked{/if}>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 mt-8">
+            <button type="button" onclick="saveNotification()"
+                    class="px-5 py-2.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                保存配置
+            </button>
+        </div>
+    </form>
+</div>

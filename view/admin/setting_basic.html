@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台管理系统 - 基本设置</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="/static/js/modal.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .submenu.show {
+            max-height: 500px;
+        }
+        .menu-item.active .submenu {
+            max-height: 500px;
+        }
+        .submenu li {
+            padding-left: 50px;
+            transition: all 0.3s ease;
+        }
+        .submenu li a {
+            padding: 10px 20px;
+            font-size: 0.875rem;
+        }
+        .submenu li.active a {
+            color: #60a5fa;
+            background-color: rgba(96, 165, 250, 0.1);
+        }
+        .submenu li:hover a {
+            color: #60a5fa;
+        }
+        .fa-chevron-down.rotate-180 {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php $current_active = 'setting_basic'; ?>
+    <?php include app()->getRootPath() . 'view/admin/components/sidebar.php'; ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="bg-white h-16 flex items-center justify-between px-6 shadow-sm">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">基本设置</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="bg-gray-50 flex-1 p-6 overflow-y-auto">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                {include file="admin/setting/basic" /}
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // 保存基础设置
+        function saveBasic() {
+            const form = document.getElementById('basicForm');
+            const formData = new FormData(form);
+
+            // 发送AJAX请求
+            fetch('/admin/setting/saveBasic', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 200 || data.code === 0) {
+                    // 使用美化的弹窗通知
+                    if (typeof window.modal !== 'undefined' && window.modal && typeof window.modal.show === 'function') {
+                        window.modal.show({
+                            title: '保存成功',
+                            content: '基本配置已成功保存，前端将立即生效',
+                            type: 'success',
+                            showCancel: false,
+                            onConfirm: () => {
+                                window.location.reload();
+                            }
+                        });
+                    } else {
+                        alert('保存成功!');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    }
+                } else {
+                    if (typeof window.modal !== 'undefined' && window.modal && typeof window.modal.show === 'function') {
+                        window.modal.show({
+                            title: '保存失败',
+                            content: data.msg || '未知错误',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    } else {
+                        alert('保存失败: ' + (data.msg || '未知错误'));
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (typeof window.modal !== 'undefined' && window.modal && typeof window.modal.show === 'function') {
+                    window.modal.show({
+                        title: '网络错误',
+                        content: '保存失败，请检查网络连接后重试',
+                        type: 'error',
+                        showCancel: false
+                    });
+                } else {
+                    alert('保存失败,请重试');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

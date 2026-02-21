@@ -1,0 +1,266 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="content"}
+<style>
+    .moment-card {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .delete-btn {
+        background: #F53F3F;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s;
+    }
+
+    .delete-btn:hover {
+        background: #D32F2F;
+    }
+
+    .stats-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 13px;
+        color: #666;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.3;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 20px;
+        color: #999;
+    }
+</style>
+
+<!-- 主内容区 -->
+<div class="container mx-auto px-4 py-6 max-w-4xl">
+    <!-- 顶部标题栏 -->
+    <div class="bg-white shadow-sm rounded-lg p-4 mb-6">
+        <div class="flex justify-between items-center">
+            <h1 class="text-lg font-bold text-gray-800">
+                <i class="fa fa-newspaper-o text-primary"></i>
+                我的动态
+            </h1>
+            <div class="text-sm text-gray-500" id="momentCount">0 条动态</div>
+        </div>
+    </div>
+
+    <!-- 动态列表 -->
+    <div id="momentsContainer">
+        <div class="loading">
+            <i class="fa fa-spinner fa-spin"></i> 加载中...
+        </div>
+    </div>
+</div>
+
+<script>
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    let currentPage = 1;
+    let isLoading = false;
+    let hasMore = true;
+
+    // 加载用户动态
+    async function loadMoments(page = 1, append = false) {
+        if (isLoading) return;
+        isLoading = true;
+
+        try {
+            const userId = getCookie('user_id');
+            if (!userId) {
+                window.location.href = '/login';
+                return;
+            }
+
+            const response = await fetch(`/user/moments?page=${page}&limit=20`);
+            const result = await response.json();
+
+            if (result.code === 200) {
+                const moments = result.data.list || [];
+                const total = result.data.total || 0;
+
+                // 更新动态数量
+                document.getElementById('momentCount').textContent = `${total} 条动态`;
+
+                if (moments.length === 0 && !append) {
+                    document.getElementById('momentsContainer').innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa fa-newspaper-o"></i>
+                            <p>还没有发布任何动态</p>
+                            <button onclick="location.href='/'" class="mt-4 px-6 py-2 bg-primary text-white rounded-lg">
+                                去发布动态
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                if (!append) {
+                    document.getElementById('momentsContainer').innerHTML = '';
+                }
+
+                moments.forEach(moment => {
+                    const momentCard = createMomentCard(moment);
+                    document.getElementById('momentsContainer').appendChild(momentCard);
+                });
+
+                hasMore = moments.length >= 20;
+            } else {
+                console.error('加载动态失败:', result.msg);
+                if (!append) {
+                    document.getElementById('momentsContainer').innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa fa-exclamation-circle"></i>
+                            <p>加载失败: ${result.msg}</p>
+                            <button onclick="location.reload()" class="mt-4 px-6 py-2 bg-primary text-white rounded-lg">
+                                重新加载
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        } catch (error) {
+            console.error('请求失败:', error);
+            if (!append) {
+                document.getElementById('momentsContainer').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa fa-exclamation-circle"></i>
+                        <p>网络错误，请稍后重试</p>
+                        <button onclick="location.reload()" class="mt-4 px-6 py-2 bg-primary text-white rounded-lg">
+                            重新加载
+                        </button>
+                    </div>
+                `;
+            }
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    // 创建动态卡片
+    function createMomentCard(moment) {
+        const card = document.createElement('div');
+        card.className = 'moment-card';
+
+        const createTime = new Date(moment.create_time).toLocaleString('zh-CN');
+        const content = moment.content ? moment.content.replace(/\n/g, '<br>') : '';
+
+        // 图片展示
+        let imagesHtml = '';
+        if (moment.images && moment.images.length > 0) {
+            const imageUrls = moment.images.split(',');
+            if (imageUrls.length === 1) {
+                imagesHtml = `<img src="${imageUrls[0]}" alt="图片" class="w-full max-h-80 object-cover rounded-lg mt-3">`;
+            } else {
+                imagesHtml = `<div class="grid grid-cols-3 gap-2 mt-3">`;
+                imageUrls.forEach((url, index) => {
+                    if (index < 9) {
+                        imagesHtml += `<img src="${url}" alt="图片${index + 1}" class="w-full h-32 object-cover rounded-lg cursor-pointer" onclick="window.open('${url}', '_blank')">`;
+                    }
+                });
+                imagesHtml += `</div>`;
+            }
+        }
+
+        card.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <div class="text-xs text-gray-400 mb-2">${createTime}</div>
+                    <div class="text-gray-800 mb-3">${content}</div>
+                    ${imagesHtml}
+                </div>
+                <button class="delete-btn ml-2" onclick="deleteMoment(${moment.id})">
+                    <i class="fa fa-trash"></i> 删除
+                </button>
+            </div>
+            <div class="flex gap-4 mt-3 pt-3 border-t border-gray-100">
+                <div class="stats-item">
+                    <i class="fa fa-heart-o"></i>
+                    <span>${moment.like_count || 0}</span>
+                </div>
+                <div class="stats-item">
+                    <i class="fa fa-comment-o"></i>
+                    <span>${moment.comment_count || 0}</span>
+                </div>
+                <div class="stats-item">
+                    <i class="fa fa-star-o"></i>
+                    <span>${moment.favorite_count || 0}</span>
+                </div>
+            </div>
+        `;
+
+        return card;
+    }
+
+    // 删除动态
+    async function deleteMoment(momentId) {
+        if (!confirm('确定要删除这条动态吗？')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/moments/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: momentId })
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                alert('删除成功');
+                location.reload();
+            } else {
+                alert('删除失败: ' + result.msg);
+            }
+        } catch (error) {
+            console.error('删除失败:', error);
+            alert('删除失败，请稍后重试');
+        }
+    }
+
+    // 滚动加载更多
+    window.addEventListener('scroll', () => {
+        if (!hasMore || isLoading) return;
+
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const scrollHeight = document.documentElement.scrollHeight;
+        const clientHeight = document.documentElement.clientHeight;
+
+        if (scrollTop + clientHeight >= scrollHeight - 100) {
+            currentPage++;
+            loadMoments(currentPage, true);
+        }
+    });
+
+    // 页面加载时获取动态
+    loadMoments();
+</script>
+{/block}

@@ -1,0 +1,100 @@
+﻿<!-- 右侧推荐侧边栏 - 桌面端显示 -->
+<aside class="hidden md:block w-1/5 flex-shrink-0">
+    <!-- 推荐关注卡片 -->
+    <div class="bg-bg-card rounded-xl shadow-soft p-4 mb-4">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-semibold text-text-primary">猜你喜欢</h3>
+            <a href="/discover/users" class="text-xs text-primary hover:text-darkPrimary transition-colors">查看更多</a>
+        </div>
+        <div id="right-recommended-users" class="space-y-3">
+            <div class="text-center py-4 text-text-tertiary">
+                <i class="fa fa-spinner fa-spin text-lg mb-2"></i>
+                <p class="text-xs">加载中...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 热门话题卡片 -->
+    <div class="bg-bg-card rounded-xl shadow-soft p-4 mb-4">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-semibold text-text-primary">今日热门话题</h3>
+            <a href="/discover/topics" class="text-xs text-primary hover:text-darkPrimary transition-colors">查看更多</a>
+        </div>
+        <div id="hot-topics-list" class="space-y-2">
+            <div class="text-center py-4 text-text-tertiary">
+                <i class="fa fa-spinner fa-spin text-lg mb-2"></i>
+                <p class="text-xs">加载中...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 正在进行的活动 -->
+    <div class="bg-bg-card rounded-xl shadow-soft p-4 mb-4">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-semibold text-text-primary">正在进行的活动</h3>
+            <a href="/activities" class="text-xs text-primary hover:text-darkPrimary transition-colors">全部活动</a>
+        </div>
+        <div id="active-activities-list" class="space-y-3">
+            <div class="text-center py-4 text-text-tertiary">
+                <i class="fa fa-spinner fa-spin text-lg mb-2"></i>
+                <p class="text-xs">加载中...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 在线用户 -->
+    <div class="bg-bg-card rounded-xl shadow-soft p-4">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-semibold text-text-primary flex items-center gap-2">
+                <span class="w-2 h-2 bg-success rounded-full animate-pulse"></span>
+                在线用户
+            </h3>
+            <span id="online-count" class="text-xs text-text-tertiary">0人在线</span>
+        </div>
+        <div id="online-users-list" class="flex flex-wrap gap-2">
+            <div class="text-center py-4 text-text-tertiary w-full">
+                <i class="fa fa-spinner fa-spin text-lg mb-2"></i>
+                <p class="text-xs">加载中...</p>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- 回到顶部按钮 -->
+<button id="back-to-top" onclick="scrollToTop()" class="fixed bottom-20 md:bottom-8 right-4 md:right-8 w-12 h-12 bg-bg-card shadow-lg rounded-full flex items-center justify-center text-text-secondary hover:text-primary hover:shadow-hover transition-all duration-300 z-40 hidden border border-border-color">
+    <i class="fa fa-arrow-up"></i>
+</button>
+
+<!-- 主题切换按钮 -->
+<button id="theme-toggle" onclick="toggleTheme()" class="fixed bottom-20 md:bottom-8 left-4 md:left-8 w-12 h-12 bg-bg-card shadow-lg rounded-full flex items-center justify-center text-text-secondary hover:text-primary hover:shadow-hover transition-all duration-300 z-40 hidden border border-border-color">
+    <i class="fa fa-moon-o" id="theme-icon"></i>
+</button>
+
+<!-- 手机端底部导航栏 - 仅移动端显示 -->
+<nav class="md:hidden block bg-bg-card shadow-lg fixed bottom-0 left-0 right-0 z-50 border-t border-border-color">
+    <div class="flex justify-around items-center py-3">
+        <a href="/" class="flex flex-col items-center gap-1 nav-active">
+            <i class="fa fa-home text-lg"></i>
+            <span class="text-xs">首页</span>
+        </a>
+        <a href="/discover" class="flex flex-col items-center gap-1 text-text-secondary hover:text-primary transition-colors">
+            <i class="fa fa-search text-lg"></i>
+            <span class="text-xs">发现</span>
+        </a>
+        <a href="#" id="publish-tab-btn" class="flex flex-col items-center gap-1 text-primary">
+            <div class="w-14 h-14 bg-gradient-to-br from-primary to-darkPrimary rounded-full flex items-center justify-center text-white -mt-8 shadow-soft hover:shadow-hover transition-all duration-200">
+                <i class="fa fa-plus text-2xl"></i>
+            </div>
+            <span class="text-xs mt-1">发布</span>
+        </a>
+        <a href="/message" class="flex flex-col items-center gap-1 text-text-secondary hover:text-primary transition-colors relative">
+            <i class="fa fa-comment text-lg"></i>
+            <span id="mobile-nav-unread-count" class="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden min-w-[20px] min-h-[20px]">0</span>
+            <span class="text-xs">消息</span>
+        </a>
+        <a href="/profile" class="flex flex-col items-center gap-1 text-text-secondary hover:text-primary transition-colors">
+            <i class="fa fa-user text-lg"></i>
+            <span class="text-xs">我的</span>
+        </a>
+    </div>
+</nav>

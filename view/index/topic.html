@@ -1,0 +1,298 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="page_title"}话题详情{/block}
+
+{block name="content"}
+<!-- 话题信息 -->
+<div class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft p-6 mb-6">
+    <div class="flex items-start gap-4 mb-4">
+        <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white flex-shrink-0">
+            <i class="fa fa-hashtag text-2xl" id="topic-icon"></i>
+        </div>
+        <div class="flex-1">
+            <h2 class="text-xl font-bold text-gray-800 dark:text-dark-text-primary mb-2" id="topic-name">加载中...</h2>
+            <p class="text-gray-600 dark:text-dark-text-secondary text-sm" id="topic-desc"></p>
+        </div>
+    </div>
+    <div class="flex gap-6 mb-4">
+        <div class="text-center">
+            <div class="text-2xl font-bold text-primary" id="follower-count">0</div>
+            <div class="text-xs text-gray-500">关注</div>
+        </div>
+        <div class="text-center">
+            <div class="text-2xl font-bold text-primary" id="post-count">0</div>
+            <div class="text-xs text-gray-500">动态</div>
+        </div>
+    </div>
+    <button class="w-full bg-gradient-to-r from-primary to-secondary text-white py-3 rounded-full font-medium hover:shadow-lg transition-all"
+            id="follow-btn" onclick="handleFollow()">
+        <i class="fa fa-plus mr-2"></i> 关注话题
+    </button>
+</div>
+
+<!-- 热门动态 -->
+<section class="mb-6">
+    <h3 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary mb-4 flex items-center gap-2">
+        <i class="fa fa-fire text-orange-500"></i>
+        热门动态
+    </h3>
+    <div id="moments-loading" class="text-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+    </div>
+    <div id="moments-container" class="grid grid-cols-1 md:grid-cols-2 gap-4" style="display: none;"></div>
+</section>
+
+<!-- 相关话题 -->
+<section>
+    <h3 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary mb-4 flex items-center gap-2">
+        <i class="fa fa-link text-primary"></i>
+        相关话题
+    </h3>
+    <div id="related-loading" class="text-center py-4">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+    </div>
+    <div id="related-container" class="space-y-3" style="display: none;"></div>
+</section>
+
+<script>
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg z-50';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+
+    function formatNumber(num) {
+        if (!num) return '0';
+        if (num >= 10000) return (num / 10000).toFixed(1) + 'w';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+        return num.toString();
+    }
+
+    function getTopicIcon(name) {
+        const icons = {
+            '今日热点': 'fa-hashtag',
+            '美照分享': 'fa-camera',
+            '美食探店': 'fa-utensils',
+            '旅行日记': 'fa-plane',
+            '健身打卡': 'fa-heartbeat',
+            '读书分享': 'fa-book',
+            '宠物日常': 'fa-paw',
+            '音乐分享': 'fa-music',
+            '影视推荐': 'fa-film',
+            '游戏天地': 'fa-gamepad',
+        };
+        return icons[name] || 'fa-hashtag';
+    }
+
+    function getTopicColor(index) {
+        const colors = [
+            'from-blue-500 to-cyan-500',
+            'from-purple-500 to-pink-500',
+            'from-green-500 to-teal-500',
+            'from-orange-500 to-red-500',
+            'from-indigo-500 to-blue-500',
+        ];
+        return colors[index % colors.length];
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    let currentTopic = null;
+    let isFollowingTopic = false;
+
+    // 加载话题详情
+    async function loadTopicDetail() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const topicId = urlParams.get('id');
+
+        if (!topicId) {
+            showToast('话题ID不存在');
+            return;
+        }
+
+        try {
+            const response = await fetch('/moments/getTopics', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            const result = await response.json();
+
+            if (result.code === 200 && result.data) {
+                const topic = result.data.find(t => t.id == topicId);
+                if (topic) {
+                    currentTopic = topic;
+                    renderTopicDetail(topic);
+                    loadRelatedTopics(result.data);
+                } else {
+                    showToast('话题不存在');
+                }
+            }
+        } catch (error) {
+            console.error('加载话题详情失败:', error);
+            showToast('加载失败');
+        }
+    }
+
+    // 渲染话题详情
+    function renderTopicDetail(topic) {
+        document.getElementById('topic-name').textContent = topic.name;
+        document.getElementById('topic-desc').textContent = topic.description || '暂无描述';
+        document.getElementById('follower-count').textContent = formatNumber(topic.follower_count || 0);
+        document.getElementById('post-count').textContent = formatNumber(topic.post_count || 0);
+
+        const icon = getTopicIcon(topic.name);
+        document.getElementById('topic-icon').className = `fa ${icon} text-2xl`;
+
+        checkTopicFollowStatus(topic.id);
+    }
+
+    // 检查话题关注状态
+    async function checkTopicFollowStatus(topicId) {
+        const userId = getCookie('user_id');
+        if (!userId) {
+            document.getElementById('follow-btn').innerHTML = '<i class="fa fa-plus mr-2"></i> 关注话题';
+            return;
+        }
+
+        try {
+            const response = await fetch('/moments/getUserTopics', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId })
+            });
+            const result = await response.json();
+
+            if (result.code === 200 && result.data) {
+                const followed = result.data.some(t => t.id == topicId);
+                isFollowingTopic = followed;
+                updateFollowButton();
+            }
+        } catch (error) {
+            console.error('检查关注状态失败:', error);
+        }
+    }
+
+    // 更新关注按钮
+    function updateFollowButton() {
+        const btn = document.getElementById('follow-btn');
+        if (isFollowingTopic) {
+            btn.innerHTML = '<i class="fa fa-check mr-2"></i> 已关注';
+            btn.classList.add('bg-white', 'text-primary', 'border', 'border-primary');
+            btn.classList.remove('bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white');
+        } else {
+            btn.innerHTML = '<i class="fa fa-plus mr-2"></i> 关注话题';
+            btn.classList.remove('bg-white', 'text-primary', 'border', 'border-primary');
+            btn.classList.add('bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white');
+        }
+    }
+
+    // 处理关注/取消关注
+    async function handleFollow() {
+        const userId = getCookie('user_id');
+        if (!userId) {
+            showToast('请先登录');
+            window.location.href = '/login';
+            return;
+        }
+
+        if (!currentTopic) return;
+
+        try {
+            const response = await fetch('/moments/toggleTopicFollow', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: userId,
+                    topic_id: currentTopic.id
+                })
+            });
+            const result = await response.json();
+
+            if (result.code === 200) {
+                isFollowingTopic = result.data.following;
+                updateFollowButton();
+                showToast(result.msg);
+
+                const countEl = document.getElementById('follower-count');
+                const currentCount = parseInt(countEl.textContent);
+                countEl.textContent = formatNumber(isFollowingTopic ? currentCount + 1 : Math.max(0, currentCount - 1));
+            } else {
+                showToast(result.msg || '操作失败');
+            }
+        } catch (error) {
+            console.error('关注操作失败:', error);
+            showToast('操作失败，请重试');
+        }
+    }
+
+    // 加载相关话题
+    function loadRelatedTopics(allTopics) {
+        const relatedLoading = document.getElementById('related-loading');
+        const container = document.getElementById('related-container');
+
+        relatedLoading.style.display = 'none';
+        container.style.display = 'block';
+
+        const relatedTopics = allTopics
+            .filter(t => t.id !== currentTopic.id)
+            .slice(0, 5);
+
+        if (relatedTopics.length > 0) {
+            container.innerHTML = relatedTopics.map((topic, index) => {
+                const color = getTopicColor(index);
+                const icon = getTopicIcon(topic.name);
+                return `
+                    <a href="/topic?id=${topic.id}" class="bg-white dark:bg-dark-bg-card rounded-lg shadow-sm p-4 flex items-center hover:shadow-md transition-shadow">
+                        <div class="w-12 h-12 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center text-white mr-3 flex-shrink-0">
+                            <i class="fa ${icon}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium text-gray-800 dark:text-dark-text-primary">${escapeHtml(topic.name)}</div>
+                            <div class="text-sm text-gray-500">
+                                ${formatNumber(topic.post_count || 0)} 动态 · ${formatNumber(topic.follower_count || 0)} 关注
+                            </div>
+                        </div>
+                        <i class="fa fa-chevron-right text-gray-400"></i>
+                    </a>
+                `;
+            }).join('');
+        } else {
+            container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">暂无相关话题</p>';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadTopicDetail();
+
+        setTimeout(() => {
+            document.getElementById('moments-loading').style.display = 'none';
+            document.getElementById('moments-container').style.display = 'grid';
+            document.getElementById('moments-container').innerHTML = `
+                <div class="bg-white dark:bg-dark-bg-card rounded-lg shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onclick="location.href='/'">
+                    <div class="h-32 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                        <i class="fa fa-image text-3xl text-gray-400"></i>
+                    </div>
+                    <div class="p-3">
+                        <p class="text-sm text-gray-600 dark:text-dark-text-secondary line-clamp-2">示例动态内容...</p>
+                        <div class="text-xs text-gray-400 mt-2">暂无动态</div>
+                    </div>
+                </div>
+            `;
+        }, 500);
+    });
+</script>
+{/block}

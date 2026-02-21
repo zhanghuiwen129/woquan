@@ -1,0 +1,39 @@
+﻿<!-- 抖音式评论组件 HTML 模板 -->
+
+<!-- 评论按钮 -->
+<button class="douyin-comment-btn" data-moment-id="{{momentId}}">
+    <i class="fa fa-comment-o"></i>
+    <span>{{commentCount}}</span>
+</button>
+
+<!-- 评论区蒙层 -->
+<div class="douyin-comment-mask"></div>
+
+<!-- 评论区弹窗 -->
+<div class="douyin-comment-box">
+    <!-- 头部 -->
+    <div class="douyin-comment-header">
+        <button class="douyin-expand-btn" id="douyin-expand-btn">
+            <i class="fa fa-expand"></i>
+        </button>
+    </div>
+
+    <!-- 评论列表 -->
+    <div class="douyin-comment-list" id="douyin-comment-list"></div>
+    <div id="douyin-comment-more"></div>
+
+    <!-- 底部输入框 -->
+    <div class="douyin-comment-footer">
+        <div class="douyin-input-wrap">
+            <button class="douyin-cancel-reply" id="douyin-cancel-reply">取消回复</button>
+            <div class="douyin-input" id="douyin-input" contenteditable="true" placeholder="说点什么..." maxlength="500"></div>
+            <button class="douyin-send-btn" id="douyin-send-btn">发送</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('douyin-send-btn').addEventListener('click', () => {
+    window.douyinComment.submitComment();
+});
+</script>

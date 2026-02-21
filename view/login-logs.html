@@ -1,0 +1,197 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录记录 - 我圈社交平台</title>
+    <link rel="stylesheet" href="/static/fontawesome.css">
+    <link rel="stylesheet" href="/profile-common.css">
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="header">
+        <a href="/profile" class="back-btn">
+            <i class="fa fa-arrow-left"></i>
+        </a>
+        <h1 class="title">登录记录</h1>
+        <div style="width: 44px;"></div>
+    </header>
+
+    <!-- 内容区域 -->
+    <main class="content">
+        <!-- 当前设备卡片 -->
+        <div class="card" style="padding: 24px; margin-bottom: 24px; background: linear-gradient(135deg, var(--primary-color) 0%, #4080FF 100%); color: white;">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                    <i class="fa fa-laptop"></i>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">当前设备</div>
+                    <div style="font-size: 18px; font-weight: 600; margin-bottom: 4px;">Chrome 浏览器</div>
+                    <div style="font-size: 14px; opacity: 0.9;">北京市 • 202.106.0.1</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 登录历史列表 -->
+        <div id="login-logs">
+            <!-- 登录记录 1 -->
+            <div class="card" style="padding: 16px 20px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: flex-start; gap: 16px;">
+                    <div class="icon-circle green" style="width: 44px; height: 44px; font-size: 18px;">
+                        <i class="fa fa-check-circle"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 15px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px;">
+                            登录成功
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">
+                            <i class="fa fa-desktop" style="margin-right: 6px;"></i>
+                            Windows 10 Chrome 浏览器
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted);">
+                            北京市 • 202.106.0.1 • 2026-01-15 10:30
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 登录记录 2 -->
+            <div class="card" style="padding: 16px 20px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: flex-start; gap: 16px;">
+                    <div class="icon-circle red" style="width: 44px; height: 44px; font-size: 18px;">
+                        <i class="fa fa-times-circle"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 15px; font-weight: 500; color: var(--danger); margin-bottom: 6px;">
+                            登录失败
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">
+                            <i class="fa fa-mobile" style="margin-right: 6px;"></i>
+                            iPhone 14 Safari 浏览器
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted);">
+                            上海市 • 180.123.45.67 • 2026-01-14 22:15
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 登录记录 3 -->
+            <div class="card" style="padding: 16px 20px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: flex-start; gap: 16px;">
+                    <div class="icon-circle green" style="width: 44px; height: 44px; font-size: 18px;">
+                        <i class="fa fa-check-circle"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 15px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px;">
+                            登录成功
+                            <span class="badge badge-new" style="font-size: 11px; padding: 2px 8px; margin-left: 8px;">异地</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">
+                            <i class="fa fa-desktop" style="margin-right: 6px;"></i>
+                            Mac OS Chrome 浏览器
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted);">
+                            广州市 • 113.240.0.1 • 2026-01-13 08:45
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 登录记录 4 -->
+            <div class="card" style="padding: 16px 20px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: flex-start; gap: 16px;">
+                    <div class="icon-circle green" style="width: 44px; height: 44px; font-size: 18px;">
+                        <i class="fa fa-check-circle"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 15px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px;">
+                            登录成功
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">
+                            <i class="fa fa-laptop" style="margin-right: 6px;"></i>
+                            Windows 11 Chrome 浏览器
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted);">
+                            北京市 • 202.106.0.1 • 2026-01-12 16:20
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 登录记录 5 -->
+            <div class="card" style="padding: 16px 20px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: flex-start; gap: 16px;">
+                    <div class="icon-circle green" style="width: 44px; height: 44px; font-size: 18px;">
+                        <i class="fa fa-check-circle"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 15px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px;">
+                            登录成功
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">
+                            <i class="fa fa-mobile" style="margin-right: 6px;"></i>
+                            Android Chrome 浏览器
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted);">
+                            深圳市 • 183.60.0.1 • 2026-01-10 09:30
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 加载更多 -->
+        <div class="load-more">
+            <button class="btn btn-outline" onclick="loadMore()">
+                加载更多
+            </button>
+        </div>
+    </main>
+
+    <!-- 底部导航 -->
+    <nav class="bottom-nav">
+        <a href="/" class="nav-item">
+            <i class="fa fa-home"></i>
+            <span>首页</span>
+        </a>
+        <a href="/discover" class="nav-item">
+            <i class="fa fa-compass"></i>
+            <span>发现</span>
+        </a>
+        <a href="/message" class="nav-item">
+            <i class="fa fa-comment"></i>
+            <span>消息</span>
+        </a>
+        <a href="/profile" class="nav-item active">
+            <i class="fa fa-user"></i>
+            <span>我的</span>
+        </a>
+    </nav>
+
+    <script>
+        // 加载更多
+        function loadMore() {
+            showToast('加载中...');
+            setTimeout(() => {
+                showToast('没有更多记录了');
+            }, 1000);
+        }
+
+        // 显示Toast提示
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -50%) scale(0.95)';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

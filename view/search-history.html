@@ -1,0 +1,225 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索历史 - 我圈社交平台</title>
+    <link rel="stylesheet" href="/static/fontawesome.css">
+    <link rel="stylesheet" href="/profile-common.css">
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <header class="header">
+        <a href="/profile" class="back-btn">
+            <i class="fa fa-arrow-left"></i>
+        </a>
+        <h1 class="title">搜索历史</h1>
+        <div style="width: 44px;"></div>
+    </header>
+
+    <!-- 内容区域 -->
+    <main class="content">
+        <!-- 搜索框 -->
+        <div class="search-box">
+            <i class="fa fa-search"></i>
+            <input type="text" id="search-input" placeholder="搜索内容..." onkeydown="if(event.key==='Enter') doSearch()">
+        </div>
+
+        <!-- 热门搜索 -->
+        <div class="card" style="padding: 20px; margin-bottom: 20px;">
+            <h3 class="section-title">热门搜索</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <span class="badge badge-success" style="font-size: 13px; padding: 6px 14px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('search-input').value='我圈社交平台';doSearch()">
+                    我圈社交平台
+                </span>
+                <span class="badge badge-success" style="font-size: 13px; padding: 6px 14px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('search-input').value='社交平台';doSearch()">
+                    社交平台
+                </span>
+                <span class="badge badge-new" style="font-size: 13px; padding: 6px 14px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('search-input').value='朋友圈';doSearch()">
+                    朋友圈
+                    <span style="font-size: 10px; margin-left: 4px; opacity: 0.7;">热</span>
+                </span>
+                <span class="badge badge-success" style="font-size: 13px; padding: 6px 14px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('search-input').value='生活方式';doSearch()">
+                    生活方式
+                </span>
+                <span class="badge badge-success" style="font-size: 13px; padding: 6px 14px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('search-input').value='旅行';doSearch()">
+                    旅行
+                </span>
+                <span class="badge badge-new" style="font-size: 13px; padding: 6px 14px; cursor: pointer; transition: all 0.2s;" onclick="document.getElementById('search-input').value='美食分享';doSearch()">
+                    美食分享
+                    <span style="font-size: 10px; margin-left: 4px; opacity: 0.7;">新</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- 搜索历史 -->
+        <div id="history-list">
+            <h3 class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>搜索历史</span>
+                <span style="font-size: 13px; color: var(--text-secondary); cursor: pointer;" onclick="clearHistory()">
+                    清空
+                </span>
+            </h3>
+
+            <!-- 历史记录项 -->
+            <div class="card" style="padding: 16px 20px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                <div class="icon-circle" style="width: 40px; height: 40px; font-size: 16px;">
+                    <i class="fa fa-clock"></i>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size: 15px; color: var(--text-primary);">我圈社交平台更新</div>
+                    <div style="font-size: 13px; color: var(--text-muted);">10分钟前</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary btn-sm" onclick="document.getElementById('search-input').value='我圈社交平台更新';doSearch()">搜索</button>
+                    <button class="btn btn-outline btn-sm" onclick="deleteHistory(this)" style="padding: 6px 12px;">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 16px 20px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                <div class="icon-circle" style="width: 40px; height: 40px; font-size: 16px;">
+                    <i class="fa fa-clock"></i>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size: 15px; color: var(--text-primary);">旅行攻略</div>
+                    <div style="font-size: 13px; color: var(--text-muted);">1小时前</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary btn-sm" onclick="document.getElementById('search-input').value='旅行攻略';doSearch()">搜索</button>
+                    <button class="btn btn-outline btn-sm" onclick="deleteHistory(this)" style="padding: 6px 12px;">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 16px 20px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                <div class="icon-circle" style="width: 40px; height: 40px; font-size: 16px;">
+                    <i class="fa fa-clock"></i>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size: 15px; color: var(--text-primary);">美食推荐</div>
+                    <div style="font-size: 13px; color: var(--text-muted);">3小时前</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary btn-sm" onclick="document.getElementById('search-input').value='美食推荐';doSearch()">搜索</button>
+                    <button class="btn btn-outline btn-sm" onclick="deleteHistory(this)" style="padding: 6px 12px;">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 16px 20px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                <div class="icon-circle" style="width: 40px; height: 40px; font-size: 16px;">
+                    <i class="fa fa-clock"></i>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size: 15px; color: var(--text-primary);">科技资讯</div>
+                    <div style="font-size: 13px; color: var(--text-muted);">昨天</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary btn-sm" onclick="document.getElementById('search-input').value='科技资讯';doSearch()">搜索</button>
+                    <button class="btn btn-outline btn-sm" onclick="deleteHistory(this)" style="padding: 6px 12px;">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 16px 20px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                <div class="icon-circle" style="width: 40px; height: 40px; font-size: 16px;">
+                    <i class="fa fa-clock"></i>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size: 15px; color: var(--text-primary);">健身教程</div>
+                    <div style="font-size: 13px; color: var(--text-muted);">2天前</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-primary btn-sm" onclick="document.getElementById('search-input').value='健身教程';doSearch()">搜索</button>
+                    <button class="btn btn-outline btn-sm" onclick="deleteHistory(this)" style="padding: 6px 12px;">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部导航 -->
+    <nav class="bottom-nav">
+        <a href="/" class="nav-item">
+            <i class="fa fa-home"></i>
+            <span>首页</span>
+        </a>
+        <a href="/discover" class="nav-item">
+            <i class="fa fa-compass"></i>
+            <span>发现</span>
+        </a>
+        <a href="/message" class="nav-item">
+            <i class="fa fa-comment"></i>
+            <span>消息</span>
+        </a>
+        <a href="/profile" class="nav-item active">
+            <i class="fa fa-user"></i>
+            <span>我的</span>
+        </a>
+    </nav>
+
+    <script>
+        // 执行搜索
+        function doSearch() {
+            const query = document.getElementById('search-input').value.trim();
+            if (!query) {
+                showToast('请输入搜索内容');
+                return;
+            }
+            
+            showToast(`搜索：${query}`);
+            // 跳转到搜索页面
+            window.location.href = `/search?q=${encodeURIComponent(query)}`;
+        }
+
+        // 删除单条历史
+        function deleteHistory(btn) {
+            if (confirm('确定要删除这条搜索历史吗？')) {
+                const card = btn.closest('.card');
+                card.style.transform = 'translateX(100%)';
+                card.style.opacity = '0';
+                setTimeout(() => {
+                    card.remove();
+                    showToast('已删除');
+                }, 300);
+            }
+        }
+
+        // 清空所有历史
+        function clearHistory() {
+            if (confirm('确定要清空所有搜索历史吗？')) {
+                const historyList = document.getElementById('history-list');
+                const cards = historyList.querySelectorAll('.card');
+                cards.forEach(card => {
+                    card.style.transform = 'translateX(100%)';
+                    card.style.opacity = '0';
+                });
+                setTimeout(() => {
+                    cards.forEach(card => card.remove());
+                    showToast('已清空历史');
+                }, 300);
+            }
+        }
+
+        // 显示Toast提示
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -50%) scale(0.95)';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

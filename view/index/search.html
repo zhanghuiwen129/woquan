@@ -1,0 +1,174 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="page_title"}搜索{/block}
+
+{block name="content"}
+<!-- 搜索框 -->
+<div class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft p-4 mb-4">
+    <div class="flex items-center gap-3">
+        <div class="flex-1 relative">
+            <input type="text" id="search-input" placeholder="搜索动态、用户、话题..."
+                   class="w-full py-3 pl-10 pr-4 rounded-xl border border-gray-200 dark:border-dark-border-color bg-gray-50 dark:bg-dark-bg-main text-gray-800 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                   onkeypress="if(event.key==='Enter')performSearch()">
+            <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        </div>
+        <button onclick="performSearch()"
+                class="bg-gradient-to-r from-primary to-secondary text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all">
+            搜索
+        </button>
+    </div>
+</div>
+
+<!-- 热门搜索 -->
+<div class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft p-4 mb-4">
+    <h3 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary mb-4 flex items-center gap-2">
+        <i class="fa fa-fire text-orange-500"></i>
+        热门搜索
+    </h3>
+    <div class="flex flex-wrap gap-2" id="hot-search-container">
+        <span class="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-2 rounded-full text-sm cursor-pointer hover:shadow-md transition-shadow"
+              onclick="searchFor('周末去哪儿')">👑 周末去哪儿</span>
+        <span class="bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              onclick="searchFor('自制美食')">🍳 自制美食</span>
+        <span class="bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              onclick="searchFor('健身打卡')">💪 健身打卡</span>
+        <span class="bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              onclick="searchFor('旅行日记')">✈️ 旅行日记</span>
+        <span class="bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              onclick="searchFor('宠物日常')">🐱 宠物日常</span>
+        <span class="bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              onclick="searchFor('读书分享')">📚 读书分享</span>
+    </div>
+</div>
+
+<!-- 搜索历史 -->
+<div class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft p-4 mb-4">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary flex items-center gap-2">
+            <i class="fa fa-history text-primary"></i>
+            搜索历史
+        </h3>
+        <button onclick="clearHistory()" class="text-sm text-gray-500 hover:text-primary transition-colors">
+            <i class="fa fa-trash"></i> 清空
+        </button>
+    </div>
+    <div id="history-list" class="flex flex-wrap gap-2"></div>
+</div>
+
+<!-- 搜索结果 -->
+<div id="search-results" style="display: none;" class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft p-4">
+    <h3 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary mb-4">搜索结果</h3>
+    <div id="results-container"></div>
+</div>
+
+<script>
+    function searchFor(keyword) {
+        document.getElementById('search-input').value = keyword;
+        performSearch();
+    }
+
+    function performSearch() {
+        const keyword = document.getElementById('search-input').value.trim();
+        if (!keyword) {
+            alert('请输入搜索关键词');
+            return;
+        }
+
+        // 保存搜索历史
+        saveHistory(keyword);
+
+        // 显示搜索结果
+        document.getElementById('search-results').style.display = 'block';
+
+        const resultsContainer = document.getElementById('results-container');
+        resultsContainer.innerHTML = `
+            <div class="text-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p class="text-gray-500 mt-2">搜索中...</p>
+            </div>
+        `;
+
+        // 模拟搜索结果（实际应该调用API）
+        setTimeout(() => {
+            resultsContainer.innerHTML = `
+                <div class="border-b border-gray-100 dark:border-dark-border-color pb-4 mb-4 last:border-0 last:pb-0 last:mb-0">
+                    <div class="flex items-start gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-bg-main p-2 rounded-lg transition-colors"
+                          onclick="location.href='/?q=${encodeURIComponent(keyword)}'">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white flex-shrink-0">
+                            <i class="fa fa-file-text"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium text-gray-800 dark:text-dark-text-primary mb-1">${keyword}相关的动态</div>
+                            <div class="text-sm text-gray-500">找到相关动态</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="border-b border-gray-100 dark:border-dark-border-color pb-4 mb-4 last:border-0 last:pb-0 last:mb-0">
+                    <div class="flex items-start gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-bg-main p-2 rounded-lg transition-colors"
+                          onclick="location.href='/topic?q=${encodeURIComponent(keyword)}'">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white flex-shrink-0">
+                            <i class="fa fa-hashtag"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium text-gray-800 dark:text-dark-text-primary mb-1">#${keyword}</div>
+                            <div class="text-sm text-gray-500">话题 · 查看相关内容</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-bg-main p-2 rounded-lg transition-colors"
+                      onclick="location.href='/user?q=${encodeURIComponent(keyword)}'">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-white flex-shrink-0">
+                            <i class="fa fa-user"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium text-gray-800 dark:text-dark-text-primary mb-1">${keyword}相关的用户</div>
+                            <div class="text-sm text-gray-500">用户 · 查看相关用户</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }, 500);
+    }
+
+    function saveHistory(keyword) {
+        let history = JSON.parse(localStorage.getItem('search_history') || '[]');
+        history = history.filter(item => item !== keyword);
+        history.unshift(keyword);
+        history = history.slice(0, 20);
+        localStorage.setItem('search_history', JSON.stringify(history));
+        updateHistoryDisplay();
+    }
+
+    function clearHistory() {
+        if (confirm('确定要清空搜索历史吗？')) {
+            localStorage.removeItem('search_history');
+            updateHistoryDisplay();
+        }
+    }
+
+    function updateHistoryDisplay() {
+        const history = JSON.parse(localStorage.getItem('search_history') || '[]');
+        const historyList = document.getElementById('history-list');
+
+        if (history.length === 0) {
+            historyList.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fa fa-search text-3xl mb-2 opacity-50"></i>
+                    <p class="text-sm">暂无搜索历史</p>
+                </div>
+            `;
+        } else {
+            historyList.innerHTML = history.map(item => `
+                <span class="bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                      onclick="searchFor('${item}')">
+                    <i class="fa fa-clock text-xs opacity-70"></i>
+                    ${item}
+                </span>
+            `).join('');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', updateHistoryDisplay);
+</script>
+{/block}

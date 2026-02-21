@@ -1,0 +1,259 @@
+{extend name="index/main-layout" /}
+
+{block name="content"}
+<style>
+    .article-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s;
+        margin-bottom: 16px;
+        cursor: pointer;
+    }
+    .article-card:hover {
+        box-shadow: 0 4px 16px rgba(74, 144, 226, 0.15);
+        transform: translateY(-2px);
+    }
+    .filter-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        display: flex;
+        gap: 12px;
+    }
+</style>
+
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold">文章列表</h1>
+            <a href="/articles/publish" class="px-4 py-2 bg-blue-500 text-white rounded-lg">写文章</a>
+        </div>
+
+        <div class="filter-bar">
+            <select id="categoryFilter" class="border rounded px-3 py-2">
+                <option value="">全部分类</option>
+            </select>
+            <input type="text" id="searchInput" class="border rounded px-3 py-2 flex-1" placeholder="搜索文章...">
+        </div>
+
+        <div id="articlesContainer">
+            <div class="text-center py-16">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                <p class="text-gray-500 mt-4">加载中...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{/block}
+
+{block name="contentMobile"}
+<div class="px-4 py-6">
+    <div class="flex items-center justify-between mb-4">
+        <h1 class="text-xl font-bold">文章列表</h1>
+        <a href="/articles/publish" class="px-3 py-1 bg-blue-500 text-white rounded text-sm">写文章</a>
+    </div>
+    <div class="mb-4">
+        <input type="text" id="searchInputMobile" class="w-full p-2 border rounded" placeholder="搜索文章...">
+    </div>
+    <div id="articlesContainerMobile">
+        <div class="text-center py-16">
+            <p class="text-gray-500">加载中...</p>
+        </div>
+    </div>
+</div>
+{/block}
+
+{block name="script"}
+<script>
+    let currentPage = 1;
+    let hasMore = true;
+    let isLoading = false;
+    let currentCategory = '';
+    let currentKeyword = '';
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text || '';
+        return div.innerHTML;
+    }
+
+    function formatDate(timestamp) {
+        const date = new Date(timestamp * 1000);
+        return date.toLocaleDateString('zh-CN');
+    }
+
+    async function loadCategories() {
+        try {
+            const response = await fetch('/api/articles/categories');
+            const result = await response.json();
+
+            if (result.code === 200) {
+                const categorySelect = document.getElementById('categoryFilter');
+                if (categorySelect) {
+                    const options = result.data.map(function(cat) {
+                        return '<option value="' + cat.id + '">' + escapeHtml(cat.name) + '</option>';
+                    }).join('');
+                    categorySelect.innerHTML = '<option value="">全部分类</option>' + options;
+                }
+            }
+        } catch (error) {
+            console.error('加载分类失败:', error);
+        }
+    }
+
+    async function loadArticles() {
+        if (isLoading) return;
+        isLoading = true;
+
+        try {
+            let url = '/api/articles?page=' + currentPage + '&limit=10';
+            if (currentCategory) {
+                url += '&category_id=' + currentCategory;
+            }
+            if (currentKeyword) {
+                url += '&keyword=' + encodeURIComponent(currentKeyword);
+            }
+
+            const response = await fetch(url);
+            const result = await response.json();
+
+            const container = document.getElementById('articlesContainer');
+            const containerMobile = document.getElementById('articlesContainerMobile');
+
+            if (result.code === 200) {
+                const articles = result.data.list || [];
+                
+                const html = articles.map(function(article) {
+                    const isCurrentUser = article.user_id === (window.currentUserId || 0);
+                    const actionsHtml = isCurrentUser ?
+                        '<button onclick="event.stopPropagation(); editArticle(' + article.id + ')" class="px-3 py-1 bg-blue-500 text-white rounded text-sm mr-2">编辑</button>' +
+                        '<button onclick="event.stopPropagation(); deleteArticle(' + article.id + ')" class="px-3 py-1 bg-red-500 text-white rounded text-sm">删除</button>'
+                        : '';
+
+                    const categoryBadge = article.category_name ?
+                        '<span class="inline-block px-2 py-1 bg-blue-100 text-blue-600 rounded text-xs mr-2">' + escapeHtml(article.category_name) + '</span>'
+                        : '';
+
+                    return '<div class="article-card" onclick="location.href=\'/articles/' + article.id + '\'">' +
+                        '<div class="flex justify-between items-start">' +
+                        '<div class="flex-1">' +
+                        '<div class="flex items-center mb-2">' +
+                        '<h3 class="text-lg font-semibold mr-2">' + escapeHtml(article.title) + '</h3>' +
+                        categoryBadge +
+                        '</div>' +
+                        '<p class="text-gray-600 mb-3">' + escapeHtml(article.summary || '') + '</p>' +
+                        '<div class="text-gray-400 text-sm flex items-center">' +
+                        '<span class="mr-4"><i class="fa fa-eye"></i> ' + (article.views || 0) + '</span>' +
+                        '<span class="mr-4"><i class="fa fa-heart"></i> ' + (article.likes || 0) + '</span>' +
+                        '<span class="mr-4"><i class="fa fa-comment"></i> ' + (article.comments || 0) + '</span>' +
+                        '<span class="mr-4"><i class="fa fa-star"></i> ' + (article.collections || 0) + '</span>' +
+                        '<span><i class="fa fa-clock"></i> ' + formatDate(article.create_time) + '</span>' +
+                        '</div>' +
+                        '</div>' +
+                        (actionsHtml ? '<div class="ml-4">' + actionsHtml + '</div>' : '') +
+                        '</div>' +
+                        '</div>';
+                }).join('');
+
+                if (container) container.innerHTML = html;
+                if (containerMobile) containerMobile.innerHTML = html;
+
+                if (articles.length === 0) {
+                    const emptyHtml = '<div class="text-center py-16"><p class="text-gray-500">暂无文章</p></div>';
+                    if (container) container.innerHTML = emptyHtml;
+                    if (containerMobile) containerMobile.innerHTML = emptyHtml;
+                }
+            }
+        } catch (error) {
+            console.error('加载失败:', error);
+            const errorHtml = '<div class="text-center py-16"><p class="text-gray-500">加载失败</p></div>';
+            const container = document.getElementById('articlesContainer');
+            const containerMobile = document.getElementById('articlesContainerMobile');
+            if (container) container.innerHTML = errorHtml;
+            if (containerMobile) containerMobile.innerHTML = errorHtml;
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    function editArticle(articleId) {
+        location.href = '/articles/edit/' + articleId;
+    }
+
+    async function deleteArticle(articleId) {
+        if (!confirm('确定要删除这篇文章吗？')) return;
+
+        try {
+            const response = await fetch('/api/articles/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: articleId })
+            });
+            const result = await response.json();
+
+            if (result.code === 200) {
+                alert('删除成功');
+                loadArticles();
+            } else {
+                alert('删除失败: ' + result.msg);
+            }
+        } catch (error) {
+            console.error('删除失败:', error);
+            alert('删除失败，请稍后重试');
+        }
+    }
+
+    async function loadUserId() {
+        try {
+            const response = await fetch('/api/user/info');
+            const result = await response.json();
+            if (result.code === 200) {
+                window.currentUserId = result.data.id;
+            }
+        } catch (error) {
+            console.error('获取用户信息失败:', error);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadUserId();
+        loadCategories();
+        loadArticles();
+
+        const categoryFilter = document.getElementById('categoryFilter');
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', function() {
+                currentCategory = this.value;
+                currentPage = 1;
+                loadArticles();
+            });
+        }
+
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    currentKeyword = this.value.trim();
+                    currentPage = 1;
+                    loadArticles();
+                }
+            });
+        }
+
+        const searchInputMobile = document.getElementById('searchInputMobile');
+        if (searchInputMobile) {
+            searchInputMobile.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    currentKeyword = this.value.trim();
+                    currentPage = 1;
+                    loadArticles();
+                }
+            });
+        }
+    });
+</script>
+{/block}

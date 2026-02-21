@@ -1,0 +1,51 @@
+﻿<!-- 站点运行设置 -->
+<div class="tab-content" id="site">
+    <h3 class="text-lg font-medium text-gray-800 mb-6">站点运行配置</h3>
+    <form id="siteForm" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">站点状态</label>
+                <select name="site_status" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                    <option value="0" {if $config.site_status ?? 0 == 0}selected{/if}>正常运行</option>
+                    <option value="1" {if $config.site_status ?? 0 == 1}selected{/if}>维护中</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">系统时区</label>
+                <select name="site_timezone" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                    <option value="Asia/Shanghai" {if $config.site_timezone ?? 'Asia/Shanghai' == 'Asia/Shanghai'}selected{/if}>东八区 (Asia/Shanghai)</option>
+                    <option value="Asia/Hong_Kong" {if $config.site_timezone ?? 'Asia/Shanghai' == 'Asia/Hong_Kong'}selected{/if}>东八区 (Asia/Hong_Kong)</option>
+                    <option value="Asia/Taipei" {if $config.site_timezone ?? 'Asia/Shanghai' == 'Asia/Taipei'}selected{/if}>东八区 (Asia/Taipei)</option>
+                </select>
+            </div>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-500 mb-2">主域名</label>
+            <input type="text" name="site_domain" value="{$config.site_domain ?? ''}"
+                   class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+            <label class="block text-sm text-gray-500 mb-2">静态资源域名</label>
+            <input type="text" name="static_domain" value="{$config.static_domain ?? ''}"
+                   class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+            <p class="text-xs text-gray-500 mt-2">图片、CSS、JS等静态资源使用的独立域名</p>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-500 mb-2">维护文案</label>
+            <textarea name="maintenance_text"
+                      class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500" rows="3">{$config.maintenance_text ?? ''}</textarea>
+            <p class="text-xs text-gray-500 mt-2">维护状态下显示的文案</p>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-500 mb-2">预计恢复时间</label>
+            <input type="datetime-local" name="maintenance_end" value="{$config.maintenance_end ?? ''}"
+                   class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+        </div>
+        <div class="flex items-center gap-4 mt-8">
+            <button type="button" onclick="saveSite()"
+                    class="px-5 py-2.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                保存配置
+            </button>
+        </div>
+    </form>
+</div>

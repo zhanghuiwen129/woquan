@@ -1,0 +1,213 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑用户资料 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <!-- 引入统一弹窗组件 -->
+    <script src="/static/js/modal.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        modern: {
+                            dark: '#1F2937',
+                            light: '#F9FAFB',
+                            primary: '#3B82F6',
+                            secondary: '#6366F1',
+                            gray: '#4B5563',
+                            lightGray: '#E5E7EB',
+                            darkGray: '#374151',
+                            white: '#FFFFFF',
+                            success: '#10B981',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'user';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">编辑用户资料</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-8">
+                <h2 class="text-2xl font-semibold text-modern-dark">编辑用户资料</h2>
+                <p class="text-modern-gray mt-2">修改用户的个人信息</p>
+            </div>
+
+            <!-- 表单 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                <form id="userForm" action="/admin/user/update" method="post" class="space-y-6">
+                    <input type="hidden" name="id" value="{$user.id}">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- 用户名 -->
+                        <div>
+                            <label for="username" class="block text-sm text-modern-gray mb-2">用户名</label>
+                            <input type="text" id="username" name="username" value="{$user.username}" 
+                                   class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary" required>
+                        </div>
+                        
+                        <!-- 邮箱 -->
+                        <div>
+                            <label for="email" class="block text-sm text-modern-gray mb-2">邮箱</label>
+                            <input type="email" id="email" name="email" value="{$user.email}" 
+                                   class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary">
+                        </div>
+                        
+                        <!-- 手机号 -->
+                        <div>
+                            <label for="mobile" class="block text-sm text-modern-gray mb-2">手机号</label>
+                            <input type="text" id="mobile" name="mobile" value="{$user.mobile}" 
+                                   class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary">
+                        </div>
+                        
+                        <!-- 用户状态 -->
+                        <div>
+                            <label for="status" class="block text-sm text-modern-gray mb-2">用户状态</label>
+                            <select id="status" name="status"
+                                    class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary">
+                                <option value="1" <?php echo ($user['status'] ?? 1) == 1 ? 'selected' : ''; ?>>正常</option>
+                                <option value="0" <?php echo ($user['status'] ?? 1) == 0 ? 'selected' : ''; ?>>禁用</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- 保存按钮 -->
+                    <div class="flex items-center gap-4">
+                        <button type="submit" class="px-6 py-3 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors">
+                            <i class="fa-solid fa-save mr-2"></i>保存修改
+                        </button>
+                        <a href="/admin/user" class="px-6 py-3 bg-modern-gray text-white rounded-md hover:bg-modern-darkGray transition-colors">
+                            <i class="fa-solid fa-arrow-left mr-2"></i>返回列表
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 表单提交处理
+        document.getElementById('userForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/admin/user/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (result.code === 200) {
+                    modal.show({
+                        title: '成功提示',
+                        content: '用户资料更新成功',
+                        type: 'success',
+                        showCancel: false,
+                        onConfirm: function() {
+                            window.location.href = '/admin/user';
+                        }
+                    });
+                } else {
+                    modal.show({
+                        title: '错误提示',
+                        content: result.msg,
+                        type: 'error',
+                        showCancel: false
+                    });
+                }
+            } catch (error) {
+                modal.show({
+                    title: '错误提示',
+                    content: '操作失败',
+                    type: 'error',
+                    showCancel: false
+                });
+            }
+        });
+    </script>
+</body>
+</html>

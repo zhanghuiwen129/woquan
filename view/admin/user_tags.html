@@ -1,0 +1,342 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>用户标签管理 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">用户标签管理</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        管理用户标签
+    </p>
+</div>
+
+<!-- 操作按钮区域 -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="flex items-center gap-4">
+        <button onclick="openAddModal()" class="px-5 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern flex items-center gap-2">
+            <i class="fas fa-plus"></i>
+            <span>新增标签</span>
+        </button>
+        <button onclick="batchDelete()" class="px-5 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center gap-2">
+            <i class="fas fa-trash"></i>
+            <span>批量删除</span>
+        </button>
+    </div>
+    <div class="flex items-center gap-4">
+        <input type="text" id="searchKeyword" placeholder="搜索标签名称..." class="px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+        <button onclick="search()" class="px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md hover:border-modern-primary transition-colors">
+            <i class="fas fa-search"></i>
+        </button>
+    </div>
+</div>
+
+<!-- 标签列表卡片 -->
+<div class="card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                    <th class="py-4 px-2 w-[40px]">
+                        <input type="checkbox" id="selectAll" class="rounded text-modern-primary focus:ring-modern-primary">
+                    </th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">ID</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">标签名称</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">标签颜色</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">标签描述</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">创建时间</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tagList" class="divide-y divide-modern-lightGray">
+                {if empty($tags)}
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-modern-gray">暂无标签数据</td>
+                </tr>
+                {else /}
+                {volist name="tags" id="tag"}
+                <tr class="hover:bg-modern-light/50 transition-colors">
+                    <td class="py-4 px-2">
+                        <input type="checkbox" class="tagCheckbox rounded text-modern-primary focus:ring-modern-primary" value="{$tag.id}">
+                    </td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">{$tag.id}</td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full" style="background-color: {$tag.color}"></span>
+                            <span class="font-medium text-modern-dark">{$tag.name}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full" style="background-color: {$tag.color}"></span>
+                            <span class="text-modern-gray">{$tag.color}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">{$tag.description|default='无描述'}</td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">{$tag.create_time|date='Y-m-d H:i'}</td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-2">
+                            <button onclick="openEditModal({$tag.id})" class="text-modern-gray hover:text-modern-primary transition-colors" title="编辑">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteTag({$tag.id})" class="text-modern-gray hover:text-modern-danger transition-colors" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {/volist}
+                {/if}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 添加/编辑模态框 -->
+<div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg w-full max-w-md">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h2 class="text-xl font-semibold" id="modalTitle">新增标签</h2>
+                <button onclick="closeModal()" class="text-modern-gray hover:text-modern-dark">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="tagForm" onsubmit="saveTag(event)">
+                    <input type="hidden" id="tagId" name="id">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-modern-gray mb-2">标签名称 <span class="text-modern-danger">*</span></label>
+                            <input type="text" id="tagName" name="name" required class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-modern-gray mb-2">标签颜色</label>
+                            <div class="flex items-center gap-3">
+                                <input type="color" id="tagColor" value="#3B82F6" class="w-12 h-12 rounded cursor-pointer">
+                                <div id="tagColorPreview" class="w-20 h-12 rounded border-2 border-gray-200" style="background-color: #3B82F6;"></div>
+                                <input type="text" id="tagColorText" value="#3B82F6" class="flex-1 px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-modern-gray mb-2">标签描述</label>
+                            <textarea id="tagDescription" name="description" rows="3" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary"></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-4">
+                        <button type="button" onclick="closeModal()" class="px-6 py-2 border border-modern-lightGray rounded hover:bg-modern-light">取消</button>
+                        <button type="submit" class="px-6 py-2 bg-modern-primary text-white rounded hover:bg-modern-secondary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let tags = [];
+
+// 加载标签数据
+async function loadTags() {
+    try {
+        const response = await fetch('/admin/user/tags');
+        const html = await response.text();
+        
+        // 从HTML中提取标签数据
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const rows = doc.querySelectorAll('#tagList tr');
+        
+        tags = [];
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 7) {
+                const id = parseInt(cells[1].textContent.trim());
+                const name = cells[2].querySelector('.font-medium')?.textContent.trim() || '';
+                const color = cells[3].querySelector('span:last-child')?.textContent.trim() || '#3B82F6';
+                const description = cells[4].textContent.trim() || '';
+                const createTime = cells[5].textContent.trim();
+                
+                if (id) {
+                    tags.push({ id, name, color, description, create_time: createTime });
+                }
+            }
+        });
+    } catch (error) {
+        console.error('加载标签失败:', error);
+    }
+}
+
+// 打开添加模态框
+function openAddModal() {
+    document.getElementById('editModal').classList.remove('hidden');
+    document.getElementById('modalTitle').textContent = '新增标签';
+    document.getElementById('tagId').value = '';
+    document.getElementById('tagName').value = '';
+    document.getElementById('tagColor').value = '#3B82F6';
+    document.getElementById('tagColorText').value = '#3B82F6';
+    document.getElementById('tagColorPreview').style.backgroundColor = '#3B82F6';
+    document.getElementById('tagDescription').value = '';
+}
+
+// 打开编辑模态框
+async function openEditModal(id) {
+    await loadTags();
+    
+    const tag = tags.find(t => t.id === id);
+    if (!tag) {
+        alert('标签不存在');
+        return;
+    }
+
+    document.getElementById('editModal').classList.remove('hidden');
+    document.getElementById('modalTitle').textContent = '编辑标签';
+    document.getElementById('tagId').value = tag.id;
+    document.getElementById('tagName').value = tag.name;
+    document.getElementById('tagColor').value = tag.color;
+    document.getElementById('tagColorText').value = tag.color;
+    document.getElementById('tagColorPreview').style.backgroundColor = tag.color;
+    document.getElementById('tagDescription').value = tag.description || '';
+}
+
+// 关闭模态框
+function closeModal() {
+    document.getElementById('editModal').classList.add('hidden');
+}
+
+// 保存标签
+async function saveTag(event) {
+    event.preventDefault();
+    
+    const id = document.getElementById('tagId').value;
+    const name = document.getElementById('tagName').value;
+    const color = document.getElementById('tagColor').value;
+    const description = document.getElementById('tagDescription').value;
+
+    if (!name) {
+        alert('标签名称不能为空');
+        return;
+    }
+
+    const data = { name, color, description };
+    if (id) {
+        data.id = parseInt(id);
+    }
+
+    try {
+        const url = id ? '/api/editUserTag' : '/api/addUserTag';
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (result.code === 200) {
+            alert(id ? '更新成功' : '创建成功');
+            closeModal();
+            location.reload();
+        } else {
+            alert(result.msg || '操作失败');
+        }
+    } catch (error) {
+        console.error('保存失败:', error);
+        alert('网络错误，请稍后重试');
+    }
+}
+
+// 删除标签
+async function deleteTag(id) {
+    if (!confirm('确定要删除该标签吗？此操作将移除该标签下的所有用户')) return;
+
+    try {
+        const response = await fetch(`/api/deleteUserTag?id=${id}`, {
+            method: 'POST'
+        });
+        const result = await response.json();
+        if (result.code === 200) {
+            alert('删除成功');
+            location.reload();
+        } else {
+            alert(result.msg || '删除失败');
+        }
+    } catch (error) {
+        console.error('删除失败:', error);
+        alert('网络错误，请稍后重试');
+    }
+}
+
+// 批量删除
+async function batchDelete() {
+    const selectedIds = [];
+    document.querySelectorAll('.tagCheckbox:checked').forEach(checkbox => {
+        selectedIds.push(parseInt(checkbox.value));
+    });
+
+    if (selectedIds.length === 0) {
+        alert('请选择要删除的标签');
+        return;
+    }
+
+    if (!confirm(`确定要删除选中的 ${selectedIds.length} 个标签吗？此操作将移除这些标签下的所有用户`)) return;
+
+    try {
+        const response = await fetch('/api/batchDeleteUserTags', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: selectedIds })
+        });
+        const result = await response.json();
+        if (result.code === 200) {
+            alert('批量删除成功');
+            location.reload();
+        } else {
+            alert(result.msg || '批量删除失败');
+        }
+    } catch (error) {
+        console.error('批量删除失败:', error);
+        alert('网络错误，请稍后重试');
+    }
+}
+
+// 搜索功能
+function search() {
+    const keyword = document.getElementById('searchKeyword').value.toLowerCase();
+    const rows = document.querySelectorAll('#tagList tr');
+
+    rows.forEach(row => {
+        const tagName = row.querySelector('.font-medium');
+        if (tagName) {
+            const name = tagName.textContent.toLowerCase();
+            if (name.includes(keyword)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    });
+}
+
+// 全选功能
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.tagCheckbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+// 颜色选择器联动
+document.getElementById('tagColor').addEventListener('input', function() {
+    const color = this.value;
+    document.getElementById('tagColorText').value = color;
+    document.getElementById('tagColorPreview').style.backgroundColor = color;
+});
+
+document.getElementById('tagColorText').addEventListener('input', function() {
+    const color = this.value;
+    if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
+        document.getElementById('tagColor').value = color;
+        document.getElementById('tagColorPreview').style.backgroundColor = color;
+    }
+});
+</script>
+{/block}

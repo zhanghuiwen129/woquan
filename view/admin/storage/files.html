@@ -1,0 +1,427 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件管理 - 存储管理</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .bg-modern-white {
+            background-color: #ffffff;
+        }
+        .bg-modern-light {
+            background-color: #f8fafc;
+        }
+        .text-modern-dark {
+            color: #1e293b;
+        }
+        .text-modern-gray {
+            color: #64748b;
+        }
+        .bg-modern-primary {
+            background-color: #3b82f6;
+        }
+        .text-modern-primary {
+            color: #3b82f6;
+        }
+        .bg-modern-secondary {
+            background-color: #2563eb;
+        }
+        .bg-modern-success {
+            background-color: #10b981;
+        }
+        .text-modern-success {
+            color: #10b981;
+        }
+        .bg-modern-gray {
+            background-color: #64748b;
+        }
+        .bg-modern-darkGray {
+            background-color: #475569;
+        }
+        .bg-modern-lightGray {
+            background-color: #e2e8f0;
+        }
+        .border-modern-lightGray {
+            border-color: #e2e8f0;
+        }
+        .shadow-modern {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'storage';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">文件管理</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name|default='管理员'}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-modern-dark">文件管理</h2>
+                <p class="text-modern-gray text-sm mt-1">管理用户发布动态时使用的图片</p>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-5 mb-6">
+                <div class="flex gap-3 flex-wrap">
+                    <a href="/admin/storage" class="px-5 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors shadow-sm">
+                        <i class="fas fa-home mr-1"></i>存储管理
+                    </a>
+                    <a href="/admin/storage/upload" class="px-5 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors shadow-sm">
+                        <i class="fas fa-upload mr-1"></i>上传文件
+                    </a>
+                    <a href="/admin/storage/clean" class="px-5 py-2 bg-yellow-500 text-white text-sm rounded-lg hover:bg-yellow-600 transition-colors shadow-sm">
+                        <i class="fas fa-trash mr-1"></i>清理缓存
+                    </a>
+                </div>
+                <div class="mt-4 text-sm text-gray-500">
+                    <p>存储文件总数：{$storage_files_count|default=0}</p>
+                    <p>动态中使用的图片数量：{$used_images_count|default=0}</p>
+                </div>
+            </div>
+
+            <!-- 搜索和筛选 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-5 mb-6">
+                <form id="searchForm" class="flex flex-wrap gap-4">
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">关键词</label>
+                        <input type="text" name="keyword" value="{$keyword}" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="文件名">
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">文件类型</label>
+                        <select name="file_type" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">全部类型</option>
+                            <option value="image" {if $file_type == 'image'}selected{/if}>图片</option>
+                            <option value="text" {if $file_type == 'text'}selected{/if}>文本</option>
+                            <option value="pdf" {if $file_type == 'pdf'}selected{/if}>PDF</option>
+                            <option value="zip" {if $file_type == 'zip'}selected{/if}>压缩包</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="px-5 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors shadow-sm">
+                            <i class="fas fa-search mr-1"></i>搜索
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 文件列表 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-5">
+                <!-- 批量操作按钮 -->
+                <div class="mb-4 flex items-center gap-3">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="selectAll" class="mr-2 h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                        <span class="text-sm text-gray-700">全选</span>
+                    </label>
+                    <button onclick="batchDelete()" class="px-4 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors shadow-sm">
+                        <i class="fas fa-trash mr-1"></i>批量删除
+                    </button>
+                    <span id="selectedCount" class="text-sm text-gray-500">已选择 0 个文件</span>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
+                                    <input type="checkbox" id="selectAllHeader" class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    文件名称
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    文件大小
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    文件类型
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    上传时间
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    上传用户
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    使用状态
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    操作
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {foreach $files.items as $file}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <input type="checkbox" class="file-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" data-id="{$file.id}">
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 flex items-center justify-center rounded-md bg-gray-100">
+                                            {if strpos($file.mimetype, 'image') !== false}
+                                                <i class="fas fa-image text-blue-500"></i>
+                                            {elseif strpos($file.mimetype, 'pdf') !== false}
+                                                <i class="fas fa-file-pdf text-red-500"></i>
+                                            {elseif strpos($file.mimetype, 'word') !== false || strpos($file.mimetype, 'document') !== false}
+                                                <i class="fas fa-file-word text-blue-500"></i>
+                                            {elseif strpos($file.mimetype, 'excel') !== false || strpos($file.mimetype, 'spreadsheet') !== false}
+                                                <i class="fas fa-file-excel text-green-500"></i>
+                                            {elseif strpos($file.mimetype, 'zip') !== false || strpos($file.mimetype, 'archive') !== false}
+                                                <i class="fas fa-file-archive text-yellow-500"></i>
+                                            {else}
+                                                <i class="fas fa-file text-gray-500"></i>
+                                            {/if}
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900 truncate max-w-xs">{$file.filename}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500">{$file.fileSizeStr}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500 truncate max-w-xs">{$file.mimetype|default='unknown'}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500">{$file.uploadTime}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">{$file.username|default='未知用户'}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {if $file.is_used}
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">已使用</span>
+                                    {else}
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">未使用</span>
+                                    {/if}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="/admin/storage/fileDetail/{$file.id}" class="text-blue-600 hover:text-blue-900 mr-3">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="/admin/storage/downloadFile/{$file.id}" class="text-green-600 hover:text-green-900 mr-3">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    <button onclick="deleteFile({$file.id})" class="text-red-600 hover:text-red-900">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {/foreach}
+                            {if empty($files.items)}
+                            <tr>
+                                <td colspan="7" class="px-6 py-8 text-center">
+                                    <div class="text-gray-400">
+                                        <i class="fas fa-file-alt text-3xl mb-2"></i>
+                                        <p>暂无文件</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {/if}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                {if $files.total > 0}
+                <div class="mt-6 flex items-center justify-between">
+                    <div class="text-sm text-gray-700">
+                        共 {$files.total} 个文件
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        {if $files.current_page > 1}
+                        <a href="?page={$files.current_page-1}&keyword={$keyword}&file_type={$file_type}" class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                        {/if}
+                        
+                        {for start="1" end="$files.last_page" name="i"}
+                        <a href="?page={$i}&keyword={$keyword}&file_type={$file_type}" class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 {if $i == $files.current_page}bg-blue-50 text-blue-600 border-blue-300{/if}">
+                            {$i}
+                        </a>
+                        {/for}
+                        
+                        {if $files.current_page < $files.last_page}
+                        <a href="?page={$files.current_page+1}&keyword={$keyword}&file_type={$file_type}" class="px-3 py-1 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                        {/if}
+                    </div>
+                </div>
+                {/if}
+            </div>
+        </main>
+    </div>
+    <!-- JavaScript -->
+    <script>
+        // 删除文件功能
+        function deleteFile(fileId) {
+            if (confirm('确定要删除这个文件吗？')) {
+                $.ajax({
+                    url: '/admin/storage/deleteFile',
+                    type: 'POST',
+                    data: { ids: fileId },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.code === 200) {
+                            alert('删除成功');
+                            location.reload();
+                        } else {
+                            alert('删除失败：' + response.msg);
+                        }
+                    },
+                    error: function() {
+                        alert('删除失败：网络错误');
+                    }
+                });
+            }
+        }
+
+        // 全选/取消全选
+        document.getElementById('selectAll').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.file-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateSelectedCount();
+        });
+
+        document.getElementById('selectAllHeader').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.file-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateSelectedCount();
+        });
+
+        // 更新已选择的文件数量
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+            const count = checkboxes.length;
+            document.getElementById('selectedCount').textContent = '已选择 ' + count + ' 个文件';
+        }
+
+        // 监听单个复选框的变化
+        document.querySelectorAll('.file-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectedCount);
+        });
+
+        // 批量删除
+        function batchDelete() {
+            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('请先选择要删除的文件');
+                return;
+            }
+
+            if (!confirm('确定要删除选中的 ' + checkboxes.length + ' 个文件吗？')) {
+                return;
+            }
+
+            const ids = Array.from(checkboxes).map(checkbox => checkbox.dataset.id);
+
+            $.ajax({
+                url: '/admin/storage/deleteFile',
+                type: 'POST',
+                data: { ids: ids },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.code === 200) {
+                        alert('删除成功');
+                        location.reload();
+                    } else {
+                        alert('删除失败：' + response.msg);
+                    }
+                },
+                error: function() {
+                    alert('删除失败：网络错误');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

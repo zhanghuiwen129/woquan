@@ -1,0 +1,387 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{$name} - {$subtitle}</title>
+    {if isset($config.icon) && $config.icon != ''}
+    <link rel="icon" href="{$config.icon}" type="image/x-icon" />
+    <link rel="shortcut icon" href="{$config.icon}" />
+    {else}
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    {/if}
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        // 日间模式配色 - 低饱和雾霾蓝系
+                        primary: '#4A90E2',
+                        secondary: '#6AA9F2',
+                        darkPrimary: '#3A7BC8',
+                        lightBlue: '#E8F3FF',
+                        danger: '#F04848',
+                        success: '#52C480',
+                        warning: '#F5A623',
+
+                        // 背景和文字色
+                        'bg-main': '#FFFFFF',
+                        'bg-card': '#F7F8FA',
+                        'text-primary': '#333647',
+                        'text-secondary': '#6B6E7F',
+                        'text-tertiary': '#9EA0AF',
+                        'border-color': '#E5E6EB',
+
+                        // 暗黑模式配色
+                        'dark-bg-main': '#18191C',
+                        'dark-bg-card': '#25262B',
+                        'dark-text-primary': '#F5F6F7',
+                        'dark-text-secondary': '#C9CDD4',
+                        'dark-text-tertiary': '#868B94',
+                        'dark-border-color': '#323338',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'soft': '0 2px 8px rgba(0, 0, 0, 0.06)',
+                        'hover': '0 4px 12px rgba(74, 144, 226, 0.15)',
+                    }
+                },
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .circle-avatar {
+                @apply rounded-full object-cover border-2 border-white shadow-sm;
+            }
+            .dynamic-card {
+                @apply w-full bg-bg-card rounded-xl shadow-soft overflow-hidden transition-all duration-200 hover:shadow-hover;
+            }
+            .nav-active {
+                @apply text-primary font-medium;
+            }
+            .grid-images-2 {
+                @apply grid grid-cols-2 gap-1;
+            }
+            .grid-images-3 {
+                @apply grid grid-cols-3 gap-1;
+            }
+            .grid-images-4 {
+                @apply grid grid-cols-2 gap-1;
+            }
+            .grid-images-more {
+                @apply grid grid-cols-3 gap-1;
+            }
+            .line-clamp-2 {
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+        }
+    </style>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="/fontawesome/css/font-awesome.min.css">
+
+    <!-- 评论组件样式 -->
+    <link rel="stylesheet" href="/common/comment-component.css">
+
+    <!-- 首页样式 -->
+    <link rel="stylesheet" href="/static/css/home.css">
+
+    <!-- 网站配置 -->
+    <script src="/static/js/site-config.js"></script>
+
+    <!-- 当前用户信息 -->
+    <script>
+        window.currentUserInfo = <?php echo isset($isLogin) && $isLogin && $currentUser ? json_encode([
+            'userId' => $currentUser['user_id'],
+            'username' => $currentUser['username'],
+            'nickname' => $currentUser['nickname'],
+            'avatar' => $currentUser['avatar'] ?: '/static/images/default-avatar.png'
+        ]) : 'null'; ?>;
+    </script>
+</head>
+<body class="bg-bg-card text-text-primary dark:bg-dark-bg-main dark:text-dark-text-primary pb-16 md:pb-0">
+
+    <!-- ==================== 顶部导航栏 ==================== -->
+    {include file="index/components/header" /}
+
+    <!-- ==================== 主页三栏布局 ==================== -->
+    <main class="container mx-auto px-4 py-6 md:flex gap-6">
+        <!-- 左侧栏 -->
+        {include file="index/components/sidebar-left" /}
+
+        <!-- 中栏 - 核心内容区 (动态发布框 + 动态列表) -->
+        <section class="w-full md:w-2/4 lg:w-3/5 pb-16 md:pb-0">
+            <!-- 动态发布框 - 桌面端显示 -->
+            <div class="w-full bg-bg-card rounded-xl shadow-soft p-4 mb-6 md:block hidden border border-border-color">
+                <?php if(isset($isLogin) && $isLogin): ?>
+                <!-- 已登录状态：显示完整发布框 -->
+                <div class="flex gap-3">
+                    <img src="<?php echo $currentUser['avatar'] ?: '/static/images/default-avatar.png'; ?>" alt="我的头像" class="w-10 h-10 circle-avatar">
+                    <textarea id="pc-publish-input" placeholder="分享你的新鲜事..." class="flex-1 border border-border-color bg-bg-card rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none text-text-primary placeholder-text-tertiary" rows="3"></textarea>
+                </div>
+                <div class="mt-4 pt-3 border-t border-border-color">
+                    <div class="flex justify-between items-center">
+                        <div class="flex gap-4">
+                            <button id="imageUploadBtn" class="flex items-center gap-1 text-text-secondary hover:text-primary transition-colors py-1 px-2 rounded-lg hover:bg-lightBlue">
+                                <i class="fa fa-picture-o text-lg"></i>
+                                <span class="text-sm">图片</span>
+                            </button>
+                            <input type="file" id="imageUpload" multiple accept="image/*" class="hidden">
+
+                            <button id="videoUploadBtn" class="flex items-center gap-1 text-text-secondary hover:text-primary transition-colors py-1 px-2 rounded-lg hover:bg-lightBlue">
+                                <i class="fa fa-video-camera text-lg"></i>
+                                <span class="text-sm">视频</span>
+                            </button>
+                            <input type="file" id="videoUpload" accept="video/*" class="hidden">
+
+                            <button id="emojiBtn" class="flex items-center gap-1 text-text-secondary hover:text-primary transition-colors py-1 px-2 rounded-lg hover:bg-lightBlue">
+                                <i class="fa fa-smile-o text-lg"></i>
+                                <span class="text-sm">表情</span>
+                            </button>
+
+                            <button id="topicBtn" class="flex items-center gap-1 text-text-secondary hover:text-primary transition-colors py-1 px-2 rounded-lg hover:bg-lightBlue">
+                                <i class="fa fa-hashtag text-lg"></i>
+                                <span class="text-sm">话题</span>
+                            </button>
+                        </div>
+
+                        <button id="pc-publish-btn" class="bg-primary text-white px-4 py-1 rounded-full text-sm font-medium hover:bg-darkPrimary transition-colors shadow-soft">
+                            发布
+                        </button>
+                    </div>
+
+                    <!-- 图片预览区域 -->
+                    <div id="image-preview-container" class="mt-3 hidden">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs font-medium text-gray-700">图片预览</span>
+                            <button id="close-image-preview" class="text-gray-400 hover:text-gray-600 text-xs">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </div>
+                        <div id="image-preview-grid" class="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto"></div>
+                    </div>
+
+                    <!-- 视频预览区域 -->
+                    <div id="video-preview-container" class="mt-3 hidden">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-medium text-gray-700">视频预览</span>
+                            <button id="close-video-preview" class="text-gray-400 hover:text-gray-600 text-xs">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="bg-gray-100 rounded-lg overflow-hidden">
+                            <video id="video-preview" class="w-full max-h-60 object-contain" controls></video>
+                        </div>
+                    </div>
+
+                    <!-- 隐私设置 -->
+                    <div class="flex items-center gap-2 mt-3">
+                        <i class="fa fa-lock text-text-tertiary text-sm"></i>
+                        <select id="privacy-select" class="bg-bg-card border border-border-color rounded-lg px-3 py-1 text-sm text-text-primary focus:outline-none focus:border-primary">
+                            <option value="0">公开</option>
+                            <option value="1">仅好友可见</option>
+                            <option value="2">仅自己可见</option>
+                        </select>
+                    </div>
+                </div>
+                <?php else: ?>
+                <!-- 未登录状态：显示提示 -->
+                <div class="text-center py-4">
+                    <p class="text-text-secondary mb-3">登录后发布动态,分享你的精彩生活</p>
+                    <a href="/login" class="inline-block bg-primary text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-darkPrimary transition-colors">
+                        立即登录
+                    </a>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- 动态列表 -->
+            <div id="moments-container">
+                {if !empty($moments)}
+                    {foreach $moments as $moment}
+                        <!-- 动态卡片组件 -->
+                        <div class="dynamic-card mb-4" data-moment-id="{$moment.moment_id}">
+                            <div class="p-4">
+                                <!-- 用户信息 -->
+                                <div class="flex items-center gap-3 mb-3">
+                                    <a href="/card/{$moment.user_id}">
+                                        <img src="{$moment.avatar ?? '/static/images/default-avatar.png'}" alt="头像" class="w-10 h-10 circle-avatar">
+                                    </a>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2">
+                                            <a href="/card/{$moment.user_id}" class="text-sm font-semibold text-text-primary hover:text-primary truncate">
+                                                {$moment.nickname ?? $moment.username}
+                                            </a>
+                                            {if $moment.is_author}
+                                                <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">作者</span>
+                                            {/if}
+                                        </div>
+                                        <div class="text-xs text-text-tertiary">
+                                            {$moment.create_time|date='m-d H:i'}
+                                        </div>
+                                    </div>
+                                    <button class="text-text-tertiary hover:text-text-secondary">
+                                        <i class="fa fa-ellipsis-h"></i>
+                                    </button>
+                                </div>
+
+                                <!-- 动态内容 -->
+                                <div class="moment-content mb-3">
+                                    <div class="text-text-primary text-sm leading-relaxed mb-2">
+                                        {$moment.content|htmlspecialchars}
+                                    </div>
+                                    {if !empty($moment.images)}
+                                        <div class="grid-images-{$moment.image_count > 9 ? 'more' : $moment.image_count}">
+                                            {foreach $moment.images as $image}
+                                                <img src="{$image.url}" alt="图片" class="w-full h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity">
+                                            {/foreach}
+                                        </div>
+                                    {/if}
+                                    {if !empty($moment.video)}
+                                        <div class="relative">
+                                            <video src="{$moment.video}" controls class="w-full rounded-lg"></video>
+                                        </div>
+                                    {/if}
+                                </div>
+
+                                <!-- 话题标签 -->
+                                {if !empty($moment.topics)}
+                                    <div class="flex flex-wrap gap-2 mb-3">
+                                        {foreach $moment.topics as $topic}
+                                            <a href="/topic/{$topic.topic_id}" class="text-xs text-primary hover:text-darkPrimary">#{$topic.name}</a>
+                                        {/foreach}
+                                    </div>
+                                {/if}
+
+                                <!-- 操作栏 -->
+                                <div class="flex items-center justify-between pt-3 border-t border-border-color">
+                                    <div class="flex items-center gap-6">
+                                        <button class="flex items-center gap-1 text-text-secondary hover:text-danger transition-colors text-sm" onclick="toggleLike({$moment.moment_id})">
+                                            <i class="fa fa-heart-o"></i>
+                                            <span>{$moment.like_count ?? 0}</span>
+                                        </button>
+                                        <button class="flex items-center gap-1 text-text-secondary hover:text-primary transition-colors text-sm" onclick="openComments({$moment.moment_id})">
+                                            <i class="fa fa-comment-o"></i>
+                                            <span>{$moment.comment_count ?? 0}</span>
+                                        </button>
+                                        <button class="flex items-center gap-1 text-text-secondary hover:text-success transition-colors text-sm">
+                                            <i class="fa fa-share"></i>
+                                            <span>分享</span>
+                                        </button>
+                                    </div>
+                                    <button class="text-text-tertiary hover:text-text-secondary">
+                                        <i class="fa fa-star-o"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {/foreach}
+                {else}
+                    <div class="text-center py-12">
+                        <i class="fa fa-inbox text-4xl text-text-tertiary mb-4"></i>
+                        <p class="text-text-secondary">暂无动态</p>
+                        <p class="text-text-tertiary text-sm mt-2">发布第一条动态吧!</p>
+                    </div>
+                {/if}
+            </div>
+
+            <!-- 加载更多 -->
+            <div id="load-more-container" class="text-center py-4 hidden">
+                <button id="load-more-btn" class="px-6 py-2 bg-bg-card border border-border-color rounded-lg text-text-secondary hover:text-primary hover:border-primary transition-colors text-sm">
+                    加载更多
+                </button>
+            </div>
+
+            <!-- 加载中 -->
+            <div id="loading-more" class="text-center py-4 hidden">
+                <i class="fa fa-spinner fa-spin text-lg text-text-tertiary"></i>
+                <p class="text-sm text-text-tertiary mt-2">加载中...</p>
+            </div>
+        </section>
+
+        <!-- 右侧栏 -->
+        {include file="index/components/sidebar-right" /}
+    </main>
+
+    <!-- ==================== 弹窗组件 ==================== -->
+    {include file="index/components/publish-modal" /}
+    {include file="index/components/card-modal" /}
+
+    <!-- ==================== JavaScript 引入 ==================== -->
+    <!-- Toast提示组件 -->
+    <script src="/static/js/toast.js"></script>
+
+    <!-- 定位模块 -->
+    <script src="/static/js/location.js"></script>
+
+    <!-- 抖音风格评论组件 -->
+    <script src="/static/js/comment-component.js"></script>
+
+    <!-- 评论组件配置 -->
+    <script>
+        window.commentConfig = {
+            pageSize: 10,
+            emojis: ['😀', '😂', '🥰', '😎', '🤔', '👍', '👎', '❤️', '🎉', '🔥', '💯', '👏', '🙏', '💪', '✨', '🌟', '💕', '😍', '🤣', '😊']
+        };
+    </script>
+
+    <!-- 首页逻辑脚本 -->
+    <script src="/static/js/home.js"></script>
+
+    <!-- 页面特定逻辑 -->
+    <script>
+        // 打开发布弹窗
+        function openPublishModal() {
+            document.getElementById('mobile-modal-mask').classList.remove('hidden');
+            document.getElementById('mobile-publish-modal').classList.remove('hidden');
+        }
+
+        // 关闭发布弹窗
+        document.getElementById('close-modal-btn')?.addEventListener('click', function() {
+            document.getElementById('mobile-modal-mask').classList.add('hidden');
+            document.getElementById('mobile-publish-modal').classList.add('hidden');
+        });
+
+        // 点击遮罩关闭弹窗
+        document.getElementById('mobile-modal-mask')?.addEventListener('click', function() {
+            document.getElementById('mobile-modal-mask').classList.add('hidden');
+            document.getElementById('mobile-publish-modal').classList.add('hidden');
+        });
+
+        // 确认对话框函数
+        let confirmCallback = null;
+
+        function showConfirm(title, message, callback) {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            confirmCallback = callback;
+            document.getElementById('confirmDialog').classList.remove('hidden');
+        }
+
+        function closeConfirmDialog() {
+            document.getElementById('confirmDialog').classList.add('hidden');
+            confirmCallback = null;
+        }
+
+        document.getElementById('confirmOkBtn')?.addEventListener('click', function() {
+            if (confirmCallback) {
+                confirmCallback();
+            }
+            closeConfirmDialog();
+        });
+    </script>
+</body>
+</html>

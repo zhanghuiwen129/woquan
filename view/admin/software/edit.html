@@ -1,0 +1,266 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>编辑软件 - 后台管理系统</title>
+  <!-- 引入Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+  <!-- 引入Font Awesome图标库 -->
+  <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+  <!-- 自定义Tailwind配置（现代化简约配色：中性灰+低饱和蓝，干净清爽） -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            // 现代化简约核心配色：中性灰为主，低饱和蓝作为强调色，无多余杂色
+            modern: {
+              dark: '#1F2937', // 侧边栏/头部背景（深灰，不压抑）
+              light: '#F9FAFB', // 主内容区背景（浅灰，干净清爽）
+              primary: '#3B82F6', // 主强调色（低饱和蓝，专业简约）
+              secondary: '#6366F1', // 辅助强调色（浅紫蓝，增加层次）
+              gray: '#4B5563', // 正文文字（中灰，高可读性）
+              lightGray: '#E5E7EB', // 边框/分割线（浅灰，柔和不突兀）
+              darkGray: '#374151', // 次要文字/卡片背景（深灰，区分层次）
+              white: '#FFFFFF', // 纯白（卡片/表单背景，干净整洁）
+              success: '#10B981', // 成功状态色（低饱和绿，不刺眼）
+              warning: '#F59E0B', // 警告状态色（低饱和黄，醒目不刺眼）
+              danger: '#EF4444' // 危险状态色（低饱和红，警示作用）
+            }
+          },
+          boxShadow: {
+            // 简约柔和阴影：无发光效果，轻量级投影提升层次
+            'modern': '0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04)',
+            'hover': '0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 基础自定义样式 + 现代化简约风格 + 原有功能保留 */
+    /* 简约滚动条美化（轻量级，不抢视觉焦点） */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F3F4F6;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D1D5DB;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #9CA3AF;
+    }
+  </style>
+</head>
+<!-- 现代化简约风格布局：干净浅灰背景 + 清晰层次 + 低饱和强调色 -->
+<body class="font-sans antialiased h-screen flex flex-col overflow-hidden text-modern-gray bg-modern-light">
+  <!-- 1. 页头导航（现代化简约风格：扁平设计 + 柔和阴影） -->
+  <header class="bg-modern-white shadow-modern py-4 px-6 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <i class="fa-solid fa-gears text-2xl text-modern-primary"></i>
+      <h1 class="text-xl font-semibold text-modern-dark">后台管理系统</h1>
+    </div>
+    <div class="flex items-center gap-6">
+      <div class="relative">
+        <i class="fa-solid fa-bell text-modern-gray cursor-pointer hover:text-modern-primary transition-colors"></i>
+        <span class="absolute -top-1 -right-1 w-2 h-2 bg-modern-primary rounded-full"></span>
+      </div>
+      <!-- 用户下拉菜单（相对定位容器，简约样式） -->
+      <div class="relative" id="userMenuContainer">
+        <div class="flex items-center gap-3 cursor-pointer" id="userMenuTrigger">
+          <img src="http://127.0.0.1/static/images/default-avatar.png" alt="用户头像" class="w-8 h-8 rounded-full object-cover border border-modern-lightGray">
+          <span class="text-modern-dark text-sm font-medium">{$admin_username}</span>
+          <i class="fa-solid fa-caret-down text-modern-gray text-xs transition-transform duration-200" id="userMenuCaret"></i>
+        </div>
+        <!-- 下拉菜单内容（简约扁平风格） -->
+        <div class="user-dropdown bg-modern-white shadow-modern border border-modern-lightGray rounded-lg overflow-hidden">
+          <ul class="py-1">
+            <li>
+              <a href="/admin/index" class="flex items-center gap-2 px-4 py-3 w-full transition-all hover:bg-modern-light hover:text-modern-primary">
+                <i class="fa-solid fa-house text-xs w-4 text-center"></i>
+                <span class="text-sm">后台首页</span>
+              </a>
+            </li>
+            <li>
+              <a href="/admin/settings" class="flex items-center gap-2 px-4 py-3 w-full transition-all hover:bg-modern-light hover:text-modern-primary">
+                <i class="fa-solid fa-cog text-xs w-4 text-center"></i>
+                <span class="text-sm">系统设置</span>
+              </a>
+            </li>
+            <li>
+              <a href="/admin/login/logout" class="flex items-center gap-2 px-4 py-3 w-full transition-all hover:bg-modern-light hover:text-modern-primary">
+                <i class="fa-solid fa-right-from-bracket text-xs w-4 text-center"></i>
+                <span class="text-sm">退出登录</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. 主体内容（左侧侧边栏 + 右侧内容区，简约层次布局） -->
+  <div class="flex flex-1 overflow-hidden">
+    <!-- 左侧导航栏（现代化简约风格：深灰背景 + 扁平导航） -->
+    <aside class="w-64 bg-modern-dark shadow-modern overflow-y-auto">
+      <nav class="py-6">
+        <div class="px-5 mb-6 text-xs font-semibold text-modern-lightGray uppercase tracking-wider">主菜单</div>
+        <ul>
+          <li>
+            <a href="/admin/index" class="sidebar-item flex items-center gap-3 px-5 py-3 w-full transition-all">
+              <i class="fa-solid fa-house-chimney text-modern-lightGray"></i>
+              <span>后台首页</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/server" class="sidebar-item flex items-center gap-3 px-5 py-3 w-full transition-all">
+              <i class="fa-solid fa-server text-modern-lightGray"></i>
+              <span>服务器管理</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/software" class="sidebar-item flex items-center gap-3 px-5 py-3 w-full transition-all active">
+              <i class="fa-solid fa-laptop-code text-modern-primary"></i>
+              <span class="text-modern-primary">软件管理</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/authorization" class="sidebar-item flex items-center gap-3 px-5 py-3 w-full transition-all">
+              <i class="fa-solid fa-shield-halved text-modern-lightGray"></i>
+              <span>授权管理</span>
+            </a>
+          </li>
+          <li>
+            <a href="/admin/version" class="sidebar-item flex items-center gap-3 px-5 py-3 w-full transition-all">
+              <i class="fa-solid fa-tag text-modern-lightGray"></i>
+              <span>版本管理</span>
+            </a>
+          </li>
+        </ul>
+
+        <div class="px-5 mt-10 mb-6 text-xs font-semibold text-modern-lightGray uppercase tracking-wider">系统设置</div>
+        <ul>
+          <li>
+            <a href="/admin/settings" class="sidebar-item flex items-center gap-3 px-5 py-3 w-full transition-all">
+              <i class="fa-solid fa-cog text-modern-lightGray"></i>
+              <span>系统配置</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- 右侧内容区（现代化简约风格：浅灰背景 + 白色卡片 + 清晰间距） -->
+    <main class="flex-1 overflow-y-auto bg-modern-light p-8">
+      <!-- 编辑软件页面 -->
+      <section>
+        <!-- 面包屑导航 -->
+        <div class="flex items-center gap-2 mb-8">
+          <a href="/admin/index" class="text-modern-gray hover:text-modern-primary transition-colors">
+            <i class="fa-solid fa-house"></i>
+          </a>
+          <i class="fa-solid fa-angle-right text-xs text-modern-gray"></i>
+          <a href="/admin/software" class="text-modern-gray hover:text-modern-primary transition-colors">软件管理</a>
+          <i class="fa-solid fa-angle-right text-xs text-modern-gray"></i>
+          <span class="text-modern-dark font-medium">编辑软件</span>
+        </div>
+
+        <!-- 编辑软件表单 -->
+        <div class="bg-modern-white rounded-lg shadow-modern p-8 transition-all hover:shadow-hover">
+          <h2 class="text-2xl font-semibold text-modern-dark mb-6">编辑软件</h2>
+          <form action="/admin/software/update.html" method="post">
+            <input type="hidden" name="id" value="{$software.id}">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <!-- 基本信息 -->
+              <div class="space-y-6">
+                <div>
+                  <label for="software_name" class="block text-sm font-medium text-modern-gray mb-2">软件名称 <span class="text-modern-danger">*</span></label>
+                  <input type="text" id="software_name" name="software_name" value="{$software.software_name}" class="w-full px-4 py-3 border border-modern-lightGray rounded-md focus:outline-none focus:ring-2 focus:ring-modern-primary focus:border-transparent transition-all" placeholder="请输入软件名称" required>
+                </div>
+                <div>
+                  <label for="software_version" class="block text-sm font-medium text-modern-gray mb-2">软件版本</label>
+                  <input type="text" id="software_version" name="software_version" value="{$software.software_version}" class="w-full px-4 py-3 border border-modern-lightGray rounded-md focus:outline-none focus:ring-2 focus:ring-modern-primary focus:border-transparent transition-all" placeholder="请输入软件版本">
+                </div>
+                <div>
+                  <label for="software_type" class="block text-sm font-medium text-modern-gray mb-2">软件类型</label>
+                  <input type="text" id="software_type" name="software_type" value="{$software.software_type}" class="w-full px-4 py-3 border border-modern-lightGray rounded-md focus:outline-none focus:ring-2 focus:ring-modern-primary focus:border-transparent transition-all" placeholder="如：Web应用, 数据库, 开发工具">
+                </div>
+                <div>
+                  <label for="status" class="block text-sm font-medium text-modern-gray mb-2">状态</label>
+                  <select id="status" name="status" class="w-full px-4 py-3 border border-modern-lightGray rounded-md focus:outline-none focus:ring-2 focus:ring-modern-primary focus:border-transparent transition-all">
+                    <option value="1" {if $software.status == 1}selected{/if}>已安装</option>
+                    <option value="0" {if $software.status == 0}selected{/if}>未安装</option>
+                  </select>
+                </div>
+              </div>
+              <!-- 扩展信息 -->
+              <div class="space-y-6">
+                <div>
+                  <label for="install_path" class="block text-sm font-medium text-modern-gray mb-2">安装路径</label>
+                  <input type="text" id="install_path" name="install_path" value="{$software.install_path}" class="w-full px-4 py-3 border border-modern-lightGray rounded-md focus:outline-none focus:ring-2 focus:ring-modern-primary focus:border-transparent transition-all" placeholder="如：/usr/local/nginx">
+                </div>
+                <div>
+                  <label for="update_available" class="block text-sm font-medium text-modern-gray mb-2">是否有更新</label>
+                  <select id="update_available" name="update_available" class="w-full px-4 py-3 border border-modern-lightGray rounded-md focus:outline-none focus:ring-2 focus:ring-modern-primary focus:border-transparent transition-all">
+                    <option value="0" {if $software.update_available == 0}selected{/if}>否</option>
+                    <option value="1" {if $software.update_available == 1}selected{/if}>是</option>
+                  </select>
+                </div>
+              </div>
+              <!-- 软件描述 -->
+              <div class="md:col-span-2">
+                <label for="description" class="block text-sm font-medium text-modern-gray mb-2">软件描述</label>
+                <textarea id="description" name="description" rows="4" class="w-full px-4 py-3 border border-modern-lightGray rounded-md focus:outline-none focus:ring-2 focus:ring-modern-primary focus:border-transparent transition-all" placeholder="请输入软件描述">{$software.description}</textarea>
+              </div>
+            </div>
+            <!-- 操作按钮 -->
+            <div class="flex items-center gap-4 mt-10">
+              <button type="submit" class="px-8 py-3 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern flex items-center gap-2">
+                <i class="fa-solid fa-check"></i>
+                <span>更新软件</span>
+              </button>
+              <a href="/admin/software/index.html" class="px-8 py-3 bg-modern-light border border-modern-lightGray rounded-md text-modern-gray hover:border-modern-primary transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-times"></i>
+                <span>取消</span>
+              </a>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- JavaScript 实现 -->
+  <script>
+    // 用户下拉菜单功能
+    const userMenuTrigger = document.getElementById('userMenuTrigger');
+    const userMenuDropdown = document.querySelector('.user-dropdown');
+    const userMenuCaret = document.getElementById('userMenuCaret');
+
+    // 点击触发器切换下拉菜单显示/隐藏
+    userMenuTrigger.addEventListener('click', function(e) {
+      e.stopPropagation(); // 阻止事件冒泡，避免点击后立即关闭
+      userMenuDropdown.classList.toggle('active');
+      userMenuCaret.classList.toggle('rotate-180'); // 箭头旋转动画
+    });
+
+    // 点击页面其他区域关闭下拉菜单
+    document.addEventListener('click', function() {
+      if (userMenuDropdown.classList.contains('active')) {
+        userMenuDropdown.classList.remove('active');
+        userMenuCaret.classList.remove('rotate-180');
+      }
+    });
+
+    // 下拉菜单内部点击不关闭（提升体验）
+    userMenuDropdown.addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
+  </script>
+</body>
+</html>

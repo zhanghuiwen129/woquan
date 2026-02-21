@@ -1,0 +1,145 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>编辑授权 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">编辑授权</h2>
+    <p class="text-modern-gray text-sm mt-1">修改授权的详细信息</p>
+</div>
+
+<!-- 返回按钮 -->
+<div class="mb-6">
+    <a href="/admin/authorization" class="inline-flex items-center gap-2 px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md text-modern-gray hover:border-modern-primary transition-colors">
+        <i class="fas fa-arrow-left"></i>
+        <span>返回列表</span>
+    </a>
+</div>
+
+<!-- 编辑授权表单 -->
+<div class="card rounded-lg p-6">
+    <form action="/admin/authorization/update" method="post" class="space-y-6">
+        <input type="hidden" name="id" value="{$authorization.id}">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- 基本信息 -->
+            <div>
+                <h3 class="text-lg font-semibold text-modern-dark mb-6 pb-2 border-b">基本信息</h3>
+                <div class="space-y-6">
+                    <div>
+                        <label for="software_id" class="block text-sm font-medium text-modern-gray mb-2">授权软件 <span class="text-red-500">*</span></label>
+                        <select id="software_id" name="software_id" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-lg focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                            <option value="">请选择软件</option>
+                            {volist name="softwareList" id="software"}
+                            <option value="{$software.id}" {if $software.id == $authorization.software_id}selected{/if}>{$software.software_name}</option>
+                            {/volist}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="license_number" class="block text-sm font-medium text-modern-gray mb-2">授权编号 <span class="text-red-500">*</span></label>
+                        <input type="text" id="license_number" name="license_number" value="{$authorization.license_number}" placeholder="输入授权编号" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-lg focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 时间设置 -->
+            <div>
+                <h3 class="text-lg font-semibold text-modern-dark mb-6 pb-2 border-b">时间设置</h3>
+                <div class="space-y-6">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="is_permanent" name="is_permanent" value="1" {if $authorization.is_permanent}checked{/if} class="w-4 h-4 text-modern-primary rounded focus:ring-modern-primary focus:ring-1">
+                        <label for="is_permanent" class="text-sm font-medium text-modern-gray">永久授权</label>
+                    </div>
+                    <div id="time-settings" class="space-y-6">
+                        <div>
+                            <label for="start_time" class="block text-sm font-medium text-modern-gray mb-2">开始时间 <span class="text-red-500">*</span></label>
+                            <input type="date" id="start_time" name="start_time" value="{$authorization.start_time}" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-lg focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                        </div>
+                        <div>
+                            <label for="end_time" class="block text-sm font-medium text-modern-gray mb-2">结束时间 <span class="text-red-500">*</span></label>
+                            <input type="date" id="end_time" name="end_time" value="{$authorization.end_time}" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-lg focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-modern-gray mb-2">授权状态 <span class="text-red-500">*</span></label>
+                        <select id="status" name="status" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-lg focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                            <option value="1" {if $authorization.status == 1}selected{/if}>有效</option>
+                            <option value="0" {if $authorization.status == 0}selected{/if}>无效</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="domains" class="block text-sm font-medium text-modern-gray mb-2">授权域名</label>
+                        <input type="text" id="domains" name="domains" value="{$authorization.domain|default=''}" placeholder="多个域名用逗号分隔，如：example.com,www.example.com" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-lg focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                        <p class="text-xs text-modern-gray mt-1">留空表示不限制域名</p>
+                    </div>
+                    <div>
+                        <label for="ips" class="block text-sm font-medium text-modern-gray mb-2">服务器IP</label>
+                        <input type="text" id="ips" name="ips" value="{$authorization.server_ip|default=''}" placeholder="多个IP用逗号分隔，如：127.0.0.1,192.168.1.1" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-lg focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                        <p class="text-xs text-modern-gray mt-1">留空表示不限制IP</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-modern-gray mb-2">功能权限</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="features[]" value="articles" {if $authorization.articles_checked}checked{/if} class="w-4 h-4 text-modern-primary rounded focus:ring-modern-primary focus:ring-1">
+                                <span class="text-sm text-modern-gray">文章功能</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="features[]" value="comments" {if $authorization.comments_checked}checked{/if} class="w-4 h-4 text-modern-primary rounded focus:ring-modern-primary focus:ring-1">
+                                <span class="text-sm text-modern-gray">评论功能</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="features[]" value="chat" {if $authorization.chat_checked}checked{/if} class="w-4 h-4 text-modern-primary rounded focus:ring-modern-primary focus:ring-1">
+                                <span class="text-sm text-modern-gray">聊天功能</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="features[]" value="vip" {if $authorization.vip_checked}checked{/if} class="w-4 h-4 text-modern-primary rounded focus:ring-modern-primary focus:ring-1">
+                                <span class="text-sm text-modern-gray">VIP功能</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="features[]" value="storage" {if $authorization.storage_checked}checked{/if} class="w-4 h-4 text-modern-primary rounded focus:ring-modern-primary focus:ring-1">
+                                <span class="text-sm text-modern-gray">存储功能</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="features[]" value="payment" {if $authorization.payment_checked}checked{/if} class="w-4 h-4 text-modern-primary rounded focus:ring-modern-primary focus:ring-1">
+                                <span class="text-sm text-modern-gray">支付功能</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 表单按钮 -->
+        <div class="pt-6 border-t border-modern-lightGray flex flex-wrap items-center justify-end gap-4">
+            <button type="reset" class="px-6 py-2 bg-modern-light border border-modern-lightGray rounded-md text-modern-gray hover:border-modern-primary transition-colors">
+                <i class="fas fa-undo mr-2"></i>重置
+            </button>
+            <button type="submit" class="px-6 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern">
+                <i class="fas fa-save mr-2"></i>更新授权
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- JavaScript 实现 -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isPermanent = document.getElementById('is_permanent');
+    const timeSettings = document.getElementById('time-settings');
+
+    if (isPermanent && timeSettings) {
+        if (isPermanent.checked) {
+            timeSettings.style.display = 'none';
+        }
+
+        isPermanent.addEventListener('change', function() {
+            if (this.checked) {
+                timeSettings.style.display = 'none';
+            } else {
+                timeSettings.style.display = 'block';
+            }
+        });
+    }
+});
+</script>
+{/block}

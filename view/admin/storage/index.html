@@ -1,0 +1,464 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>存储管理 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .bg-modern-white {
+            background-color: #ffffff;
+        }
+        .bg-modern-light {
+            background-color: #f8fafc;
+        }
+        .text-modern-dark {
+            color: #1e293b;
+        }
+        .text-modern-gray {
+            color: #64748b;
+        }
+        .bg-modern-primary {
+            background-color: #3b82f6;
+        }
+        .text-modern-primary {
+            color: #3b82f6;
+        }
+        .bg-modern-secondary {
+            background-color: #2563eb;
+        }
+        .bg-modern-success {
+            background-color: #10b981;
+        }
+        .text-modern-success {
+            color: #10b981;
+        }
+        .bg-modern-gray {
+            background-color: #64748b;
+        }
+        .bg-modern-darkGray {
+            background-color: #475569;
+        }
+        .bg-modern-lightGray {
+            background-color: #e2e8f0;
+        }
+        .border-modern-lightGray {
+            border-color: #e2e8f0;
+        }
+        .shadow-modern {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'storage';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">存储管理</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name|default='管理员'}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-modern-dark">存储管理</h2>
+                <p class="text-modern-gray text-sm mt-1">管理系统文件存储</p>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-5 mb-6">
+                <div class="flex gap-3 flex-wrap">
+                    <a href="/admin/storage/files" class="px-5 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors shadow-sm">
+                        <i class="fas fa-file mr-1"></i>文件管理
+                    </a>
+                    <a href="/admin/storage/upload" class="px-5 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors shadow-sm">
+                        <i class="fas fa-upload mr-1"></i>上传文件
+                    </a>
+                    <a href="/admin/storage/config" class="px-5 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600 transition-colors shadow-sm">
+                        <i class="fas fa-cog mr-1"></i>存储配置
+                    </a>
+                    <a href="/admin/storage/clean" class="px-5 py-2 bg-yellow-500 text-white text-sm rounded-lg hover:bg-yellow-600 transition-colors shadow-sm">
+                        <i class="fas fa-trash mr-1"></i>清理缓存
+                    </a>
+                    <a href="/admin/storage/statistics" class="px-5 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors shadow-sm">
+                        <i class="fas fa-chart-bar mr-1"></i>存储统计
+                    </a>
+                    <a href="/admin/storage/cdn" class="px-5 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition-colors shadow-sm">
+                        <i class="fas fa-cloud mr-1"></i>CDN设置
+                    </a>
+                </div>
+            </div>
+
+            <!-- 存储概览 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- 文件总数 -->
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-modern-gray text-sm">文件总数</p>
+                            <h3 class="text-2xl font-semibold text-modern-dark mt-1">{$totalFiles|default=0}</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-file-alt text-blue-500 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 存储空间 -->
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-modern-gray text-sm">存储空间</p>
+                            <h3 class="text-2xl font-semibold text-modern-dark mt-1">{$totalSize|default='0 B'}</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-database text-green-500 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 存储类型 -->
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-modern-gray text-sm">存储类型</p>
+                            <h3 class="text-2xl font-semibold text-modern-dark mt-1">本地存储</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-server text-purple-500 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 存储使用趋势 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-6 mb-6">
+                <h3 class="text-lg font-semibold text-modern-dark mb-4">存储使用趋势</h3>
+                <div class="h-80">
+                    <canvas id="storageTrendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 文件类型分布 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <h3 class="text-lg font-semibold text-modern-dark mb-4">文件类型分布</h3>
+                    <div class="h-64">
+                        <canvas id="fileTypeChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <h3 class="text-lg font-semibold text-modern-dark mb-4">存储类型分布</h3>
+                    <div class="h-64">
+                        <canvas id="storageTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 最近上传的文件 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                <h3 class="text-lg font-semibold text-modern-dark mb-4">最近上传的文件</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    文件名称
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    文件大小
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    文件类型
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    上传时间
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    操作
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {foreach $recentFiles as $file}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 flex items-center justify-center rounded-md bg-gray-100">
+                                            {if strpos($file.mimetype, 'image') !== false}
+                                                <i class="fas fa-image text-blue-500"></i>
+                                            {elseif strpos($file.mimetype, 'pdf') !== false}
+                                                <i class="fas fa-file-pdf text-red-500"></i>
+                                            {elseif strpos($file.mimetype, 'word') !== false || strpos($file.mimetype, 'document') !== false}
+                                                <i class="fas fa-file-word text-blue-500"></i>
+                                            {elseif strpos($file.mimetype, 'excel') !== false || strpos($file.mimetype, 'spreadsheet') !== false}
+                                                <i class="fas fa-file-excel text-green-500"></i>
+                                            {elseif strpos($file.mimetype, 'zip') !== false || strpos($file.mimetype, 'archive') !== false}
+                                                <i class="fas fa-file-archive text-yellow-500"></i>
+                                            {else}
+                                                <i class="fas fa-file text-gray-500"></i>
+                                            {/if}
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900 truncate max-w-xs">{$file.filename}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500">{$file.fileSizeStr}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500 truncate max-w-xs">{$file.mimetype|default='unknown'}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500">{$file.uploadTime}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="/admin/storage/fileDetail/{$file.id}" class="text-blue-600 hover:text-blue-900 mr-3">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="/admin/storage/downloadFile/{$file.id}" class="text-green-600 hover:text-green-900 mr-3">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    <button onclick="deleteFile({$file.id})" class="text-red-600 hover:text-red-900">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {/foreach}
+                            {if empty($recentFiles)}
+                            <tr>
+                                <td colspan="5" class="px-6 py-8 text-center">
+                                    <div class="text-gray-400">
+                                        <i class="fas fa-file-alt text-3xl mb-2"></i>
+                                        <p>暂无上传文件</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {/if}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    <!-- JavaScript -->
+    <script>
+        // 存储使用趋势图表
+        document.addEventListener('DOMContentLoaded', function() {
+            // 模拟最近7天的存储使用数据
+            const labels = [];
+            const data = [];
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                labels.push(date.getMonth() + 1 + '/' + date.getDate());
+                // 生成模拟数据
+                data.push(Math.floor(Math.random() * 100) + 50);
+            }
+
+            const ctx1 = document.getElementById('storageTrendChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '存储使用量 (MB)',
+                        data: data,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '存储使用量 (MB)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '日期'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 文件类型分布图表
+            const ctx2 = document.getElementById('fileTypeChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['图片', '文档', '压缩包', '其他'],
+                    datasets: [{
+                        data: [45, 30, 15, 10],
+                        backgroundColor: [
+                            '#3b82f6',
+                            '#10b981',
+                            '#f59e0b',
+                            '#6b7280'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+
+            // 存储类型分布图表
+            const ctx3 = document.getElementById('storageTypeChart').getContext('2d');
+            new Chart(ctx3, {
+                type: 'pie',
+                data: {
+                    labels: ['本地存储', '云存储'],
+                    datasets: [{
+                        data: [85, 15],
+                        backgroundColor: [
+                            '#3b82f6',
+                            '#8b5cf6'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+        });
+
+        // 删除文件功能
+        function deleteFile(fileId) {
+            if (confirm('确定要删除这个文件吗？')) {
+                $.ajax({
+                    url: '/admin/storage/deleteFile',
+                    type: 'POST',
+                    data: { ids: fileId },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.code === 200) {
+                            alert('删除成功');
+                            location.reload();
+                        } else {
+                            alert('删除失败：' + response.msg);
+                        }
+                    },
+                    error: function() {
+                        alert('删除失败：网络错误');
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

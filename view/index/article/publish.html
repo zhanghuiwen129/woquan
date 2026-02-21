@@ -1,0 +1,733 @@
+{extend name="index/main-layout" /}
+
+{block name="content"}
+<style>
+    .publish-container {
+        background: white;
+        border-radius: 12px;
+        padding: 32px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #333;
+        outline: none;
+        transition: all 0.3s;
+        box-sizing: border-box;
+    }
+
+    .form-input:focus {
+        border-color: #4a90e2;
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    }
+
+    .form-textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #333;
+        outline: none;
+        transition: all 0.3s;
+        box-sizing: border-box;
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .form-textarea:focus {
+        border-color: #4a90e2;
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    }
+
+    .title-input {
+        font-size: 24px;
+        font-weight: 600;
+        padding: 16px;
+        border: none;
+        border-bottom: 2px solid #e0e0e0;
+        outline: none;
+        transition: all 0.3s;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .title-input:focus {
+        border-bottom-color: #4a90e2;
+    }
+
+    .title-input::placeholder {
+        color: #ccc;
+    }
+
+    .editor-container {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .editor-toolbar {
+        border-bottom: 1px solid #e0e0e0;
+        padding: 12px;
+        background: #f9f9f9;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .toolbar-btn {
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+        color: #666;
+        font-size: 16px;
+    }
+
+    .toolbar-btn:hover {
+        background: #4a90e2;
+        color: white;
+    }
+
+    .toolbar-divider {
+        width: 1px;
+        height: 24px;
+        background: #e0e0e0;
+        margin: 6px 8px;
+    }
+
+    .editor-content {
+        min-height: 400px;
+        padding: 20px;
+        outline: none;
+        line-height: 1.8;
+        font-size: 15px;
+    }
+
+    .editor-content:empty:before {
+        content: attr(data-placeholder);
+        color: #ccc;
+    }
+
+    .cover-upload {
+        border: 2px dashed #e0e0e0;
+        border-radius: 8px;
+        padding: 32px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        position: relative;
+    }
+
+    .cover-upload:hover {
+        border-color: #4a90e2;
+        background: rgba(74, 144, 226, 0.05);
+    }
+
+    .cover-preview {
+        max-width: 100%;
+        max-height: 300px;
+        border-radius: 8px;
+        display: none;
+    }
+
+    .cover-preview.active {
+        display: block;
+    }
+
+    .cover-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        color: #999;
+    }
+
+    .cover-placeholder.active {
+        display: none;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 12px;
+        margin-top: 32px;
+    }
+
+    .btn {
+        padding: 12px 32px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background: #f0f0f0;
+        color: #333;
+    }
+
+    .btn-secondary:hover {
+        background: #e0e0e0;
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+</style>
+
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="publish-container">
+            <h1 class="text-2xl font-bold mb-6">发布文章</h1>
+
+            <div class="form-group">
+                <input type="text" id="articleTitle" class="title-input" placeholder="请输入文章标题">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">封面图片</label>
+                <div class="cover-upload" id="coverUpload">
+                    <div class="cover-placeholder" id="coverPlaceholder">
+                        <i class="fa fa-cloud-upload-alt text-4xl"></i>
+                        <p>点击或拖拽上传封面图片</p>
+                        <p class="text-sm text-gray-400">支持 JPG、PNG 格式，建议尺寸 1200x630</p>
+                    </div>
+                    <img id="coverPreview" class="cover-preview" alt="封面预览">
+                    <input type="file" id="coverInput" accept="image/*" style="display: none;">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">文章内容</label>
+                <div class="editor-container">
+                    <div class="editor-toolbar">
+                        <button class="toolbar-btn" onclick="formatDoc('bold')" title="加粗">
+                            <i class="fa fa-bold"></i>
+                        </button>
+                        <button class="toolbar-btn" onclick="formatDoc('italic')" title="斜体">
+                            <i class="fa fa-italic"></i>
+                        </button>
+                        <button class="toolbar-btn" onclick="formatDoc('underline')" title="下划线">
+                            <i class="fa fa-underline"></i>
+                        </button>
+                        <div class="toolbar-divider"></div>
+                        <button class="toolbar-btn" onclick="formatDoc('insertUnorderedList')" title="无序列表">
+                            <i class="fa fa-list-ul"></i>
+                        </button>
+                        <button class="toolbar-btn" onclick="formatDoc('insertOrderedList')" title="有序列表">
+                            <i class="fa fa-list-ol"></i>
+                        </button>
+                        <div class="toolbar-divider"></div>
+                        <button class="toolbar-btn" onclick="formatDoc('justifyLeft')" title="左对齐">
+                            <i class="fa fa-align-left"></i>
+                        </button>
+                        <button class="toolbar-btn" onclick="formatDoc('justifyCenter')" title="居中">
+                            <i class="fa fa-align-center"></i>
+                        </button>
+                        <button class="toolbar-btn" onclick="formatDoc('justifyRight')" title="右对齐">
+                            <i class="fa fa-align-right"></i>
+                        </button>
+                        <div class="toolbar-divider"></div>
+                        <button class="toolbar-btn" onclick="insertImage()" title="插入图片">
+                            <i class="fa fa-image"></i>
+                        </button>
+                        <button class="toolbar-btn" onclick="insertLink()" title="插入链接">
+                            <i class="fa fa-link"></i>
+                        </button>
+                    </div>
+                    <div id="articleContent" class="editor-content" contenteditable="true" data-placeholder="写下你的想法..."></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">文章摘要</label>
+                <textarea id="articleSummary" class="form-textarea" placeholder="请输入文章摘要（可选）" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">文章分类</label>
+                <select id="articleCategory" class="form-input">
+                    <option value="">请选择分类</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">文章标签</label>
+                <input type="text" id="articleTags" class="form-input" placeholder="请输入文章标签，用逗号分隔">
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="isDraft" class="checkbox">
+                    <label for="isDraft">保存为草稿</label>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button id="publishBtn" class="btn btn-primary">发布文章</button>
+                <button id="saveDraftBtn" class="btn btn-secondary">保存草稿</button>
+            </div>
+        </div>
+    </div>
+</div>
+{/block}
+
+{block name="contentMobile"}
+<style>
+    .publish-container {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #333;
+        outline: none;
+        transition: all 0.3s;
+        box-sizing: border-box;
+    }
+
+    .form-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #333;
+        outline: none;
+        transition: all 0.3s;
+        box-sizing: border-box;
+        min-height: 80px;
+        resize: vertical;
+    }
+
+    .title-input {
+        font-size: 20px;
+        font-weight: 600;
+        padding: 12px;
+        border: none;
+        border-bottom: 2px solid #e0e0e0;
+        outline: none;
+        transition: all 0.3s;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .editor-container {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .editor-toolbar {
+        border-bottom: 1px solid #e0e0e0;
+        padding: 8px;
+        background: #f9f9f9;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .toolbar-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: white;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+        color: #666;
+        font-size: 14px;
+    }
+
+    .editor-content {
+        min-height: 300px;
+        padding: 16px;
+        outline: none;
+        line-height: 1.8;
+        font-size: 14px;
+    }
+
+    .cover-upload {
+        border: 2px dashed #e0e0e0;
+        border-radius: 8px;
+        padding: 24px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .cover-preview {
+        max-width: 100%;
+        max-height: 200px;
+        border-radius: 8px;
+        display: none;
+    }
+
+    .cover-preview.active {
+        display: block;
+    }
+
+    .cover-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        color: #999;
+    }
+
+    .cover-placeholder.active {
+        display: none;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 24px;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #f0f0f0;
+        color: #333;
+    }
+</style>
+
+<div class="px-4 py-6">
+    <div class="publish-container">
+        <h1 class="text-xl font-bold mb-4">发布文章</h1>
+
+        <div class="form-group">
+            <input type="text" id="articleTitle" class="title-input" placeholder="请输入文章标题">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">封面图片</label>
+            <div class="cover-upload" id="coverUpload">
+                <div class="cover-placeholder" id="coverPlaceholder">
+                    <i class="fa fa-cloud-upload-alt text-3xl"></i>
+                    <p class="text-sm">点击上传封面</p>
+                </div>
+                <img id="coverPreview" class="cover-preview" alt="封面预览">
+                <input type="file" id="coverInput" accept="image/*" style="display: none;">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">文章内容</label>
+            <div class="editor-container">
+                <div class="editor-toolbar">
+                    <button class="toolbar-btn" onclick="formatDoc('bold')">
+                        <i class="fa fa-bold"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="formatDoc('italic')">
+                        <i class="fa fa-italic"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="formatDoc('underline')">
+                        <i class="fa fa-underline"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="insertImage()">
+                        <i class="fa fa-image"></i>
+                    </button>
+                    <button class="toolbar-btn" onclick="insertLink()">
+                        <i class="fa fa-link"></i>
+                    </button>
+                </div>
+                <div id="articleContent" class="editor-content" contenteditable="true" data-placeholder="写下你的想法..."></div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">文章摘要</label>
+            <textarea id="articleSummary" class="form-textarea" placeholder="请输入文章摘要（可选）" rows="2"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">文章分类</label>
+            <select id="articleCategory" class="form-input">
+                <option value="">请选择分类</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">文章标签</label>
+            <input type="text" id="articleTags" class="form-input" placeholder="请输入文章标签，用逗号分隔">
+        </div>
+
+        <div class="form-group">
+            <div class="checkbox-group">
+                <input type="checkbox" id="isDraft">
+                <label for="isDraft">保存为草稿</label>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button id="publishBtn" class="btn btn-primary">发布文章</button>
+            <button id="saveDraftBtn" class="btn btn-secondary">保存草稿</button>
+        </div>
+    </div>
+</div>
+{/block}
+
+{block name="script"}
+<script>
+    let coverImage = '';
+
+    function formatDoc(cmd, value = null) {
+        document.execCommand(cmd, false, value);
+        document.getElementById('articleContent').focus();
+    }
+
+    function insertImage() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/upload/image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    const img = `<img src="${result.data.url}" style="max-width: 100%; border-radius: 8px;">`;
+                    formatDoc('insertHTML', img);
+                } else {
+                    alert('上传失败: ' + result.msg);
+                }
+            } catch (error) {
+                alert('上传失败: ' + error.message);
+            }
+        };
+        input.click();
+    }
+
+    function insertLink() {
+        const url = prompt('请输入链接地址:');
+        if (url) {
+            formatDoc('createLink', url);
+        }
+    }
+
+    async function uploadCover(file) {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/api/upload/image', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.code === 200) {
+                coverImage = result.data.url;
+                document.getElementById('coverPreview').src = coverImage;
+                document.getElementById('coverPreview').classList.add('active');
+                document.getElementById('coverPlaceholder').classList.add('active');
+            } else {
+                alert('上传失败: ' + result.msg);
+            }
+        } catch (error) {
+            alert('上传失败: ' + error.message);
+        }
+    }
+
+    async function loadCategories() {
+        try {
+            const response = await fetch('/api/articles/categories');
+            const result = await response.json();
+
+            if (result.code === 200) {
+                const select = document.getElementById('articleCategory');
+                result.data.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('加载分类失败:', error);
+        }
+    }
+
+    async function publishArticle(isDraft = false) {
+        const title = document.getElementById('articleTitle').value.trim();
+        const content = document.getElementById('articleContent').innerHTML.trim();
+        const summary = document.getElementById('articleSummary').value.trim();
+        const category = document.getElementById('articleCategory').value;
+        const tags = document.getElementById('articleTags').value.trim();
+
+        if (!title) {
+            alert('请输入文章标题');
+            return;
+        }
+
+        if (!content) {
+            alert('请输入文章内容');
+            return;
+        }
+
+        const data = {
+            title,
+            content,
+            summary,
+            cover: coverImage,
+            category_id: category || null,
+            tags,
+            status: isDraft ? 0 : 1
+        };
+
+        try {
+            const response = await fetch('/api/articles/publish', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            if (result.code === 200) {
+                alert(isDraft ? '草稿保存成功' : '文章发布成功');
+                window.location.href = '/articles';
+            } else {
+                alert('发布失败: ' + result.msg);
+            }
+        } catch (error) {
+            alert('发布失败: ' + error.message);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCategories();
+
+        const coverUpload = document.getElementById('coverUpload');
+        const coverInput = document.getElementById('coverInput');
+
+        coverUpload.addEventListener('click', () => coverInput.click());
+
+        coverInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                uploadCover(file);
+            }
+        });
+
+        coverUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            coverUpload.style.borderColor = '#4a90e2';
+        });
+
+        coverUpload.addEventListener('dragleave', () => {
+            coverUpload.style.borderColor = '#e0e0e0';
+        });
+
+        coverUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            coverUpload.style.borderColor = '#e0e0e0';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                uploadCover(file);
+            }
+        });
+
+        document.getElementById('publishBtn').addEventListener('click', () => {
+            publishArticle(false);
+        });
+
+        document.getElementById('saveDraftBtn').addEventListener('click', () => {
+            publishArticle(true);
+        });
+    });
+</script>
+{/block}

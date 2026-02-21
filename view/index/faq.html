@@ -1,0 +1,259 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="content"}
+<style>
+    .faq-item {
+        transition: all 0.3s ease;
+    }
+    .faq-item:hover {
+        background-color: var(--lightBlue);
+    }
+    .faq-answer {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+    .faq-item.active .faq-answer {
+        max-height: 500px;
+    }
+    .faq-item.active .faq-icon {
+        transform: rotate(180deg);
+    }
+</style>
+
+<!-- 主内容区 -->
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-4xl mx-auto">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-text-primary mb-2">帮助中心</h2>
+            <p class="text-text-secondary">常见问题解答</p>
+        </div>
+
+        <!-- 搜索框 -->
+        <div class="mb-6">
+            <div class="relative">
+                <input
+                    type="text"
+                    id="faq-search"
+                    placeholder="搜索问题..."
+                    class="w-full px-4 py-3 pl-10 bg-bg-card rounded-lg border border-border-color text-text-primary placeholder-text-tertiary focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    oninput="filterFAQ()"
+                >
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"></i>
+            </div>
+        </div>
+
+        <!-- 分类标签 -->
+        <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+            <button onclick="filterCategory('all')" class="category-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-primary text-white">
+                全部
+            </button>
+            <button onclick="filterCategory('account')" class="category-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-bg-card text-text-primary hover:bg-gray-200">
+                账户相关
+            </button>
+            <button onclick="filterCategory('moment')" class="category-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-bg-card text-text-primary hover:bg-gray-200">
+                动态相关
+            </button>
+            <button onclick="filterCategory('points')" class="category-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-bg-card text-text-primary hover:bg-gray-200">
+                积分等级
+            </button>
+            <button onclick="filterCategory('safety')" class="category-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-bg-card text-text-primary hover:bg-gray-200">
+                安全问题
+            </button>
+        </div>
+
+        <!-- FAQ列表 -->
+        <div id="faq-list" class="space-y-3">
+            <!-- FAQ列表由JS加载 -->
+        </div>
+
+        <!-- 联系客服 -->
+        <div class="mt-8 bg-bg-card rounded-xl p-6 text-center">
+            <i class="fa fa-headphones text-4xl text-primary mb-3"></i>
+            <h3 class="text-lg font-semibold text-text-primary mb-2">还有问题？</h3>
+            <p class="text-sm text-text-secondary mb-4">如果您的问题未在列表中，请联系我们的客服团队</p>
+            <button onclick="contactSupport()" class="px-6 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-darkPrimary transition-colors">
+                <i class="fa fa-comment-o mr-1"></i>联系客服
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // FAQ数据
+    const faqData = [
+        {
+            id: 1,
+            category: 'account',
+            question: '如何修改账户密码？',
+            answer: '进入"设置中心"→"账户安全"，点击"修改密码"按钮，按照提示输入旧密码和新密码即可完成修改。建议定期更换密码以保障账户安全。'
+        },
+        {
+            id: 2,
+            category: 'account',
+            question: '如何绑定手机号？',
+            answer: '进入"设置中心"→"账户安全"，点击"绑定手机号"，输入手机号并获取验证码，验证通过后即可完成绑定。绑定手机号可以增强账户安全。'
+        },
+        {
+            id: 3,
+            category: 'account',
+            question: '如何注销账户？',
+            answer: '进入"设置中心"→"账户安全"，点击"注销账户"按钮。请注意，账户注销后所有数据将被永久删除，且无法恢复。'
+        },
+        {
+            id: 4,
+            category: 'moment',
+            question: '如何发布动态？',
+            answer: '点击首页中间的"+"按钮，或者在"我的"页面点击"发布动态"，输入内容并可选择添加图片、话题等，点击"发布"即可。'
+        },
+        {
+            id: 5,
+            category: 'moment',
+            question: '如何删除自己发布的动态？',
+            answer: '在动态详情页面，点击右上角的三点菜单，选择"删除动态"，确认后即可删除已发布的动态。删除后无法恢复。'
+        },
+        {
+            id: 6,
+            category: 'moment',
+            question: '如何置顶动态？',
+            answer: '在动态详情页面，点击右上角的三点菜单，选择"置顶动态"。仅等级3及以上用户可以使用置顶功能。'
+        },
+        {
+            id: 7,
+            category: 'points',
+            question: '如何获取积分？',
+            answer: '通过完成每日任务（如签到、发布动态、点赞评论等）和成长任务可以获得积分。进入"积分中心"查看可用任务。'
+        },
+        {
+            id: 8,
+            category: 'points',
+            question: '积分有什么用？',
+            answer: '积分可以用于升级等级，解锁更多特权和功能。高等级用户享有更多权益，如免审核发布、专属客服等。'
+        },
+        {
+            id: 9,
+            category: 'points',
+            question: '如何升级等级？',
+            answer: '通过获取积分可以升级等级，每次升级需要一定数量的积分。进入"等级中心"查看当前等级和升级所需积分。'
+        },
+        {
+            id: 10,
+            category: 'safety',
+            question: '如何举报违规内容？',
+            answer: '在动态或评论页面，点击右上角的三点菜单，选择"举报"，选择举报类型并填写说明，提交后我们会尽快处理。'
+        },
+        {
+            id: 11,
+            category: 'safety',
+            question: '如何保护隐私？',
+            answer: '您可以在"设置中心"中设置谁可以查看您的主页、谁可以给您发送私信等。建议定期检查隐私设置，保护个人信息安全。'
+        },
+        {
+            id: 12,
+            category: 'safety',
+            question: '如何屏蔽某个用户？',
+            answer: '进入该用户的主页，点击右上角的三个点，选择"拉黑用户"即可。被拉黑的用户无法查看您的动态或与您互动。'
+        }
+    ];
+
+    let currentCategory = 'all';
+
+    // 页面加载时初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        renderFAQ();
+    });
+
+    // 渲染FAQ列表
+    function renderFAQ() {
+        const container = document.getElementById('faq-list');
+        let filteredData = faqData;
+
+        // 按分类筛选
+        if (currentCategory !== 'all') {
+            filteredData = faqData.filter(item => item.category === currentCategory);
+        }
+
+        // 按搜索关键词筛选
+        const searchTerm = document.getElementById('faq-search').value.toLowerCase();
+        if (searchTerm) {
+            filteredData = filteredData.filter(item =>
+                item.question.toLowerCase().includes(searchTerm) ||
+                item.answer.toLowerCase().includes(searchTerm)
+            );
+        }
+
+        if (filteredData.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-8 text-text-secondary">
+                    <i class="fa fa-inbox text-4xl mb-3"></i>
+                    <p>未找到相关内容</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = filteredData.map(item => `
+            <div class="faq-item bg-white rounded-lg overflow-hidden cursor-pointer" onclick="toggleFAQ(${item.id})">
+                <div class="flex items-center justify-between p-4">
+                    <div class="flex items-center gap-3 flex-1">
+                        <span class="text-sm text-primary font-medium">[${getCategoryName(item.category)}]</span>
+                        <h4 class="text-sm font-medium text-text-primary">${item.question}</h4>
+                    </div>
+                    <i class="faq-icon fa fa-chevron-down text-text-tertiary transition-transform duration-300"></i>
+                </div>
+                <div class="faq-answer px-4 pb-4">
+                    <div class="text-sm text-text-secondary pl-16">${item.answer}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 获取分类名称
+    function getCategoryName(category) {
+        const names = {
+            'account': '账户',
+            'moment': '动态',
+            'points': '积分',
+            'safety': '安全'
+        };
+        return names[category] || category;
+    }
+
+    // 展开/收起FAQ
+    function toggleFAQ(id) {
+        const faqItems = document.querySelectorAll('.faq-item');
+        faqItems.forEach(item => {
+            if (item.onclick.toString().includes(id)) {
+                item.classList.toggle('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+
+    // 按分类筛选
+    function filterCategory(category) {
+        currentCategory = category;
+
+        // 更新按钮样式
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.classList.remove('bg-primary', 'text-white');
+            btn.classList.add('bg-bg-card', 'text-text-primary');
+        });
+        event.target.classList.remove('bg-bg-card', 'text-text-primary');
+        event.target.classList.add('bg-primary', 'text-white');
+
+        renderFAQ();
+    }
+
+    // 搜索过滤
+    function filterFAQ() {
+        renderFAQ();
+    }
+
+    // 联系客服
+    function contactSupport() {
+        window.location.href = '/message?type=support';
+    }
+</script>
+{/block}

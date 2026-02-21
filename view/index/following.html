@@ -1,0 +1,615 @@
+﻿{extend name="index/main-layout" /}
+
+<!-- 桌面端内容 -->
+{block name="content"}
+<style>
+    .follow-item {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .follow-item:hover {
+        box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+        transform: translateY(-2px);
+        cursor: pointer;
+    }
+
+    .follow-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .follow-time {
+        font-size: 12px;
+        color: var(--text-tertiary);
+    }
+
+    /* 名片弹窗样式 */
+    #cardModal {
+        z-index: 9999;
+    }
+
+    .modal-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        max-width: 400px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--primary-color);
+    }
+
+    .stat-number {
+        font-size: 18px;
+        font-weight: bold;
+        color: var(--text-primary);
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+</style>
+
+<!-- 名片弹窗 -->
+<div id="cardModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
+    <div class="modal-card p-6">
+        <div class="flex justify-between items-start mb-4">
+            <div class="flex items-center gap-3">
+                <img id="modalAvatar" src="" alt="头像" class="modal-avatar">
+                <div>
+                    <h3 id="modalNickname" class="text-xl font-bold text-gray-800"></h3>
+                    <p id="modalUsername" class="text-sm text-gray-500"></p>
+                </div>
+            </div>
+            <button onclick="closeCardModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+
+        <div id="modalBio" class="text-sm text-gray-600 mb-4 p-3 bg-gray-50 rounded-lg"></div>
+
+        <div class="grid grid-cols-4 gap-4 mb-4 text-center">
+            <div>
+                <p id="modalMoments" class="stat-number">0</p>
+                <p class="stat-label">动态</p>
+            </div>
+            <div>
+                <p id="modalFollowing" class="stat-number">0</p>
+                <p class="stat-label">关注</p>
+            </div>
+            <div>
+                <p id="modalFollowers" class="stat-number">0</p>
+                <p class="stat-label">粉丝</p>
+            </div>
+            <div>
+                <p id="modalLikes" class="stat-number">0</p>
+                <p class="stat-label">获赞</p>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <button id="modalFollowBtn" class="flex-1 bg-primary text-white py-2 rounded-full font-medium hover:bg-secondary transition-colors">
+                关注
+            </button>
+            <a id="modalCardLink" href="" class="flex-1 bg-gray-100 text-gray-700 py-2 rounded-full font-medium hover:bg-gray-200 transition-colors text-center">
+                查看完整名片
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 关注列表 - 使用PHP渲染的数据 -->
+{if isset($following) && count($following) > 0}
+<div id="follow-list" class="space-y-4">
+    {volist name="following" id="user"}
+    <div class="follow-item" data-user-id="{$user.id}" onclick="showCardModal(this)">
+        <div class="flex items-center gap-3 flex-1">
+            <img src="{$user.avatar|default='/static/images/default-avatar.png'}" alt="头像" class="follow-avatar">
+            <div class="flex-1">
+                <h3 class="font-semibold text-gray-800">{$user.nickname|default=$user.username}</h3>
+                <p class="text-sm text-gray-500 truncate">{$user.bio|default='暂无个性签名'}</p>
+            </div>
+        </div>
+    </div>
+    {/volist}
+</div>
+{else}
+<div id="empty" class="text-center py-16">
+    <div class="w-24 h-24 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fa fa-user-plus text-4xl text-blue-500"></i>
+    </div>
+    <h2 class="text-xl font-bold text-gray-800 mb-2">暂无关注</h2>
+    <p class="text-gray-500 mb-4">去发现有趣的人并关注他们吧</p>
+    <a href="/discover#recommended" class="inline-block bg-primary text-white px-6 py-2 rounded-full hover:bg-secondary transition-colors">
+        去发现
+    </a>
+</div>
+{/if}
+
+<script>
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg z-50';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(function() {
+            toast.remove();
+        }, 2000);
+    }
+
+    // 显示名片弹窗
+    async function showCardModal(element) {
+        try {
+            // 从元素上获取用户ID
+            const userId = element.getAttribute('data-user-id');
+            if (!userId) {
+                showToast('用户ID不存在');
+                return;
+            }
+
+            // 根据设备选择弹窗：PC端优先使用PC弹窗，移动端优先使用移动端弹窗
+            let isMobile = window.innerWidth <= 768;
+            let modal = isMobile
+                ? document.getElementById('cardModalMobile')
+                : document.getElementById('cardModal');
+            if (!modal) {
+                console.error('找不到 cardModal 元素');
+                showToast('弹窗加载失败');
+                return;
+            }
+            modal.classList.remove('hidden');
+
+            // 获取用户名片信息
+            const response = await fetch(`/user/card?user_id=${userId}`);
+            const result = await response.json();
+
+            if (result.code === 200 && result.data) {
+                const user = result.data.user;
+                const stats = result.data.stats;
+
+                // 在当前选中的弹窗内查找元素
+                const modalAvatar = modal.querySelector('#modalAvatar');
+                const modalNickname = modal.querySelector('#modalNickname');
+                const modalUsername = modal.querySelector('#modalUsername');
+                const modalBio = modal.querySelector('#modalBio');
+                const modalMoments = modal.querySelector('#modalMoments');
+                const modalFollowing = modal.querySelector('#modalFollowing');
+                const modalFollowers = modal.querySelector('#modalFollowers');
+                const modalLikes = modal.querySelector('#modalLikes');
+                const modalFollowBtn = modal.querySelector('#modalFollowBtn');
+                const modalCardLink = modal.querySelector('#modalCardLink');
+
+                // 检查所有必需元素是否存在
+                if (!modalAvatar || !modalNickname || !modalUsername || !modalBio ||
+                    !modalMoments || !modalFollowing || !modalFollowers || !modalLikes ||
+                    !modalFollowBtn || !modalCardLink) {
+                    console.error('弹窗元素加载失败');
+                    showToast('弹窗元素加载失败');
+                    return;
+                }
+
+                // 更新弹窗内容
+                modalAvatar.src = user.avatar || '/static/images/default-avatar.png';
+                modalNickname.textContent = user.nickname || user.username;
+                modalUsername.textContent = '@' + user.username;
+                modalBio.textContent = user.bio || user.motto || '暂无个性签名';
+
+                // 更新统计数据
+                modalMoments.textContent = stats.moments || 0;
+                modalFollowing.textContent = stats.following || 0;
+                modalFollowers.textContent = stats.followers || 0;
+                modalLikes.textContent = stats.likes || 0;
+
+                // 更新关注按钮状态
+                if (result.data.is_following) {
+                    modalFollowBtn.textContent = '已关注';
+                    modalFollowBtn.className = 'flex-1 bg-gray-300 text-gray-700 py-2 rounded-full font-medium hover:bg-gray-400 transition-colors';
+                } else {
+                    modalFollowBtn.textContent = '关注';
+                    modalFollowBtn.className = 'flex-1 bg-primary text-white py-2 rounded-full font-medium hover:bg-secondary transition-colors';
+                }
+
+                // 绑定关注按钮点击事件
+                modalFollowBtn.onclick = async function() {
+                    const action = modalFollowBtn.textContent === '关注' ? 'follow' : 'unfollow';
+                    try {
+                        const followResponse = await fetch('/user/follow', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ target_id: userId, action: action })
+                        });
+                        const followResult = await followResponse.json();
+
+                        if (followResult.code === 200) {
+                            if (followResult.data && followResult.data.following) {
+                                modalFollowBtn.textContent = '已关注';
+                                modalFollowBtn.className = 'flex-1 bg-gray-300 text-gray-700 py-2 rounded-full font-medium hover:bg-gray-400 transition-colors';
+                                showToast('关注成功');
+                            } else {
+                                modalFollowBtn.textContent = '关注';
+                                modalFollowBtn.className = 'flex-1 bg-primary text-white py-2 rounded-full font-medium hover:bg-secondary transition-colors';
+                                showToast('取消关注成功');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('关注操作失败:', error);
+                        showToast('操作失败，请稍后重试');
+                    }
+                };
+
+                // 更新查看完整名片链接
+                modalCardLink.href = `/card/${userId}`;
+            } else {
+                showToast('获取用户信息失败');
+                closeCardModal();
+            }
+        } catch (error) {
+            console.error('加载名片失败:', error);
+            showToast('加载名片失败');
+            closeCardModal();
+        }
+    }
+
+    // 关闭名片弹窗
+    function closeCardModal() {
+        const modal = document.getElementById('cardModal');
+        const modalMobile = document.getElementById('cardModalMobile');
+        if (modal) modal.classList.add('hidden');
+        if (modalMobile) modalMobile.classList.add('hidden');
+    }
+
+    // DOM 加载完成后初始化事件监听器
+    document.addEventListener('DOMContentLoaded', function() {
+        const cardModal = document.getElementById('cardModal');
+        if (cardModal) {
+            cardModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeCardModal();
+                }
+            });
+        } else {
+            console.error('找不到 cardModal 元素，无法初始化事件监听器');
+        }
+    });
+</script>
+{/block}
+
+<!-- 移动端内容 -->
+{block name="contentMobile"}
+<style>
+    .follow-item {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+    }
+
+    .follow-item:hover {
+        box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .follow-item:active {
+        transform: scale(0.98);
+    }
+
+    .follow-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    /* 移动端名片弹窗样式 */
+    #cardModal {
+        z-index: 9999;
+    }
+
+    .modal-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        max-width: 400px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--primary-color);
+    }
+
+    .stat-number {
+        font-size: 18px;
+        font-weight: bold;
+        color: var(--text-primary);
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+</style>
+
+<!-- 移动端名片弹窗 -->
+<div id="cardModalMobile" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
+    <div class="modal-card p-6">
+        <div class="flex justify-between items-start mb-4">
+            <div class="flex items-center gap-3">
+                <img id="modalAvatar" src="" alt="头像" class="modal-avatar">
+                <div>
+                    <h3 id="modalNickname" class="text-xl font-bold text-gray-800"></h3>
+                    <p id="modalUsername" class="text-sm text-gray-500"></p>
+                </div>
+            </div>
+            <button onclick="closeCardModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+
+        <div id="modalBio" class="text-sm text-gray-600 mb-4 p-3 bg-gray-50 rounded-lg"></div>
+
+        <div class="grid grid-cols-4 gap-4 mb-4 text-center">
+            <div>
+                <p id="modalMoments" class="stat-number">0</p>
+                <p class="stat-label">动态</p>
+            </div>
+            <div>
+                <p id="modalFollowing" class="stat-number">0</p>
+                <p class="stat-label">关注</p>
+            </div>
+            <div>
+                <p id="modalFollowers" class="stat-number">0</p>
+                <p class="stat-label">粉丝</p>
+            </div>
+            <div>
+                <p id="modalLikes" class="stat-number">0</p>
+                <p class="stat-label">获赞</p>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <button id="modalFollowBtn" class="flex-1 bg-primary text-white py-2 rounded-full font-medium hover:bg-secondary transition-colors">
+                关注
+            </button>
+            <a id="modalCardLink" href="" class="flex-1 bg-gray-100 text-gray-700 py-2 rounded-full font-medium hover:bg-gray-200 transition-colors text-center">
+                查看完整名片
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 关注列表 - 使用PHP渲染的数据 -->
+{if isset($following) && count($following) > 0}
+<div id="follow-list-mobile" class="px-4 py-4 space-y-4">
+    {volist name="following" id="user"}
+    <div class="follow-item" data-user-id="{$user.id}" onclick="showCardModal(this)">
+        <div class="flex items-center gap-3 flex-1">
+            <img src="{$user.avatar|default='/static/images/default-avatar.png'}" alt="头像" class="follow-avatar">
+            <div class="flex-1">
+                <h3 class="font-semibold text-gray-800">{$user.nickname|default=$user.username}</h3>
+                <p class="text-sm text-gray-500 truncate">{$user.bio|default='暂无个性签名'}</p>
+            </div>
+        </div>
+    </div>
+    {/volist}
+</div>
+{else}
+<div id="empty-mobile" class="text-center py-16 px-4">
+    <div class="w-24 h-24 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fa fa-user-plus text-4xl text-blue-500"></i>
+    </div>
+    <h2 class="text-xl font-bold text-gray-800 mb-2">暂无关注</h2>
+    <p class="text-gray-500 mb-4">去发现有趣的人并关注他们吧</p>
+    <a href="/discover#recommended" class="inline-block bg-primary text-white px-6 py-2 rounded-full hover:bg-secondary transition-colors">
+        去发现
+    </a>
+</div>
+{/if}
+{/block}
+
+{block name="script"}
+<script>
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg z-50';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(function() {
+            toast.remove();
+        }, 2000);
+    }
+
+    function closeCardModal() {
+        const modal = document.getElementById('cardModal');
+        const modalMobile = document.getElementById('cardModalMobile');
+        if (modal) modal.classList.add('hidden');
+        if (modalMobile) modalMobile.classList.add('hidden');
+    }
+
+    async function showCardModal(element) {
+        try {
+            const userId = element.getAttribute('data-user-id');
+            if (!userId) {
+                showToast('用户ID不存在');
+                return;
+            }
+
+            // 检查是否有弹窗元素，如果没有则创建
+            let isMobile = window.innerWidth <= 768;
+            let modal = isMobile
+                ? document.getElementById('cardModalMobile')
+                : document.getElementById('cardModal');
+
+            if (!modal) {
+                // 创建弹窗
+                modal = document.createElement('div');
+                modal.id = 'cardModal';
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-[9999]';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full max-h-[90vh] overflow-y-auto">
+                        <div class="flex justify-between items-start mb-4 p-4">
+                            <div class="flex items-center gap-3">
+                                <img id="modalAvatar" src="" alt="头像" class="w-16 h-16 rounded-full object-cover border-3 border-primary">
+                                <div>
+                                    <h3 id="modalNickname" class="text-xl font-bold text-gray-800"></h3>
+                                    <p id="modalUsername" class="text-sm text-gray-500"></p>
+                                </div>
+                            </div>
+                            <button onclick="closeCardModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div id="modalBio" class="text-sm text-gray-600 mb-4 px-4 py-3 bg-gray-50 rounded-lg"></div>
+
+                        <div class="grid grid-cols-4 gap-4 mb-4 px-4 text-center">
+                            <div>
+                                <p id="modalMoments" class="text-lg font-bold text-gray-800">0</p>
+                                <p class="text-xs text-gray-500">动态</p>
+                            </div>
+                            <div>
+                                <p id="modalFollowing" class="text-lg font-bold text-gray-800">0</p>
+                                <p class="text-xs text-gray-500">关注</p>
+                            </div>
+                            <div>
+                                <p id="modalFollowers" class="text-lg font-bold text-gray-800">0</p>
+                                <p class="text-xs text-gray-500">粉丝</p>
+                            </div>
+                            <div>
+                                <p id="modalLikes" class="text-lg font-bold text-gray-800">0</p>
+                                <p class="text-xs text-gray-500">获赞</p>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 px-4 pb-4">
+                            <button id="modalFollowBtn" class="flex-1 bg-primary text-white py-2 rounded-full font-medium hover:bg-secondary transition-colors text-sm">
+                                关注
+                            </button>
+                            <a id="modalCardLink" href="" class="flex-1 bg-gray-100 text-gray-700 py-2 rounded-full font-medium hover:bg-gray-200 transition-colors text-center text-sm">
+                                查看名片
+                            </a>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                // 添加点击背景关闭弹窗的事件
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeCardModal();
+                    }
+                });
+            }
+
+            modal.classList.remove('hidden');
+
+            const response = await fetch(`/user/card?user_id=${userId}`);
+            const result = await response.json();
+
+            if (result.code === 200 && result.data) {
+                const user = result.data.user;
+                const stats = result.data.stats;
+
+                // 在当前选中的弹窗内查找元素
+                const modalAvatar = modal.querySelector('#modalAvatar');
+                const modalNickname = modal.querySelector('#modalNickname');
+                const modalUsername = modal.querySelector('#modalUsername');
+                const modalBio = modal.querySelector('#modalBio');
+                const modalMoments = modal.querySelector('#modalMoments');
+                const modalFollowing = modal.querySelector('#modalFollowing');
+                const modalFollowers = modal.querySelector('#modalFollowers');
+                const modalLikes = modal.querySelector('#modalLikes');
+                const modalFollowBtn = modal.querySelector('#modalFollowBtn');
+                const modalCardLink = modal.querySelector('#modalCardLink');
+
+                if (modalAvatar) modalAvatar.src = user.avatar || '/static/images/default-avatar.png';
+                if (modalNickname) modalNickname.textContent = user.nickname || user.username;
+                if (modalUsername) modalUsername.textContent = '@' + user.username;
+                if (modalBio) modalBio.textContent = user.bio || user.motto || '暂无个性签名';
+                if (modalMoments) modalMoments.textContent = stats.moments || 0;
+                if (modalFollowing) modalFollowing.textContent = stats.following || 0;
+                if (modalFollowers) modalFollowers.textContent = stats.followers || 0;
+                if (modalLikes) modalLikes.textContent = stats.likes || 0;
+
+                if (modalFollowBtn) {
+                    if (result.data.is_following) {
+                        modalFollowBtn.textContent = '已关注';
+                        modalFollowBtn.className = 'flex-1 bg-gray-300 text-gray-700 py-2 rounded-full font-medium hover:bg-gray-400 transition-colors text-sm';
+                    } else {
+                        modalFollowBtn.textContent = '关注';
+                        modalFollowBtn.className = 'flex-1 bg-primary text-white py-2 rounded-full font-medium hover:bg-secondary transition-colors text-sm';
+                    }
+
+                    modalFollowBtn.onclick = async function() {
+                        const action = modalFollowBtn.textContent === '关注' ? 'follow' : 'unfollow';
+                        try {
+                            const followResponse = await fetch('/user/follow', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ target_id: userId, action: action })
+                            });
+                            const followResult = await followResponse.json();
+
+                            if (followResult.code === 200) {
+                                if (followResult.data && followResult.data.following) {
+                                    modalFollowBtn.textContent = '已关注';
+                                    modalFollowBtn.className = 'flex-1 bg-gray-300 text-gray-700 py-2 rounded-full font-medium hover:bg-gray-400 transition-colors text-sm';
+                                    showToast('关注成功');
+                                } else {
+                                    modalFollowBtn.textContent = '关注';
+                                    modalFollowBtn.className = 'flex-1 bg-primary text-white py-2 rounded-full font-medium hover:bg-secondary transition-colors text-sm';
+                                    showToast('取消关注成功');
+                                }
+                            }
+                        } catch (error) {
+                            console.error('关注操作失败:', error);
+                            showToast('操作失败，请稍后重试');
+                        }
+                    };
+                }
+
+                if (modalCardLink) {
+                    modalCardLink.href = `/card/${userId}`;
+                }
+            } else {
+                showToast('获取用户信息失败');
+                closeCardModal();
+            }
+        } catch (error) {
+            console.error('加载名片失败:', error);
+            showToast('加载名片失败');
+            closeCardModal();
+        }
+    }
+</script>
+{/block}

@@ -1,0 +1,257 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件详情 - 存储管理</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        .file-preview {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'storage';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">文件详情</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name|default='管理员'}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <!-- 返回按钮 -->
+            <div class="mb-6">
+                <a href="/admin/storage/files" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>返回文件列表
+                </a>
+            </div>
+
+            <!-- 文件详情卡片 -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div class="flex flex-col md:flex-row gap-8">
+                    <!-- 文件预览 -->
+                    <div class="md:w-1/3">
+                        <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                            {if strpos($file.mimetype, 'image') !== false}
+                                <img src="{$file.filepath}" alt="{$file.filename}" class="file-preview mx-auto rounded" onerror="this.src='/static/images/default-image.png'">
+                            {elseif strpos($file.mimetype, 'pdf') !== false}
+                                <div class="flex flex-col items-center justify-center py-12">
+                                    <i class="fas fa-file-pdf text-red-500 text-6xl mb-4"></i>
+                                    <p class="text-gray-500">PDF 文件</p>
+                                </div>
+                            {elseif strpos($file.mimetype, 'word') !== false}
+                                <div class="flex flex-col items-center justify-center py-12">
+                                    <i class="fas fa-file-word text-blue-500 text-6xl mb-4"></i>
+                                    <p class="text-gray-500">Word 文件</p>
+                                </div>
+                            {elseif strpos($file.mimetype, 'excel') !== false}
+                                <div class="flex flex-col items-center justify-center py-12">
+                                    <i class="fas fa-file-excel text-green-500 text-6xl mb-4"></i>
+                                    <p class="text-gray-500">Excel 文件</p>
+                                </div>
+                            {elseif strpos($file.mimetype, 'zip') !== false}
+                                <div class="flex flex-col items-center justify-center py-12">
+                                    <i class="fas fa-file-archive text-yellow-500 text-6xl mb-4"></i>
+                                    <p class="text-gray-500">压缩文件</p>
+                                </div>
+                            {else}
+                                <div class="flex flex-col items-center justify-center py-12">
+                                    <i class="fas fa-file text-gray-400 text-6xl mb-4"></i>
+                                    <p class="text-gray-500">文件预览不可用</p>
+                                </div>
+                            {/if}
+                        </div>
+                    </div>
+
+                    <!-- 文件信息 -->
+                    <div class="md:w-2/3">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-6">{$file.filename}</h2>
+                        
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">文件ID</label>
+                                    <div class="text-sm text-gray-900 bg-gray-50 p-3 rounded-md">{$file.id}</div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">文件大小</label>
+                                    <div class="text-sm text-gray-900 bg-gray-50 p-3 rounded-md">
+                                        {php}
+                                        if ($file['filesize'] < 1024) {
+                                            echo $file['filesize'] . ' B';
+                                        } elseif ($file['filesize'] < 1024 * 1024) {
+                                            echo round($file['filesize'] / 1024, 2) . ' KB';
+                                        } else {
+                                            echo round($file['filesize'] / (1024 * 1024), 2) . ' MB';
+                                        }
+                                        {/php}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">文件类型</label>
+                                    <div class="text-sm text-gray-900 bg-gray-50 p-3 rounded-md">{$file.mimetype|default='未知'}</div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">存储类型</label>
+                                    <div class="text-sm text-gray-900 bg-gray-50 p-3 rounded-md">{$file.storage_type|default='local'}</div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">存储路径</label>
+                                <div class="text-sm text-gray-900 bg-gray-50 p-3 rounded-md break-all">{$file.filepath}</div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">MD5 值</label>
+                                <div class="text-sm text-gray-900 bg-gray-50 p-3 rounded-md font-mono">{$file.md5|default='-'}</div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">上传用户</label>
+                                    <div class="text-sm text-gray-900 bg-gray-50 p-3 rounded-md">
+                                        <a href="/admin/user/detail/{$file.user_id}" class="text-blue-600 hover:text-blue-900">{$file.nickname|default='未知用户'}</a>
+                                        <span class="text-gray-500 text-xs ml-2">(ID: {$file.user_id})</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">上传时间</label>
+                                    <div class="text-sm text-gray-900 bg-gray-50 p-3 rounded-md">
+                                        {php}echo date('Y-m-d H:i:s', $file['create_time']);{/php}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="flex gap-4">
+                <a href="/admin/storage/downloadFile/{$file.id}" class="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors">
+                    <i class="fas fa-download mr-2"></i>下载文件
+                </a>
+                <a href="{$file.filepath}" target="_blank" class="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-external-link-alt mr-2"></i>在新窗口打开
+                </a>
+                <button onclick="deleteFile({$file.id})" class="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">
+                    <i class="fas fa-trash mr-2"></i>删除文件
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // 删除文件
+        function deleteFile(id) {
+            if (confirm('确定要删除这个文件吗？')) {
+                fetch('/admin/storage/deleteFile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ids: id })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 200) {
+                        alert('删除成功');
+                        window.location.href = '/admin/storage/files';
+                    } else {
+                        alert('删除失败：' + data.msg);
+                    }
+                })
+                .catch(error => {
+                    alert('删除失败：网络错误');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+﻿{extend name="admin/layout" /}
+
+{block name="title"}<title>活动统计 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">活动统计</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        查看活动数据和统计信息
+    </p>
+</div>
+
+<!-- 统计卡片 -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="card stat-card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-modern-gray text-sm">活动总数</p>
+                <p class="text-2xl font-bold text-modern-dark mt-1">{$totalActivities|default=0}</p>
+            </div>
+            <div class="w-12 h-12 bg-modern-primary/10 rounded-lg flex items-center justify-center">
+                <i class="fas fa-calendar-alt text-modern-primary text-xl"></i>
+            </div>
+        </div>
+    </div>
+    <div class="card stat-card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-modern-gray text-sm">进行中</p>
+                <p class="text-2xl font-bold text-modern-success mt-1">{$ongoingActivities|default=0}</p>
+            </div>
+            <div class="w-12 h-12 bg-modern-success/10 rounded-lg flex items-center justify-center">
+                <i class="fas fa-play-circle text-modern-success text-xl"></i>
+            </div>
+        </div>
+    </div>
+    <div class="card stat-card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-modern-gray text-sm">已结束</p>
+                <p class="text-2xl font-bold text-modern-gray mt-1">{$endedActivities|default=0}</p>
+            </div>
+            <div class="w-12 h-12 bg-modern-gray/10 rounded-lg flex items-center justify-center">
+                <i class="fas fa-stop-circle text-modern-gray text-xl"></i>
+            </div>
+        </div>
+    </div>
+    <div class="card stat-card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-modern-gray text-sm">总参与人数</p>
+                <p class="text-2xl font-bold text-modern-secondary mt-1">{$totalParticipants|default=0}</p>
+            </div>
+            <div class="w-12 h-12 bg-modern-secondary/10 rounded-lg flex items-center justify-center">
+                <i class="fas fa-users text-modern-secondary text-xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- 热门活动排行 -->
+    <div class="card rounded-lg p-6">
+        <h3 class="text-lg font-medium text-modern-dark mb-4">
+            <i class="fas fa-chart-bar mr-2"></i>热门活动排行
+        </h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-modern-light">
+                        <th class="py-4 px-6 text-left text-modern-gray font-medium">排名</th>
+                        <th class="py-4 px-6 text-left text-modern-gray font-medium">活动标题</th>
+                        <th class="py-4 px-6 text-left text-modern-gray font-medium">参与人数</th>
+                        <th class="py-4 px-6 text-left text-modern-gray font-medium">状态</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-modern-lightGray">
+                    {if empty($activityStats)}
+                    <tr>
+                        <td colspan="4" class="px-6 py-12 text-center text-modern-gray">暂无数据</td>
+                    </tr>
+                    {else /}
+                    {volist name="activityStats" id="activity" key="index"}
+                    <tr class="hover:bg-modern-light/50 transition-colors">
+                        <td class="py-4 px-6 text-sm">
+                            {if $index == 0}
+                            <span class="text-yellow-500 font-bold">1</span>
+                            {elseif $index == 1 /}
+                            <span class="text-gray-500 font-bold">2</span>
+                            {elseif $index == 2 /}
+                            <span class="text-orange-500 font-bold">3</span>
+                            {else /}
+                            <span class="text-modern-gray">{$index + 1}</span>
+                            {/if}
+                        </td>
+                        <td class="py-4 px-6 text-sm text-modern-dark">{$activity.title}</td>
+                        <td class="py-4 px-6 text-sm text-modern-primary font-medium">{$activity.participant_count|default=0}</td>
+                        <td class="py-4 px-6">
+                            {switch name="$activity.status"}
+                            {case value="0"}
+                            <span class="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded">未开始</span>
+                            {/case}
+                            {case value="1"}
+                            <span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">进行中</span>
+                            {/case}
+                            {case value="2"}
+                            <span class="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded">已结束</span>
+                            {/case}
+                            {/switch}
+                        </td>
+                    </tr>
+                    {/volist}
+                    {/if}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 最近创建的活动 -->
+    <div class="card rounded-lg p-6">
+        <h3 class="text-lg font-medium text-modern-dark mb-4">
+            <i class="fas fa-clock mr-2"></i>最近创建的活动
+        </h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-modern-light">
+                        <th class="py-4 px-6 text-left text-modern-gray font-medium">活动标题</th>
+                        <th class="py-4 px-6 text-left text-modern-gray font-medium">参与人数</th>
+                        <th class="py-4 px-6 text-left text-modern-gray font-medium">状态</th>
+                        <th class="py-4 px-6 text-left text-modern-gray font-medium">创建时间</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-modern-lightGray">
+                    {if empty($recentActivities)}
+                    <tr>
+                        <td colspan="4" class="px-6 py-12 text-center text-modern-gray">暂无数据</td>
+                    </tr>
+                    {else /}
+                    {volist name="recentActivities" id="activity"}
+                    <tr class="hover:bg-modern-light/50 transition-colors">
+                        <td class="py-4 px-6 text-sm text-modern-dark">{$activity.title}</td>
+                        <td class="py-4 px-6 text-sm text-modern-primary font-medium">{$activity.participant_count|default=0}</td>
+                        <td class="py-4 px-6">
+                            {switch name="$activity.status"}
+                            {case value="0"}
+                            <span class="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded">未开始</span>
+                            {/case}
+                            {case value="1"}
+                            <span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">进行中</span>
+                            {/case}
+                            {case value="2"}
+                            <span class="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded">已结束</span>
+                            {/case}
+                            {/switch}
+                        </td>
+                        <td class="py-4 px-6 text-sm text-modern-gray">{$activity.create_time|date='Y-m-d H:i'}</td>
+                    </tr>
+                    {/volist}
+                    {/if}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{/block}

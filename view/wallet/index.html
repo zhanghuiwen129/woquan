@@ -1,0 +1,310 @@
+{extend name="index/main-layout" /}
+
+{block name="content"}
+<!-- 桌面端内容 -->
+{/block}
+
+{block name="contentMobile"}
+<!-- 主内容区 -->
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- 钱包头部卡片 -->
+        <div class="bg-gradient-to-r from-primary to-secondary rounded-xl p-6 text-white mb-6 shadow-lg">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold flex items-center gap-2">
+                    <i class="fa fa-wallet"></i>
+                    我的钱包
+                </h2>
+                <button onclick="loadWalletInfo()" class="text-white/80 hover:text-white transition-colors">
+                    <i class="fa fa-refresh"></i>
+                </button>
+            </div>
+            
+            <!-- 主要货币余额 -->
+            <div class="mb-4">
+                <div class="text-white/80 text-sm mb-1">账户余额</div>
+                <div class="text-white text-4xl font-bold" id="balance">
+                    {$primaryCurrency.symbol|default='¥'}{$primaryBalance|default='0.00'}
+                </div>
+            </div>
+
+            <!-- 多货币余额列表 -->
+            {if $walletBalances && count($walletBalances) > 1}
+            <div class="currency-balance-list mt-4 space-y-2 max-h-32 overflow-y-auto">
+                {volist name="walletBalances" id="currency"}
+                {if $primaryCurrency && $currency.code neq $primaryCurrency.code}
+                <div class="flex justify-between items-center text-white/90 py-1">
+                    <span class="text-sm">{$currency.name}</span>
+                    <span class="text-sm font-medium">{$currency.symbol}{$currency.balance}</span>
+                </div>
+                {/if}
+                {/volist}
+            </div>
+            {/if}
+            
+            <!-- 统计数据 -->
+            <div class="wallet-stats mt-6 flex gap-8 pt-4 border-t border-white/20">
+                <div class="stat-item">
+                    <div class="text-white/80 text-xs">本月收入</div>
+                    <div class="text-white text-lg font-semibold">+¥0.00</div>
+                </div>
+                <div class="stat-item">
+                    <div class="text-white/80 text-xs">本月支出</div>
+                    <div class="text-white text-lg font-semibold">-¥0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="bg-bg-card rounded-xl p-4 mb-6 shadow-soft">
+            <div class="grid grid-cols-3 gap-3">
+                <a href="/wallet/recharge" class="action-btn flex flex-col items-center justify-center bg-primary text-white rounded-lg py-4 hover:bg-secondary transition-all hover:shadow-hover">
+                    <i class="fa fa-plus-circle text-2xl mb-2"></i>
+                    <span class="text-sm font-medium">充值</span>
+                </a>
+                <a href="/wallet/withdraw" class="action-btn flex flex-col items-center justify-center bg-white border-2 border-primary text-primary rounded-lg py-4 hover:bg-lightBlue transition-all">
+                    <i class="fa fa-minus-circle text-2xl mb-2"></i>
+                    <span class="text-sm font-medium">提现</span>
+                </a>
+                <a href="/wallet/transactions" class="action-btn flex flex-col items-center justify-center bg-white border-2 border-gray-300 text-gray-600 rounded-lg py-4 hover:bg-gray-50 transition-all">
+                    <i class="fa fa-list text-2xl mb-2"></i>
+                    <span class="text-sm font-medium">记录</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- 快捷功能 -->
+        <div class="bg-bg-card rounded-xl p-4 mb-6 shadow-soft">
+            <h3 class="text-text-primary font-semibold mb-4 flex items-center gap-2">
+                <i class="fa fa-star text-primary"></i>
+                快捷功能
+            </h3>
+            <div class="grid grid-cols-4 gap-4">
+                <a href="/points" class="function-item flex flex-col items-center gap-2 text-center transition-transform hover:-translate-y-1">
+                    <div class="function-icon w-12 h-12 rounded-full flex items-center justify-center text-white text-xl shadow-md" style="background: linear-gradient(135deg, #FF9A5B 0%, #FF6B6B 100%);">
+                        <i class="fa fa-gift"></i>
+                    </div>
+                    <span class="text-xs text-text-secondary">积分兑换</span>
+                </a>
+                <a href="/activities" class="function-item flex flex-col items-center gap-2 text-center transition-transform hover:-translate-y-1">
+                    <div class="function-icon w-12 h-12 rounded-full flex items-center justify-center text-white text-xl shadow-md" style="background: linear-gradient(135deg, #A855F7 0%, #7C3AED 100%);">
+                        <i class="fa fa-calendar"></i>
+                    </div>
+                    <span class="text-xs text-text-secondary">活动奖励</span>
+                </a>
+                <a href="/levels" class="function-item flex flex-col items-center gap-2 text-center transition-transform hover:-translate-y-1">
+                    <div class="function-icon w-12 h-12 rounded-full flex items-center justify-center text-white text-xl shadow-md" style="background: linear-gradient(135deg, #4A90E2 0%, #3A7BC8 100%);">
+                        <i class="fa fa-star"></i>
+                    </div>
+                    <span class="text-xs text-text-secondary">等级特权</span>
+                </a>
+                <a href="/faq" class="function-item flex flex-col items-center gap-2 text-center transition-transform hover:-translate-y-1">
+                    <div class="function-icon w-12 h-12 rounded-full flex items-center justify-center text-white text-xl shadow-md" style="background: linear-gradient(135deg, #52C480 0%, #3CB371 100%);">
+                        <i class="fa fa-question-circle"></i>
+                    </div>
+                    <span class="text-xs text-text-secondary">帮助中心</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- 最近交易 -->
+        <div class="bg-bg-card rounded-xl shadow-soft">
+            <div class="flex justify-between items-center p-4 border-b border-border-color">
+                <h3 class="text-text-primary font-semibold flex items-center gap-2">
+                    <i class="fa fa-history text-primary"></i>
+                    最近交易
+                </h3>
+                <a href="/wallet/transactions" class="text-primary text-sm hover:underline transition-colors">
+                    查看全部 <i class="fa fa-angle-right ml-1"></i>
+                </a>
+            </div>
+            
+            {if $transactions && count($transactions) > 0}
+            <div class="transaction-list">
+                {volist name="transactions" id="item"}
+                <div class="transaction-item flex justify-between items-center py-4 px-4 border-b border-border-color hover:bg-white dark:hover:bg-dark-bg-card transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="transaction-icon w-10 h-10 rounded-full flex items-center justify-center {$item.amount > 0 ? 'bg-green-100 text-green-500' : 'bg-red-100 text-red-500'}">
+                            {if $item.amount > 0}
+                            <i class="fa fa-plus"></i>
+                            {else/}
+                            <i class="fa fa-minus"></i>
+                            {/if}
+                        </div>
+                        <div>
+                            <div class="text-text-primary font-medium">{$item.description|default='交易'}</div>
+                            <div class="text-text-tertiary text-xs">{$item.create_time|date='Y-m-d H:i:s'}</div>
+                        </div>
+                    </div>
+                    <div class="transaction-amount {$item.amount > 0 ? 'text-green-500' : 'text-red-500'} font-semibold">
+                        {if $item.amount > 0}+{/if}{$item.amount|number_format=2}
+                    </div>
+                </div>
+                {/volist}
+            </div>
+            {else/}
+            <div class="empty-state flex flex-col items-center justify-center py-12 text-text-tertiary">
+                <i class="fa fa-inbox text-5xl mb-4 text-text-tertiary/50"></i>
+                <p class="text-sm">暂无交易记录</p>
+            </div>
+            {/if}
+        </div>
+    </div>
+</div>
+
+<script>
+// 显示提示
+function showWalletToast(message, type = 'info') {
+    // 尝试使用主布局中的toast系统（如果存在）
+    if (typeof window.toastManager !== 'undefined' && window.toastManager.showToast) {
+        window.toastManager.showToast(message, type);
+    } else if (typeof window.showToast !== 'undefined' && window.showToast !== showWalletToast) {
+        // 避免调用自身
+        window.showToast(message, type);
+    } else {
+        // 简单的控制台日志作为后备
+        console.log(`[钱包提示][${type}] ${message}`);
+        // 也可以尝试alert
+        if (type === 'error') {
+            alert(message);
+        }
+    }
+}
+
+// 加载钱包信息
+function loadWalletInfo() {
+    fetch('/wallet/getWalletInfo', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        },
+        credentials: 'same-origin'
+    })
+    .then(async response => {
+        // 先检查Content-Type，如果是HTML则说明出错了
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            // 可能是未登录返回的HTML
+            if (response.status === 302 || response.status === 401) {
+                throw new Error('请先登录');
+            }
+            throw new Error(`服务器返回了非JSON响应 (状态码: ${response.status})`);
+        }
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error('请先登录');
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return response.json();
+    })
+    .then(result => {
+        if (result.code === 200 || result.code === 0) {
+            // 更新主要货币余额（假设第一个元素是主要货币）
+            if (result.data && result.data.length > 0) {
+                const primary = result.data[0];
+                const balanceElement = document.getElementById('balance');
+                if (balanceElement) {
+                    balanceElement.textContent = primary.symbol + parseFloat(primary.balance || 0).toFixed(2);
+                }
+            }
+        } else if (result.code === 401) {
+            showWalletToast('请先登录', 'warning');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 1500);
+        } else {
+            showWalletToast(result.msg || result.message || '加载失败', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('加载钱包信息失败:', error);
+        if (error.message === '请先登录') {
+            showWalletToast('请先登录', 'warning');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 1500);
+        } else {
+            showWalletToast('网络错误，请重试 (' + error.message + ')', 'error');
+        }
+    });
+}
+
+// 页面加载时获取钱包信息
+document.addEventListener('DOMContentLoaded', function() {
+    // 等待一小段时间确保主布局加载完成
+    setTimeout(() => {
+        loadWalletInfo();
+    }, 100);
+});
+</script>
+
+<style>
+/* 钱包特定样式 */
+.wallet-stats {
+    display: flex;
+    gap: 40px;
+}
+
+.stat-item {
+    padding: 12px 0;
+}
+
+.action-btn {
+    transition: transform 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+.function-item {
+    transition: transform 0.2s ease;
+}
+
+.transaction-item {
+    transition: background-color 0.2s ease;
+}
+
+/* 货币余额列表滚动条 */
+.currency-balance-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.currency-balance-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+
+.currency-balance-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+.currency-balance-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* 交易金额字体 */
+.transaction-amount {
+    font-family: 'Monaco', 'Consolas', monospace;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .wallet-stats {
+        gap: 20px;
+    }
+}
+</style>
+{/block}

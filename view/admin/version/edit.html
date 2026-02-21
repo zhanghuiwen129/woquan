@@ -1,0 +1,122 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>编辑版本 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">编辑版本</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        编辑版本信息
+    </p>
+</div>
+
+<!-- 编辑版本表单 -->
+<div class="card rounded-lg p-6">
+    <form id="versionForm" onsubmit="return updateVersion(event)">
+        <input type="hidden" name="id" value="{$version.id}">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 软件选择 -->
+            <div>
+                <label class="block text-sm font-medium text-modern-dark mb-2">
+                    <i class="fas fa-laptop-code mr-1"></i>所属软件
+                </label>
+                <select name="software_id" required class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+                    <option value="">请选择软件</option>
+                    {volist name="softwareList" id="software"}
+                    <option value="{$software.id}" {$software.id == $version.software_id ? 'selected' : ''}>{$software.software_name}</option>
+                    {/volist}
+                </select>
+            </div>
+
+            <!-- 版本号 -->
+            <div>
+                <label class="block text-sm font-medium text-modern-dark mb-2">
+                    <i class="fas fa-tag mr-1"></i>版本号
+                </label>
+                <input type="text" name="version_number" value="{$version.version_number}" required class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+            </div>
+
+            <!-- 发布日期 -->
+            <div>
+                <label class="block text-sm font-medium text-modern-dark mb-2">
+                    <i class="fas fa-calendar mr-1"></i>发布日期
+                </label>
+                <input type="date" name="release_date" value="{$version.release_date}" required class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+            </div>
+
+            <!-- 是否为最新版本 -->
+            <div class="flex items-center pt-8">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="is_latest" value="1" {$version.is_latest ? 'checked' : ''} class="w-4 h-4 text-modern-primary border-modern-lightGray rounded focus:ring-modern-primary">
+                    <span class="text-sm text-modern-dark">标记为最新版本</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 更新日志 -->
+        <div class="mt-6">
+            <label class="block text-sm font-medium text-modern-dark mb-2">
+                <i class="fas fa-list-alt mr-1"></i>更新日志
+            </label>
+            <textarea name="update_log" rows="6" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary resize-none">{$version.update_log}</textarea>
+        </div>
+
+        <!-- 下载链接 -->
+        <div class="mt-6">
+            <label class="block text-sm font-medium text-modern-dark mb-2">
+                <i class="fas fa-download mr-1"></i>下载链接
+            </label>
+            <input type="text" name="download_url" value="{$version.download_url}" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+        </div>
+
+        <!-- 文件大小 -->
+        <div class="mt-6">
+            <label class="block text-sm font-medium text-modern-dark mb-2">
+                <i class="fas fa-file-archive mr-1"></i>文件大小
+            </label>
+            <input type="text" name="file_size" value="{$version.file_size}" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="mt-8 flex items-center gap-4">
+            <button type="submit" class="px-6 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern">
+                <i class="fas fa-save mr-1"></i>更新
+            </button>
+            <a href="/admin/version" class="px-6 py-2 bg-modern-light border border-modern-lightGray text-modern-gray rounded-md hover:border-modern-primary transition-colors">
+                <i class="fas fa-arrow-left mr-1"></i>返回
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+function updateVersion(event) {
+    event.preventDefault();
+
+    const form = document.getElementById('versionForm');
+    const formData = new FormData(form);
+
+    fetch('/admin/version/update', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(result => {
+        if (result.includes('success') || result.includes('成功')) {
+            alert('更新成功');
+            window.location.href = '/admin/version';
+        } else {
+            alert('更新失败: ' + result);
+        }
+    })
+    .catch(error => {
+        console.error('更新失败:', error);
+        alert('网络错误，请稍后重试');
+    });
+
+    return false;
+}
+</script>
+{/block}

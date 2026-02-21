@@ -1,0 +1,122 @@
+﻿<!-- 用户名片弹窗 -->
+<div id="userCardModal" class="hidden fixed inset-0 z-[2000]">
+    <!-- 点击背景关闭 -->
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeUserCardModal()"></div>
+    <!-- 弹窗内容 -->
+    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] bg-white rounded-2xl shadow-2xl overflow-hidden animate-fadeIn">
+        <!-- 顶部蓝色渐变封面 -->
+        <div class="h-24 bg-gradient-to-r from-[#516AE8] to-[#7B9CF8] relative">
+            <button onclick="closeUserCardModal()" class="absolute top-3 right-3 w-8 h-8 bg-black/20 hover:bg-black/30 rounded-full text-white flex items-center justify-center transition-colors">
+                <i class="fa fa-times text-sm"></i>
+            </button>
+        </div>
+
+        <!-- 头像 -->
+        <div class="relative -mt-12 mb-3">
+            <img id="userCardAvatar" src="/static/images/default-avatar.png" alt="用户头像"
+                 class="w-24 h-24 rounded-full border-4 border-white shadow-lg mx-auto object-cover bg-gray-100"
+                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSI0OCIgY3k9IjQ4IiByPSI0OCIgZmlsbD0iI0VFRTNDNSIvPjxyZWN0IHg9IjMwIiB5PSI2MCIgd2lkdGg9IjM2IiBoZWlnaHQ9IjI0IiByeD0iMTIiIGZpbGw9IiM3QjdBMkMiLz48L3N2Zz4='">
+        </div>
+
+        <!-- 用户名和简介 -->
+        <div class="px-6 pb-4">
+            <h3 id="userCardNickname" class="text-xl font-bold text-gray-900 text-center mb-1">加载中...</h3>
+            <p id="userCardUsername" class="text-sm text-gray-500 text-center mb-3">@username</p>
+            <p id="userCardBio" class="text-sm text-gray-600 text-center line-clamp-2 h-10">这个人很懒,什么都没留下</p>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="px-6 pb-4 flex gap-3">
+            <button id="userCardFollowBtn" class="flex-1 py-2.5 bg-[#516AE8] hover:bg-[#4359CC] text-white rounded-full font-medium transition-colors">
+                <i class="fa fa-plus mr-1"></i> 关注
+            </button>
+            <a id="userCardProfileBtn" href="#" class="flex-1 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full font-medium transition-colors text-center">
+                主页
+            </a>
+        </div>
+
+        <!-- 统计数据 -->
+        <div class="border-t border-gray-100 px-6 py-4">
+            <div class="flex justify-around">
+                <a id="userCardFollowing" href="#" class="text-center group cursor-pointer">
+                    <div id="userCardFollowingCount" class="text-lg font-bold text-gray-900 group-hover:text-[#516AE8] transition-colors">0</div>
+                    <div class="text-xs text-gray-500">关注</div>
+                </a>
+                <a id="userCardFollowers" href="#" class="text-center group cursor-pointer">
+                    <div id="userCardFollowersCount" class="text-lg font-bold text-gray-900 group-hover:text-[#516AE8] transition-colors">0</div>
+                    <div class="text-xs text-gray-500">粉丝</div>
+                </a>
+                <a id="userCardMoments" href="#" class="text-center group cursor-pointer">
+                    <div id="userCardMomentsCount" class="text-lg font-bold text-gray-900 group-hover:text-[#516AE8] transition-colors">0</div>
+                    <div class="text-xs text-gray-500">动态</div>
+                </a>
+                <a id="userCardLikes" href="#" class="text-center group cursor-pointer">
+                    <div id="userCardLikesCount" class="text-lg font-bold text-gray-900 group-hover:text-[#516AE8] transition-colors">0</div>
+                    <div class="text-xs text-gray-500">赞</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+    }
+    .animate-fadeIn {
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    /* 下拉菜单动画 */
+    .dropdown-menu {
+        transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+    }
+
+    .dropdown-menu.opacity-0 {
+        opacity: 0;
+        transform: scale(0.95) translateY(-5px);
+        pointer-events: none;
+    }
+
+    .dropdown-menu.opacity-100 {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+
+    .dropdown-menu.scale-95 {
+        transform: scale(0.95) translateY(-5px);
+    }
+
+    .dropdown-menu.scale-100 {
+        transform: scale(1) translateY(0);
+    }
+
+    /* 用户菜单容器样式 */
+    #user-dropdown-menu {
+        transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transform-origin: top right;
+    }
+
+    /* 隐藏状态：应用动画但不使用display: none */
+    #user-dropdown-menu.hidden {
+        opacity: 0;
+        transform: scale(0.95) translateY(-5px);
+        pointer-events: none;
+        visibility: hidden;
+    }
+
+    /* 显示状态 */
+    #user-dropdown-menu:not(.hidden) {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        visibility: visible;
+    }
+</style>

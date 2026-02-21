@@ -1,0 +1,1103 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>聊天 - <?php echo $otherUser['nickname'] ?? '用户'; ?></title>
+    
+    <!-- 全局样式 -->
+    <style>
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        /* 消息相关样式 */
+        .message-item {
+            position: relative;
+            display: flex;
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .message-item.sent {
+            justify-content: flex-end;
+        }
+        
+        .message-item.received {
+            justify-content: flex-start;
+        }
+        
+        .message-content {
+            position: relative;
+            max-width: 70%;
+        }
+        
+        .message-status {
+            position: absolute;
+            right: -20px;
+            bottom: 2px;
+            font-size: 10px;
+        }
+        
+        .typing-indicator {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        
+        /* 右键菜单 */
+        .context-menu {
+            position: absolute;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            z-index: 100;
+            overflow: hidden;
+        }
+        
+        .context-menu-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        
+        .context-menu-item:hover {
+            background: #f5f5f5;
+        }
+        
+        /* 引用回复预览 */
+        .reply-preview {
+            background: #f0f0f0;
+            border-left: 3px solid #007bff;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+        
+        .reply-preview .reply-content {
+            font-size: 12px;
+            color: #666;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .long-press {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        /* 消息日期分组 */
+        .date-divider {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .date-divider span {
+            background: rgba(0,0,0,0.1);
+            color: #666;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        
+        /* 在线状态 */
+        .online-dot {
+            width: 10px;
+            height: 10px;
+            background: #28a745;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
+        
+        .offline-dot {
+            width: 10px;
+            height: 10px;
+            background: #dc3545;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
+        
+        /* WebSocket状态 */
+        .ws-status {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 50;
+        }
+        
+        .ws-connected {
+            background: #28a745;
+            color: white;
+        }
+        
+        .ws-disconnected {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .ws-connecting {
+            background: #ffc107;
+            color: white;
+        }
+        
+        /* 多选模式 */
+        .select-mode-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+        }
+        
+        .select-mode-overlay.active {
+            display: flex;
+        }
+        
+        .message-checkbox {
+            display: none;
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .select-mode .message-checkbox {
+            display: block;
+        }
+        
+        /* 加载更多 */
+        .load-more {
+            text-align: center;
+            padding: 10px;
+            color: #999;
+            cursor: pointer;
+        }
+        
+        .load-more:hover {
+            color: #007bff;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Toast提示 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+    
+    <!-- 引入全局CSS -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/fontawesome.css">
+</head>
+<body>
+    <!-- 存储当前用户信息到JavaScript变量 -->
+    <script>
+        window.currentUserInfo = <?php echo isset($isLogin) && $isLogin && $currentUser ? json_encode([
+            'id' => $currentUser['id'] ?? '',
+            'username' => $currentUser['username'] ?? '',
+            'nickname' => $currentUser['nickname'] ?? '',
+            'avatar' => $currentUser['avatar'] ?? '/static/images/default-avatar.png'
+        ]) : 'null'; ?>;
+        window.otherUserInfo = <?php echo isset($otherUser) ? json_encode([
+            'id' => $otherUser['id'] ?? '',
+            'nickname' => $otherUser['nickname'] ?? '用户',
+            'avatar' => $otherUser['avatar'] ?? '/static/images/default-avatar.png',
+            'level' => $otherUser['level'] ?? 0,
+            'bio' => $otherUser['bio'] ?? ''
+        ]) : 'null'; ?>;
+        window.enableWebSocket = <?php echo isset($enableWebSocket) && $enableWebSocket ? 'true' : 'false'; ?>;
+    </script>
+
+    <!-- PC端聊天界面 -->
+    <div id="pc-chat" class="hidden">
+        <!-- WebSocket连接状态指示 -->
+        <div id="ws-status" class="ws-status hidden">
+            <i class="fa fa-spinner fa-spin"></i> 连接中...
+        </div>
+
+        <!-- 多选模式顶部栏 -->
+        <div id="select-mode-overlay" class="select-mode-overlay">
+            <div>
+                <input type="checkbox" id="select-all" onchange="chatPC.toggleSelectAll()">
+                <label for="select-all">全选</label>
+                <span id="selected-count">已选 0 条</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="chatPC.batchDelete()" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                    <i class="fa fa-trash"></i> 删除
+                </button>
+                <button onclick="chatPC.batchForward()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                    <i class="fa fa-share"></i> 转发
+                </button>
+                <button onclick="chatPC.exitSelectMode()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+                    取消
+                </button>
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <main class="container mx-auto px-4 py-6 max-w-4xl">
+            <!-- 聊天头部 -->
+            <div class="flex items-center justify-between mb-6 bg-white rounded-xl shadow-sm p-4">
+                <div class="flex items-center">
+                    <a href="/messages" class="mr-3 text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-arrow-left"></i>
+                    </a>
+                    <div class="relative">
+                        <img src="<?php echo $otherUser['avatar'] ?? '/static/images/default-avatar.png'; ?>" alt="用户头像" class="w-10 h-10 rounded-full object-cover mr-3">
+                        <span id="user-status-dot" class="offline-dot absolute bottom-0 right-3 border-2 border-white"></span>
+                    </div>
+                    <div>
+                        <div class="font-medium"><?php echo $otherUser['nickname'] ?? '用户'; ?></div>
+                        <div class="text-xs text-gray-500 flex items-center gap-1">
+                            等级 <?php echo $otherUser['level'] ?? 0; ?>
+                            <span id="online-status" class="hidden"><span class="online-dot"></span>在线</span>
+                            <span id="typing-indicator" class="typing-indicator hidden text-blue-500">正在输入...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="showSearch()" class="text-gray-500 hover:text-gray-700" title="搜索">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button onclick="showFavorites()" class="text-gray-500 hover:text-gray-700" title="收藏">
+                        <i class="fa fa-star"></i>
+                    </button>
+                    <button onclick="showQuickReply()" class="text-gray-500 hover:text-gray-700" title="快捷回复">
+                        <i class="fa fa-bolt"></i>
+                    </button>
+                    <a href="/card/<?php echo $otherUser['id'] ?? 0; ?>" class="text-gray-500 hover:text-gray-700" title="查看资料">
+                        <i class="fa fa-user"></i>
+                    </a>
+                    <button onclick="showChatOptions()" class="text-gray-500 hover:text-gray-700" title="更多">
+                        <i class="fa fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 聊天内容区 -->
+            <div class="bg-white rounded-xl shadow-sm p-4 mb-6 h-[60vh] overflow-y-auto" id="chat-content">
+                <!-- 加载更多 -->
+                <div id="load-more" class="load-more" onclick="chatPC.loadMoreMessages()">
+                    <i class="fa fa-angle-up"></i> 加载更多
+                </div>
+
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fa fa-spinner fa-spin text-xl mb-2"></i>
+                    <p>加载中...</p>
+                </div>
+            </div>
+
+            <!-- 引用回复预览 -->
+            <div id="reply-preview" class="hidden bg-white rounded-xl shadow-sm p-3 mb-3 mx-4">
+                <div class="flex items-center justify-between">
+                    <div class="reply-preview flex-1">
+                        <div class="text-xs text-gray-500 mb-1">回复: <span id="reply-author"></span></div>
+                        <div id="reply-content" class="reply-content text-sm text-gray-700"></div>
+                    </div>
+                    <button onclick="chatPC.cancelReply()" class="text-gray-400 hover:text-gray-600 ml-2">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 消息输入区 -->
+            <div class="bg-white rounded-xl shadow-sm p-4">
+                <div class="flex items-center gap-3 mb-3">
+                    <button onclick="chatPC.toggleSelectMode()" class="text-gray-500 hover:text-gray-700" title="多选模式">
+                        <i class="fa fa-check-square-o"></i>
+                    </button>
+                    <button onclick="showFontSizeAdjuster()" class="text-gray-500 hover:text-gray-700" title="字体大小">
+                        <i class="fa fa-text-height"></i>
+                    </button>
+                    <button onclick="showBackgroundSettings()" class="text-gray-500 hover:text-gray-700" title="聊天背景">
+                        <i class="fa fa-picture-o"></i>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button id="emoji-button" class="text-gray-500 hover:text-gray-700 emoji-button" title="表情">
+                        <i class="fa fa-smile-o"></i>
+                    </button>
+
+                    <div class="relative">
+                        <button class="text-gray-500 hover:text-gray-700" title="图片" onclick="document.getElementById('image-input').click()">
+                            <i class="fa fa-picture-o"></i>
+                        </button>
+                        <input type="file" id="image-input" accept="image/*" hidden onchange="chatPC.handleImageUpload(event)">
+                    </div>
+
+                    <div class="relative">
+                        <button class="text-gray-500 hover:text-gray-700" title="视频" onclick="document.getElementById('video-input').click()">
+                            <i class="fa fa-video-camera"></i>
+                        </button>
+                        <input type="file" id="video-input" accept="video/*" hidden onchange="chatPC.handleVideoUpload(event)">
+                    </div>
+
+                    <div class="relative">
+                        <button class="text-gray-500 hover:text-gray-700" title="文件" onclick="document.getElementById('file-input').click()">
+                            <i class="fa fa-file"></i>
+                        </button>
+                        <input type="file" id="file-input" hidden onchange="chatPC.handleFileUpload(event)">
+                    </div>
+
+                    <div class="relative">
+                        <button id="voice-button" class="text-gray-500 hover:text-gray-700" title="语音" onmousedown="chatPC.startRecording()" onmouseup="chatPC.stopRecording()" ontouchstart="chatPC.startRecording()" ontouchend="chatPC.stopRecording()">
+                            <i class="fa fa-microphone"></i>
+                        </button>
+                    </div>
+
+                    <div class="relative">
+                        <button class="text-gray-500 hover:text-gray-700" title="位置" onclick="showLocationPicker()">
+                            <i class="fa fa-map-marker"></i>
+                        </button>
+                    </div>
+
+                    <div class="relative">
+                        <button class="text-gray-500 hover:text-gray-700" title="名片" onclick="showCardShare()">
+                            <i class="fa fa-address-card"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex-1">
+                        <input type="text" id="message-input" placeholder="输入消息..." class="w-full px-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+
+                    <button id="send-button" class="bg-primary text-white px-4 py-2 rounded-full hover:bg-primary/90 transition-colors" title="发送">
+                        <i class="fa fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- 右键菜单 -->
+        <div id="context-menu" class="context-menu hidden">
+            <div class="context-menu-item" onclick="chatPC.handleMenuAction('copy')">
+                <i class="fa fa-copy text-gray-500"></i> 复制
+            </div>
+            <div class="context-menu-item" onclick="chatPC.handleMenuAction('reply')">
+                <i class="fa fa-reply text-blue-500"></i> 回复
+            </div>
+            <div class="context-menu-item" onclick="chatPC.handleMenuAction('forward')">
+                <i class="fa fa-share text-green-500"></i> 转发
+            </div>
+            <div class="context-menu-item" onclick="chatPC.handleMenuAction('favorite')">
+                <i class="fa fa-star text-yellow-500"></i> 收藏
+            </div>
+            <div class="context-menu-item" onclick="chatPC.handleMenuAction('pin')">
+                <i class="fa fa-thumb-tack text-purple-500"></i> 置顶
+            </div>
+            <div class="context-menu-item" onclick="chatPC.handleMenuAction('delete')">
+                <i class="fa fa-trash text-red-500"></i> 删除
+            </div>
+        </div>
+    </div>
+
+    <!-- 移动端聊天界面 -->
+    <div id="mobile-chat" class="hidden">
+        <!-- 移动端聊天容器 -->
+        <div class="mobile-chat-container">
+            <!-- 聊天头部 -->
+            <div class="mobile-chat-header">
+                <div class="user-info">
+                    <a href="/messages" style="color: #333; font-size: 24px;">
+                        <i class="fa fa-arrow-left"></i>
+                    </a>
+                    <img src="<?php echo $otherUser['avatar'] ?? '/static/images/default-avatar.png'; ?>" alt="用户头像" class="user-avatar">
+                    <div class="user-details">
+                        <h3><?php echo $otherUser['nickname'] ?? '用户'; ?></h3>
+                        <p>等级 <?php echo $otherUser['level'] ?? 0; ?></p>
+                    </div>
+                </div>
+                <a href="/card/<?php echo $otherUser['id'] ?? 0; ?>" style="color: #333; font-size: 20px;">
+                    <i class="fa fa-user"></i>
+                </a>
+            </div>
+
+            <!-- 聊天内容区 -->
+            <div class="mobile-chat-content" id="mobile-chat-content">
+                <div class="loading-state">
+                    <i class="fa fa-spinner fa-spin text-2xl mb-2"></i>
+                    <p>加载中...</p>
+                </div>
+            </div>
+
+            <!-- 表情选择器 -->
+            <div class="mobile-emoji-picker" id="mobile-emoji-picker">
+                <div class="emoji-grid" id="mobile-emoji-grid"></div>
+            </div>
+
+            <!-- 消息输入区 -->
+            <div class="mobile-chat-footer">
+                <div class="mobile-input-row">
+                    <button class="mobile-action-btn" id="mobile-emoji-btn">
+                        <i class="fa fa-smile-o"></i>
+                    </button>
+                    <button class="mobile-action-btn" onclick="document.getElementById('mobile-file-input').click()">
+                        <i class="fa fa-picture-o"></i>
+                    </button>
+                    <input type="file" id="mobile-file-input" accept="image/*" hidden onchange="chatMobile.handleFileUpload(event)">
+                    <div class="mobile-input-wrapper">
+                        <div id="mobile-message-input" class="mobile-input" contenteditable="true" placeholder="输入消息..."></div>
+                    </div>
+                    <button class="mobile-send-btn" id="mobile-send-btn">
+                        发送
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入核心脚本 -->
+    <script src="/static/js/websocket-client.js"></script>
+    <script src="/static/js/image-viewer.js"></script>
+    <script src="/static/js/video-player.js"></script>
+    <script src="/static/js/voice-player.js"></script>
+    <script src="/static/js/file-downloader.js"></script>
+    <script src="/static/js/location-message.js"></script>
+    <script src="/static/js/card-share.js"></script>
+    <script src="/static/js/quick-reply.js"></script>
+    <script src="/static/js/chat-background.js"></script>
+    <script src="/static/js/font-size-adjuster.js"></script>
+    <script src="/static/js/notification-sound.js"></script>
+    <script src="/static/js/message-search.js"></script>
+    <script src="/static/js/message-forward.js"></script>
+    
+    <!-- 表情选择器 -->
+    <link rel="stylesheet" href="/static/css/emoji-picker.css">
+    <script src="/static/js/emoji-picker.js"></script>
+
+    <!-- 新增模块 -->
+    <script src="/static/js/voice-call.js"></script>
+    <script src="/static/js/video-call.js"></script>
+    <script src="/static/js/screen-share.js"></script>
+    <script src="/static/js/voice-recording-visualizer.js"></script>
+    <script src="/static/js/file-upload-progress.js"></script>
+    <script src="/static/js/message-read-receipt.js"></script>
+    <script src="/static/js/rich-text-editor.js"></script>
+    <script src="/static/js/message-mention.js"></script>
+    <script src="/static/js/message-search-ui.js"></script>
+    <script src="/static/js/quick-reply-ui.js"></script>
+
+    <!-- PC端聊天逻辑 -->
+    <script src="/static/js/chat-pc.js"></script>
+    
+    <!-- 移动端聊天逻辑 -->
+    <script src="/static/js/chat-mobile.js"></script>
+
+    <!-- 设备检测和初始化 -->
+    <script>
+        // 检测设备类型
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                   window.innerWidth <= 768;
+        }
+        
+        // 显示对应版本的聊天界面
+        document.addEventListener('DOMContentLoaded', function() {
+            if (isMobile()) {
+                // 显示移动端
+                document.getElementById('mobile-chat').classList.remove('hidden');
+                document.getElementById('pc-chat').classList.add('hidden');
+            } else {
+                // 显示PC端
+                document.getElementById('pc-chat').classList.remove('hidden');
+                document.getElementById('mobile-chat').classList.add('hidden');
+            }
+        });
+        
+        // Toast提示函数
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+        
+        // 聊天选项弹窗
+        function showChatOptions() {
+            const popup = document.createElement('div');
+            popup.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm';
+            
+            popup.innerHTML = `
+                <div class="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold">聊天选项</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fa fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <button class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-3" onclick="markAllRead(); this.closest('.fixed').remove();">
+                            <i class="fa fa-check-circle text-primary"></i>
+                            <span>标记所有消息为已读</span>
+                        </button>
+                        <button class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-3" onclick="deleteChat(); this.closest('.fixed').remove();">
+                            <i class="fa fa-trash text-red-500"></i>
+                            <span>删除聊天记录</span>
+                        </button>
+                        <button class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-3" onclick="clearChat(); this.closest('.fixed').remove();">
+                            <i class="fa fa-eraser text-orange-500"></i>
+                            <span>清空聊天记录</span>
+                        </button>
+                        <button class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-3" onclick="goToUserCard(); this.closest('.fixed').remove();">
+                            <i class="fa fa-user text-gray-500"></i>
+                            <span>查看用户名片</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(popup);
+            
+            popup.addEventListener('click', (e) => {
+                if (e.target === popup) {
+                    popup.remove();
+                }
+            });
+        }
+        
+        // 功能函数
+        async function markAllRead() {
+            try {
+                const response = await fetch('/api/v1/messages/markAsRead', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sender_id: window.otherUserInfo?.id })
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    showToast('标记已读成功');
+                } else {
+                    throw new Error(result.msg || '标记已读失败');
+                }
+            } catch (error) {
+                console.error('标记已读失败:', error);
+                showToast('标记已读失败,请稍后重试');
+            }
+        }
+        
+        async function deleteChat() {
+            if (!confirm('确定要删除与该用户的所有聊天记录吗?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/v1/messages/deleteMessage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: window.otherUserInfo?.id })
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    showToast('删除成功');
+                    window.location.href = '/messages';
+                } else {
+                    throw new Error(result.msg || '删除失败');
+                }
+            } catch (error) {
+                console.error('删除聊天记录失败:', error);
+                showToast('删除失败,请稍后重试');
+            }
+        }
+        
+        async function clearChat() {
+            if (!confirm('确定要清空与该用户的所有聊天记录吗？此操作不可恢复！')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/v1/messages/deleteMessage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: window.otherUserInfo?.id })
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    showToast('清空成功');
+                    if (chatPC) chatPC.loadChatHistory();
+                    if (chatMobile) chatMobile.loadChatHistory();
+                } else {
+                    throw new Error(result.msg || '清空失败');
+                }
+            } catch (error) {
+                console.error('清空聊天记录失败:', error);
+                showToast('清空失败,请稍后重试');
+            }
+        }
+        
+        function goToUserCard(userId) {
+            window.location.href = `/card/${window.otherUserInfo?.id}`;
+        }
+        
+        function showSearch() {
+            if (typeof MessageSearchUI !== 'undefined') {
+                new MessageSearchUI({ chatId: window.otherUserInfo?.id });
+            } else {
+                showToast('搜索功能加载失败');
+            }
+        }
+        
+        function showFavorites() {
+            window.location.href = '/messages/favorites';
+        }
+        
+        function showQuickReply() {
+            if (typeof quickReply !== 'undefined') {
+                quickReply.showPanel((reply) => {
+                    const input = document.getElementById('message-input');
+                    input.value = reply;
+                    input.focus();
+                    if (chatPC) chatPC.sendMessage();
+                });
+            } else {
+                showToast('快捷回复功能未加载');
+            }
+        }
+        
+        function showFontSizeAdjuster() {
+            if (typeof FontSizeAdjuster !== 'undefined') {
+                FontSizeAdjuster.show();
+            } else {
+                showToast('字体调整功能未加载');
+            }
+        }
+        
+        function showBackgroundSettings() {
+            if (typeof ChatBackground !== 'undefined') {
+                ChatBackground.show();
+            } else {
+                showToast('背景设置功能未加载');
+            }
+        }
+        
+        function showLocationPicker() {
+            if (typeof LocationMessage !== 'undefined') {
+                LocationMessage.pick((lat, lng, address) => {
+                    const locationData = JSON.stringify({ lat, lng, address });
+                    if (chatPC) chatPC.sendMessage(locationData, 6, '', '', 0, 0);
+                });
+            } else {
+                showToast('位置功能未加载');
+            }
+        }
+        
+        function showCardShare() {
+            if (typeof CardShare !== 'undefined') {
+                CardShare.show((userId, nickname, avatar) => {
+                    const cardData = JSON.stringify({ user_id: userId, nickname, avatar });
+                    if (chatPC) chatPC.sendMessage(cardData, 7, '', '', 0, 0);
+                });
+            } else {
+                showToast('名片分享功能未加载');
+            }
+        }
+    </script>
+
+    <!-- 移动端样式 -->
+    <style>
+        /* 移动端聊天样式 - 参考微信/抖音 */
+        .mobile-chat-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .mobile-chat-header {
+            background: #fff;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: relative;
+            z-index: 10;
+        }
+
+        .mobile-chat-header .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mobile-chat-header .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .mobile-chat-header .user-details h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .mobile-chat-header .user-details p {
+            font-size: 12px;
+            color: #999;
+            margin: 2px 0 0 0;
+        }
+
+        .mobile-chat-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #f5f5f5;
+            -webkit-overflow-scrolling: touch;
+            transition: padding-bottom 0.3s ease;
+        }
+
+        .mobile-chat-content.shifted {
+            padding-bottom: 250px;
+        }
+
+        .message-item {
+            display: flex;
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .message-item.sent {
+            justify-content: flex-end;
+        }
+
+        .message-item .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .message-item.sent .avatar {
+            margin-left: 10px;
+        }
+
+        .message-item.received .avatar {
+            margin-right: 10px;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            position: relative;
+            font-size: 15px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .message-item.sent .message-bubble {
+            background: linear-gradient(135deg, #07c160 0%, #06ad56 100%);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 2px 6px rgba(7, 193, 96, 0.2);
+        }
+
+        .message-item.received .message-bubble {
+            background: #fff;
+            color: #333;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        .recall-btn {
+            color: #999;
+            font-size: 12px;
+            margin-left: 8px;
+            cursor: pointer;
+        }
+
+        .recall-btn:active {
+            color: #07c160;
+        }
+
+        .mobile-chat-footer {
+            background: #fff;
+            padding: 10px 16px;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            border-top: 1px solid #eee;
+            position: relative;
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+
+        .mobile-chat-footer.shifted {
+            transform: translateY(-250px);
+        }
+
+        .mobile-input-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .mobile-action-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            border-radius: 50%;
+            color: #666;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .mobile-action-btn:active {
+            background: #e0e0e0;
+            transform: scale(0.95);
+        }
+
+        .mobile-input-wrapper {
+            flex: 1;
+            background: #f5f5f5;
+            border-radius: 20px;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+        }
+
+        .mobile-input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-size: 15px;
+            color: #333;
+            outline: none;
+            resize: none;
+            max-height: 100px;
+            min-height: 20px;
+            line-height: 24px;
+            overflow-y: auto;
+        }
+
+        .mobile-input:empty:before {
+            content: attr(placeholder);
+            color: #999;
+        }
+
+        .mobile-input img.inline-emoji {
+            display: inline-block;
+            vertical-align: middle;
+            width: 24px;
+            height: 24px;
+            margin: 0 2px;
+        }
+
+        .mobile-send-btn {
+            width: 50px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #07c160 0%, #06ad56 100%);
+            border-radius: 18px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .mobile-send-btn:active {
+            opacity: 0.8;
+            transform: scale(0.95);
+        }
+
+        /* 表情选择器 */
+        .mobile-emoji-picker {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: -250px;
+            background: #fff;
+            border-top: 1px solid #eee;
+            z-index: 999;
+            padding: 16px;
+            padding-bottom: calc(16px + env(safe-area-inset-bottom));
+            display: none;
+            transition: bottom 0.3s ease;
+            height: 250px;
+            overflow-y: auto;
+        }
+
+        .mobile-emoji-picker.show {
+            display: block !important;
+            bottom: 0 !important;
+            animation: slideUp 0.3s ease;
+        }
+
+        .mobile-emoji-picker .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+
+        .mobile-emoji-picker .emoji-item {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mobile-emoji-picker .emoji-item:hover {
+            background: #f3f4f6;
+            transform: scale(1.1);
+        }
+
+        .mobile-emoji-picker .emoji-item:active {
+            transform: scale(0.95);
+        }
+
+        .emoji-item {
+            font-size: 24px;
+            text-align: center;
+            padding: 8px 0;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .emoji-item:active {
+            background: #f5f5f5;
+        }
+
+        /* 加载动画 */
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #999;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #999;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        /* 图片消息 */
+        .message-image {
+            max-width: 100%;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* 撤回消息 */
+        .recalled-message {
+            background: #f5f5f5 !important;
+            color: #999 !important;
+            font-size: 13px;
+            padding: 8px 12px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</body>
+</html>

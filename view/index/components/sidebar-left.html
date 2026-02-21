@@ -1,0 +1,95 @@
+﻿<!-- 左侧栏 - 桌面端显示 -->
+<aside class="hidden md:block w-1/5 lg:w-1/6 flex-shrink-0">
+    <div class="bg-bg-card rounded-xl shadow-soft p-4">
+        <div class="flex flex-col gap-1">
+            <a href="/" class="flex items-center gap-3 py-2.5 px-3 rounded-lg bg-lightBlue text-primary font-medium transition-all duration-200">
+                <i class="fa fa-home text-lg w-5 text-center"></i>
+                <span>首页</span>
+            </a>
+
+            <!-- 发现页入口 -->
+            <a href="/discover" class="flex items-center gap-3 py-2.5 px-3 rounded-lg text-text-secondary hover:bg-lightBlue hover:text-primary transition-all duration-200">
+                <i class="fa fa-search text-lg w-5 text-center"></i>
+                <span>热门话题</span>
+            </a>
+            <a href="/activities" class="flex items-center gap-3 py-2.5 px-3 rounded-lg text-text-secondary hover:bg-lightBlue hover:text-primary transition-all duration-200">
+                <i class="fa fa-calendar text-lg w-5 text-center"></i>
+                <span>活动中心</span>
+            </a>
+
+            <!-- 发布动态按钮（高亮） -->
+            <button onclick="openPublishModal()" class="flex items-center gap-3 py-3 px-4 mt-2 rounded-lg bg-gradient-to-r from-primary to-darkPrimary text-white font-medium shadow-soft hover:shadow-hover transition-all duration-200 transform hover:scale-[1.02] border-0 cursor-pointer">
+                <i class="fa fa-edit text-lg w-5 text-center"></i>
+                <span>发布动态</span>
+            </button>
+
+            <hr class="my-2 border-border-color">
+
+            <!-- 消息和我的 -->
+            <a href="/message" class="flex items-center gap-3 py-2.5 px-3 rounded-lg text-text-secondary hover:bg-lightBlue hover:text-primary transition-all duration-200">
+                <i class="fa fa-envelope text-lg w-5 text-center"></i>
+                <span>消息通知</span>
+                <span id="sidebar-unread-count" class="ml-auto bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+            </a>
+            <a href="/profile" class="flex items-center gap-3 py-2.5 px-3 rounded-lg text-text-secondary hover:bg-lightBlue hover:text-primary transition-all duration-200">
+                <i class="fa fa-user text-lg w-5 text-center"></i>
+                <span>我的主页</span>
+            </a>
+
+            <!-- 我的关注/粉丝 -->
+            <a href="/following" class="flex items-center gap-3 py-2.5 px-3 rounded-lg text-text-secondary hover:bg-lightBlue hover:text-primary transition-all duration-200">
+                <i class="fa fa-user-plus text-lg w-5 text-center"></i>
+                <span>我的关注</span>
+            </a>
+            <a href="/followers" class="flex items-center gap-3 py-2.5 px-3 rounded-lg text-text-secondary hover:bg-lightBlue hover:text-primary transition-all duration-200">
+                <i class="fa fa-users text-lg w-5 text-center"></i>
+                <span>我的粉丝</span>
+            </a>
+
+            <!-- 收藏和草稿 -->
+            <a href="/favorites" class="flex items-center gap-3 py-2.5 px-3 rounded-lg text-text-secondary hover:bg-lightBlue hover:text-primary transition-all duration-200">
+                <i class="fa fa-bookmark text-lg w-5 text-center"></i>
+                <span>我的收藏</span>
+            </a>
+            <a href="/drafts" class="flex items-center gap-3 py-2.5 px-3 rounded-lg text-text-secondary hover:bg-lightBlue hover:text-primary transition-all duration-200">
+                <i class="fa fa-file-text text-lg w-5 text-center"></i>
+                <span>我的草稿箱</span>
+            </a>
+
+            <hr class="my-2 border-border-color">
+
+            <!-- 积分和等级 -->
+            <a href="/points" class="flex items-center gap-3 py-2.5 px-3 rounded-lg text-text-secondary hover:bg-lightBlue hover:text-primary transition-all duration-200">
+                <i class="fa fa-gift text-lg w-5 text-center"></i>
+                <span>积分中心</span>
+            </a>
+            <a href="/level" class="flex items-center gap-3 py-2.5 px-3 rounded-lg text-text-secondary hover:bg-lightBlue hover:text-primary transition-all duration-200">
+                <i class="fa fa-star text-lg w-5 text-center"></i>
+                <span>等级中心</span>
+            </a>
+
+            <hr class="my-2 border-border-color">
+
+            <!-- 设置中心 -->
+            <a href="/settings" class="flex items-center gap-3 py-2.5 px-3 rounded-lg text-text-secondary hover:bg-lightBlue hover:text-primary transition-all duration-200">
+                <i class="fa fa-cog text-lg w-5 text-center"></i>
+                <span>设置中心</span>
+            </a>
+        </div>
+
+        <!-- 运营活动区域 -->
+        <div class="mt-6 pt-4 border-t border-border-color">
+            <h3 class="text-xs font-semibold text-text-secondary mb-3 uppercase tracking-wide">运营活动</h3>
+            <div class="space-y-3">
+                <div class="bg-gradient-to-r from-secondary/20 to-primary/20 rounded-lg p-3 cursor-pointer hover:shadow-soft transition-all duration-200">
+                    <div class="text-sm font-medium text-primary mb-1">新人专享</div>
+                    <div class="text-xs text-text-secondary">注册即送100积分</div>
+                </div>
+                <div class="bg-gradient-to-r from-warning/20 to-warning/10 rounded-lg p-3 cursor-pointer hover:shadow-soft transition-all duration-200">
+                    <div class="text-sm font-medium text-warning mb-1">活动推荐</div>
+                    <div class="text-xs text-text-secondary">参与话题赢大奖</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</aside>

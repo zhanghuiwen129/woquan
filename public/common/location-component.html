@@ -1,0 +1,124 @@
+﻿<!-- 定位组件模板 -->
+<template id="location-component-template">
+    <div class="location-display" id="location-display">
+        <div class="location-icon">
+            <i class="fa fa-map-marker"></i>
+        </div>
+        <div class="location-info">
+            <div class="location-text" id="location-text">获取位置中...</div>
+            <div class="location-distance" id="location-distance"></div>
+        </div>
+        <button class="location-refresh-btn" id="location-refresh-btn" title="刷新位置">
+            <i class="fa fa-refresh"></i>
+        </button>
+    </div>
+</template>
+
+<style>
+/* 定位显示组件 */
+.location-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(74, 144, 226, 0.08);
+    border-radius: 8px;
+    font-size: 13px;
+    color: #4A90E2;
+}
+
+.location-display .location-icon {
+    flex-shrink: 0;
+    font-size: 16px;
+}
+
+.location-display .location-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.location-display .location-text {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.location-display .location-distance {
+    font-size: 12px;
+    color: #6B6E7F;
+    margin-top: 2px;
+}
+
+.location-display .location-refresh-btn {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: #9EA0AF;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.location-display .location-refresh-btn:hover {
+    background: rgba(74, 144, 226, 0.15);
+    color: #4A90E2;
+}
+
+.location-display .location-refresh-btn i {
+    font-size: 14px;
+}
+
+.location-display .location-refresh-btn.loading i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* 移动端样式 */
+@media (max-width: 768px) {
+    .location-display {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .location-display .location-icon {
+        font-size: 14px;
+    }
+
+    .location-display .location-refresh-btn {
+        width: 22px;
+        height: 22px;
+    }
+}
+
+/* 暗黑模式 */
+.dark .location-display {
+    background: rgba(74, 144, 226, 0.15);
+}
+
+.dark .location-display .location-text {
+    color: #6AA9F2;
+}
+
+.dark .location-display .location-distance {
+    color: #868B94;
+}
+
+.dark .location-display .location-refresh-btn {
+    color: #868B94;
+}
+
+.dark .location-display .location-refresh-btn:hover {
+    background: rgba(74, 144, 226, 0.2);
+    color: #6AA9F2;
+}
+</style>

@@ -1,0 +1,444 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户统计 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        modern: {
+                            dark: '#1F2937',
+                            light: '#F9FAFB',
+                            primary: '#3B82F6',
+                            secondary: '#6366F1',
+                            gray: '#4B5563',
+                            lightGray: '#E5E7EB',
+                            darkGray: '#374151',
+                            white: '#FFFFFF',
+                            success: '#10B981',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <!-- 引入Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        .stat-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'user_statistics';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">用户统计</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-8">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-semibold text-modern-dark">用户统计</h2>
+                        <p class="text-modern-gray mt-2">查看用户数据的统计和分析</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <a href="/admin/user" class="px-5 py-2.5 bg-modern-primary text-white rounded-md hover:bg-blue-600 transition-colors">
+                            <i class="fa-solid fa-arrow-left mr-2"></i>返回用户列表
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 统计概览卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
+                <!-- 用户总数 -->
+                <div class="stat-card bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-modern-gray mb-1">用户总数</p>
+                            <h3 class="text-2xl font-bold text-modern-dark">{$totalUsers}</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                            <i class="fa-solid fa-users text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 今日新增 -->
+                <div class="stat-card bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-modern-gray mb-1">今日新增</p>
+                            <h3 class="text-2xl font-bold text-modern-success">{$todayNewUsers}</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+                            <i class="fa-solid fa-user-plus text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 昨日新增 -->
+                <div class="stat-card bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-modern-gray mb-1">昨日新增</p>
+                            <h3 class="text-2xl font-bold text-modern-secondary">{$yesterdayNewUsers}</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
+                            <i class="fa-solid fa-calendar-day text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 本周新增 -->
+                <div class="stat-card bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-modern-gray mb-1">本周新增</p>
+                            <h3 class="text-2xl font-bold text-orange-600">{$weekNewUsers}</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-600">
+                            <i class="fa-solid fa-calendar-week text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 本月新增 -->
+                <div class="stat-card bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-modern-gray mb-1">本月新增</p>
+                            <h3 class="text-2xl font-bold text-rose-600">{$monthNewUsers}</h3>
+                        </div>
+                        <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center text-rose-600">
+                            <i class="fa-solid fa-calendar-month text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 活跃用户 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-lg font-semibold text-modern-dark">活跃用户（最近7天）</h4>
+                        <span class="text-modern-success font-medium">{$activeUsers}</span>
+                    </div>
+                    <div class="w-full h-64">
+                        <canvas id="activeUsersChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-lg font-semibold text-modern-dark">用户状态分布</h4>
+                    </div>
+                    <div class="w-full h-64">
+                        <canvas id="userStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 增长趋势和分组统计 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-lg font-semibold text-modern-dark">用户增长趋势（最近7天）</h4>
+                    </div>
+                    <div class="w-full h-64">
+                        <canvas id="growthTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-lg font-semibold text-modern-dark">用户分组统计</h4>
+                    </div>
+                    <div class="w-full h-64">
+                        <canvas id="groupStatsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户标签统计 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-6 mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-lg font-semibold text-modern-dark">用户标签统计</h4>
+                </div>
+                <div class="w-full h-64">
+                    <canvas id="tagStatsChart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 准备统计数据
+        const growthTrendData = {$growthTrend|json_encode};
+        const userStatusData = {$userStatus|json_encode};
+        const groupStatsData = {$groupStats|json_encode};
+        const tagStatsData = {$tagStats|json_encode};
+        const activeUsers = {$activeUsers};
+        const totalUsers = {$totalUsers};
+
+        // 活跃用户图表
+        const activeUsersCtx = document.getElementById('activeUsersChart').getContext('2d');
+        new Chart(activeUsersCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['活跃用户', '非活跃用户'],
+                datasets: [{
+                    data: [activeUsers, totalUsers - activeUsers],
+                    backgroundColor: ['#10B981', '#E5E7EB'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.parsed}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 用户状态分布图表
+        const userStatusCtx = document.getElementById('userStatusChart').getContext('2d');
+        const statusLabels = userStatusData.map(item => item.status === 1 ? '正常' : '禁用');
+        const statusCounts = userStatusData.map(item => item.count);
+        const statusColors = statusLabels.map(label => label === '正常' ? '#10B981' : '#EF4444');
+
+        new Chart(userStatusCtx, {
+            type: 'pie',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusCounts,
+                    backgroundColor: statusColors,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.parsed}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 用户增长趋势图表
+        const growthTrendCtx = document.getElementById('growthTrendChart').getContext('2d');
+        const growthDates = growthTrendData.map(item => item.date);
+        const growthCounts = growthTrendData.map(item => item.count);
+
+        new Chart(growthTrendCtx, {
+            type: 'line',
+            data: {
+                labels: growthDates,
+                datasets: [{
+                    label: '新增用户数',
+                    data: growthCounts,
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // 用户分组统计图表
+        const groupStatsCtx = document.getElementById('groupStatsChart').getContext('2d');
+        const groupNames = groupStatsData.map(item => item.name);
+        const groupCounts = groupStatsData.map(item => item.count);
+
+        new Chart(groupStatsCtx, {
+            type: 'bar',
+            data: {
+                labels: groupNames,
+                datasets: [{
+                    label: '用户数',
+                    data: groupCounts,
+                    backgroundColor: '#6366F1',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // 用户标签统计图表
+        const tagStatsCtx = document.getElementById('tagStatsChart').getContext('2d');
+        const tagNames = tagStatsData.map(item => item.name);
+        const tagCounts = tagStatsData.map(item => item.count);
+        const tagColors = tagStatsData.map(item => item.color);
+
+        new Chart(tagStatsCtx, {
+            type: 'bar',
+            data: {
+                labels: tagNames,
+                datasets: [{
+                    label: '用户数',
+                    data: tagCounts,
+                    backgroundColor: tagColors,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    },
+                    x: {
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
