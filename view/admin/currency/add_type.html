@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加货币类型 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .bg-modern-white {
+            background-color: #ffffff;
+        }
+        .bg-modern-light {
+            background-color: #f8fafc;
+        }
+        .text-modern-dark {
+            color: #1e293b;
+        }
+        .text-modern-gray {
+            color: #64748b;
+        }
+        .bg-modern-primary {
+            background-color: #3b82f6;
+        }
+        .text-modern-primary {
+            color: #3b82f6;
+        }
+        .bg-modern-secondary {
+            background-color: #2563eb;
+        }
+        .bg-modern-success {
+            background-color: #10b981;
+        }
+        .text-modern-success {
+            color: #10b981;
+        }
+        .bg-modern-gray {
+            background-color: #64748b;
+        }
+        .bg-modern-darkGray {
+            background-color: #475569;
+        }
+        .bg-modern-lightGray {
+            background-color: #e2e8f0;
+        }
+        .border-modern-lightGray {
+            border-color: #e2e8f0;
+        }
+        .shadow-modern {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'currency';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">添加货币类型</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name|default='管理员'}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-modern-dark">添加新的货币/积分类型</h2>
+                <p class="text-modern-gray text-sm mt-1">创建新的货币或积分类型用于系统</p>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-5 mb-6">
+                <a href="/admin/currency" class="px-5 py-2 bg-modern-gray text-white text-sm rounded-lg hover:bg-modern-darkGray transition-colors shadow-sm">
+                    <i class="fas fa-arrow-left mr-1"></i>返回列表
+                </a>
+            </div>
+
+            <!-- 添加表单 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-6 max-w-3xl">
+                <form id="currencyForm">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <!-- 基本信息 -->
+                        <div>
+                            <h3 class="text-lg font-medium text-modern-dark mb-4">基本信息</h3>
+                            <div class="mb-4">
+                                <label class="block text-sm text-modern-gray mb-2">货币名称 <span class="text-red-500">*</span></label>
+                                <input type="text" name="name" placeholder="如：金币、积分、钻石" 
+                                       class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm text-modern-gray mb-2">货币符号 <span class="text-red-500">*</span></label>
+                                <input type="text" name="symbol" placeholder="如：💰、🪙、💎" 
+                                       class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm text-modern-gray mb-2">描述</label>
+                                <textarea name="description" rows="3" placeholder="请输入货币描述" 
+                                          class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all resize-none"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- 设置 -->
+                        <div>
+                            <h3 class="text-lg font-medium text-modern-dark mb-4">设置</h3>
+                            <div class="mb-4">
+                                <label class="block text-sm text-modern-gray mb-2">排序</label>
+                                <input type="number" name="sort" placeholder="0" value="0"
+                                       class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                                <p class="text-xs text-modern-gray mt-2">数字越小越靠前</p>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm text-modern-gray mb-2">状态</label>
+                                <select name="status" 
+                                        class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                                    <option value="1">启用</option>
+                                    <option value="0">禁用</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm text-modern-gray mb-2">主要货币</label>
+                                <div class="flex items-center gap-3">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" name="is_primary" value="1" 
+                                               class="w-4 h-4 rounded border-modern-lightGray text-modern-primary focus:ring-modern-primary">
+                                        <span class="text-sm text-modern-dark">设置为主要货币</span>
+                                    </label>
+                                </div>
+                                <p class="text-xs text-modern-gray mt-2">系统中只能有一个主要货币，设置后会自动取消其他货币的主要货币状态</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="flex justify-end gap-4">
+                        <a href="/admin/currency" class="px-5 py-2.5 bg-modern-lightGray text-modern-gray rounded-lg hover:bg-gray-300 transition-colors shadow-sm">
+                            <i class="fas fa-arrow-left mr-2"></i>返回列表
+                        </a>
+                        <button type="submit" class="px-5 py-2.5 bg-modern-primary text-white rounded-lg hover:bg-modern-secondary transition-colors shadow-sm">
+                            <i class="fas fa-save mr-2"></i>保存设置
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 保存货币类型
+        $('#currencyForm').submit(function(e) {
+            e.preventDefault();
+            
+            var data = $(this).serialize();
+            
+            $.ajax({
+                url: '/admin/currency/saveType',
+                type: 'POST',
+                data: data,
+                dataType: 'json',
+                beforeSend: function() {
+                    $('button[type="submit"]').attr('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>保存中...');
+                },
+                success: function(res) {
+                    if (res.code == 200) {
+                        alert('添加成功！');
+                        window.location.href = '/admin/currency';
+                    } else {
+                        alert('添加失败：' + res.msg);
+                    }
+                },
+                error: function() {
+                    alert('网络错误，请重试！');
+                },
+                complete: function() {
+                    $('button[type="submit"]').attr('disabled', false).html('<i class="fas fa-save mr-2"></i>保存设置');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

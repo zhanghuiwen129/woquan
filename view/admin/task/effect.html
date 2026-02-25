@@ -1,0 +1,142 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>任务效果分析 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">任务效果分析</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        查看用户任务完成记录和效果数据
+    </p>
+</div>
+
+<!-- 任务效果列表卡片 -->
+<div class="card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">ID</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">用户</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">任务名称</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">任务类型</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">完成时间</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-modern-lightGray">
+                <!-- 数据将通过JS加载 -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页 -->
+    <div class="bg-modern-light px-6 py-4 flex items-center justify-between border-t border-modern-lightGray">
+        <div class="text-sm text-modern-gray">
+            共 <span id="totalCount">0</span> 条记录
+        </div>
+        <div class="flex items-center gap-2" id="pagination">
+            <!-- 分页按钮将通过JS生成 -->
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+let currentPage = 1;
+let pageSize = 20;
+
+// 加载数据
+function loadData(page = 1) {
+    currentPage = page;
+
+    fetch(`/admin/task/effect?page=${page}&limit=${pageSize}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+        .then(response => response.json())
+        .then(result => {
+            if (result.code === 200) {
+                renderTable(result.data.list);
+                renderPagination(result.data.total);
+            } else {
+                alert('加载失败: ' + result.msg);
+            }
+        })
+        .catch(error => {
+            console.error('加载失败:', error);
+            alert('网络错误，请稍后重试');
+        });
+}
+
+// 渲染表格
+function renderTable(data) {
+    const tbody = document.getElementById('tableBody');
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-12 text-center text-modern-gray">暂无数据</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = data.map(item => {
+        const typeMap = {
+            'daily': '<span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">每日任务</span>',
+            'growth': '<span class="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded">成长任务</span>'
+        };
+
+        return `
+            <tr class="hover:bg-modern-light/50 transition-colors">
+                <td class="py-4 px-6 text-sm text-modern-gray">${item.id}</td>
+                <td class="py-4 px-6">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-modern-lightGray rounded-full flex items-center justify-center mr-2">
+                            <i class="fas fa-user text-modern-gray text-sm"></i>
+                        </div>
+                        <div class="text-sm text-modern-dark">${item.username || '未知用户'}</div>
+                    </div>
+                </td>
+                <td class="py-4 px-6 text-sm text-modern-dark">${item.task_name || '未知任务'}</td>
+                <td class="py-4 px-6">${typeMap[item.task_type] || '-'}</td>
+                <td class="py-4 px-6 text-sm text-modern-gray">${formatDate(item.create_time)}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// 渲染分页
+function renderPagination(total) {
+    const totalPages = Math.ceil(total / pageSize);
+    const pagination = document.getElementById('pagination');
+    document.getElementById('totalCount').textContent = total;
+
+    let html = '';
+
+    html += `<button onclick="loadData(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-3 py-1 border rounded hover:bg-modern-white disabled:opacity-50 disabled:cursor-not-allowed">
+        <i class="fas fa-chevron-left"></i>
+    </button>`;
+
+    for (let i = 1; i <= totalPages && i <= 5; i++) {
+        html += `<button onclick="loadData(${i})" class="px-3 py-1 border rounded ${currentPage === i ? 'bg-modern-primary text-white' : 'hover:bg-modern-white'}">${i}</button>`;
+    }
+
+    html += `<button onclick="loadData(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''} class="px-3 py-1 border rounded hover:bg-modern-white disabled:opacity-50 disabled:cursor-not-allowed">
+        <i class="fas fa-chevron-right"></i>
+    </button>`;
+
+    pagination.innerHTML = html;
+}
+
+// 格式化日期
+function formatDate(timestamp) {
+    if (!timestamp) return '-';
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleString('zh-CN');
+}
+
+// 页面加载时获取数据
+document.addEventListener('DOMContentLoaded', function() {
+    loadData(1);
+});
+</script>
+{/block}

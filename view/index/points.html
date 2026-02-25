@@ -1,0 +1,984 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="content"}
+<!-- 主内容区 -->
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- 积分总览卡片 -->
+        <div class="bg-gradient-to-r from-primary to-darkPrimary rounded-xl p-6 text-white mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold">我的积分</h2>
+                <div class="flex items-center gap-2 text-sm">
+                    <i class="fa fa-trophy"></i>
+                    <span>当前等级</span>
+                    <span id="current-level" class="font-bold">Lv1</span>
+                </div>
+            </div>
+
+            <div class="flex items-baseline gap-2 mb-4">
+                <span id="total-points" class="text-4xl font-bold">0</span>
+                <span class="text-sm opacity-80">积分</span>
+            </div>
+
+            <!-- 升级进度条 -->
+            <div class="bg-white/20 rounded-full h-3 mb-2">
+                <div id="level-progress" class="bg-white rounded-full h-3 transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between text-xs opacity-80">
+                <span>还需 <span id="points-needed">100</span> 积分升级到 Lv2</span>
+                <span id="next-level-info">Lv2</span>
+            </div>
+        </div>
+
+        <!-- 积分统计卡片 -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="bg-bg-card rounded-lg p-4 text-center">
+                <div class="text-text-secondary text-xs mb-1">今日获取</div>
+                <div id="today-points" class="text-xl font-bold text-primary">0</div>
+            </div>
+            <div class="bg-bg-card rounded-lg p-4 text-center">
+                <div class="text-text-secondary text-xs mb-1">本周获取</div>
+                <div id="week-points" class="text-xl font-bold text-primary">0</div>
+            </div>
+            <div class="bg-bg-card rounded-lg p-4 text-center">
+                <div class="text-text-secondary text-xs mb-1">累计获取</div>
+                <div id="total-gained" class="text-xl font-bold text-primary">0</div>
+            </div>
+        </div>
+
+        <!-- 快捷操作 -->
+        <div class="flex gap-2 mb-6 overflow-x-auto hidden-scrollbar">
+            <button onclick="loadTab('tasks')" class="tab-btn flex-1 min-w-[120px] bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                <i class="fa fa-tasks mr-2"></i>积分任务
+            </button>
+            <button onclick="loadTab('history')" class="tab-btn flex-1 min-w-[120px] bg-bg-card text-text-primary px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                <i class="fa fa-history mr-2"></i>积分明细
+            </button>
+            <button onclick="loadTab('exchange')" class="tab-btn flex-1 min-w-[120px] bg-bg-card text-text-primary px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                <i class="fa fa-gift mr-2"></i>积分兑换
+            </button>
+        </div>
+
+        <!-- 内容区域 -->
+        <div id="desktop-content-area" class="desktop-content">
+            <!-- 积分任务 (默认显示) -->
+            <div id="desktop-tasks-tab" class="tab-content">
+                <div class="bg-bg-card rounded-xl p-4 mb-4">
+                    <h3 class="text-sm font-semibold text-text-primary mb-3">
+                        <i class="fa fa-calendar-check text-primary mr-2"></i>每日任务
+                        <span class="text-xs text-text-secondary ml-2">每天凌晨重置</span>
+                    </h3>
+                    <div id="daily-tasks" class="space-y-3">
+                        <!-- 任务列表由JS加载 -->
+                    </div>
+                </div>
+
+                <div class="bg-bg-card rounded-xl p-4">
+                    <h3 class="text-sm font-semibold text-text-primary mb-3">
+                        <i class="fa fa-rocket text-primary mr-2"></i>成长任务
+                        <span class="text-xs text-text-secondary ml-2">完成一次即可</span>
+                    </h3>
+                    <div id="growth-tasks" class="space-y-3">
+                        <!-- 任务列表由JS加载 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 积分明细 -->
+            <div id="desktop-history-tab" class="tab-content hidden">
+                <div class="bg-bg-card rounded-xl p-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-semibold text-text-primary">积分明细</h3>
+                        <button onclick="clearHistory()" class="text-xs text-text-secondary hover:text-primary transition-colors">
+                            <i class="fa fa-trash-o mr-1"></i>清空记录
+                        </button>
+                    </div>
+                    <div id="points-history" class="space-y-3">
+                        <!-- 历史记录由JS加载 -->
+                    </div>
+                    <div id="no-history" class="text-center py-8 text-text-secondary hidden">
+                        <i class="fa fa-inbox text-4xl mb-3"></i>
+                        <p>暂无积分记录</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 积分兑换 -->
+            <div id="desktop-exchange-tab" class="tab-content hidden">
+                <div class="bg-bg-card rounded-xl p-4 mb-4">
+                    <h3 class="text-sm font-semibold text-text-primary mb-3">
+                        <i class="fa fa-star text-primary mr-2"></i>可兑换商品
+                    </h3>
+                    <div id="exchange-items" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- 兑换商品由JS加载 -->
+                    </div>
+                </div>
+
+                <div class="bg-bg-card rounded-xl p-4">
+                    <h3 class="text-sm font-semibold text-text-primary mb-3">
+                        <i class="fa fa-exchange-alt text-primary mr-2"></i>兑换记录
+                    </h3>
+                    <div id="exchange-history" class="space-y-3">
+                        <!-- 兑换记录由JS加载 -->
+                    </div>
+                    <div id="no-exchange" class="text-center py-8 text-text-secondary hidden">
+                        <i class="fa fa-inbox text-4xl mb-3"></i>
+                        <p>暂无兑换记录</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // 当前用户信息
+    let currentUser = null;
+
+    // 页面加载时初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        loadUserInfo();
+        loadPointsInfo();
+        loadDailyTasks();
+        loadGrowthTasks();
+        loadPointsHistory();
+        loadExchangeItems();
+    });
+
+    // 加载用户信息
+    async function loadUserInfo() {
+        try {
+            const response = await fetch('/api/user/info');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                currentUser = data.data;
+            }
+        } catch (error) {
+            console.error('加载用户信息失败:', error);
+        }
+    }
+
+    // 加载积分信息
+    async function loadPointsInfo() {
+        try {
+            const response = await fetch('/api/points/info');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                const info = data.data;
+                document.getElementById('total-points').textContent = info.total_points || 0;
+                document.getElementById('today-points').textContent = info.today_points || 0;
+                document.getElementById('week-points').textContent = info.week_points || 0;
+                document.getElementById('total-gained').textContent = info.total_gained || 0;
+                document.getElementById('current-level').textContent = 'Lv' + (info.level || 1);
+
+                // 更新升级进度
+                const currentLevel = info.level || 1;
+                const currentPoints = info.total_points || 0;
+                const levelPoints = currentLevel * 100; // 每级需要100积分
+                const progress = Math.min((currentPoints / levelPoints) * 100, 100);
+
+                document.getElementById('level-progress').style.width = progress + '%';
+                document.getElementById('points-needed').textContent = Math.max(levelPoints - currentPoints, 0);
+                document.getElementById('next-level-info').textContent = 'Lv' + (currentLevel + 1);
+            }
+        } catch (error) {
+            console.error('加载积分信息失败:', error);
+        }
+    }
+
+    // 加载每日任务
+    async function loadDailyTasks() {
+        try {
+            const response = await fetch('/api/tasks/daily');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                const tasks = data.data || [];
+                renderTasks(tasks, 'daily-tasks');
+            }
+        } catch (error) {
+            console.error('加载每日任务失败:', error);
+        }
+    }
+
+    // 加载成长任务
+    async function loadGrowthTasks() {
+        try {
+            const response = await fetch('/api/tasks/growth');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                const tasks = data.data || [];
+                renderTasks(tasks, 'growth-tasks');
+            }
+        } catch (error) {
+            console.error('加载成长任务失败:', error);
+        }
+    }
+
+    // 渲染任务列表
+    function renderTasks(tasks, containerId) {
+        const container = document.getElementById(containerId);
+
+        if (tasks.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-4 text-text-secondary">
+                    <i class="fa fa-check-circle text-2xl mb-2"></i>
+                    <p class="text-sm">所有任务已完成</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = tasks.map(task => `
+            <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 ${task.completed ? 'bg-green-100' : 'bg-primary/10'} rounded-full flex items-center justify-center">
+                        <i class="fa ${task.completed ? 'fa-check text-green-500' : task.icon || 'fa-tasks'} ${task.completed ? '' : 'text-primary'}"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium text-text-primary">${task.name}</div>
+                        <div class="text-xs text-text-secondary">${task.description || '完成即可获得积分'}</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-bold text-primary">+${task.points}</span>
+                    ${task.completed
+                        ? '<span class="text-xs text-green-500">已完成</span>'
+                        : `<button onclick="completeTask(${task.id}, '${task.type}')" class="px-3 py-1 bg-primary text-white text-xs rounded-lg hover:bg-darkPrimary transition-colors">领取</button>`
+                    }
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 完成任务
+    async function completeTask(taskId, taskType) {
+        try {
+            const response = await fetch('/api/tasks/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task_id: taskId, task_type: taskType })
+            });
+            const data = await response.json();
+
+            if (data.code === 200) {
+                showToast(data.msg || '任务完成，积分已发放！');
+                loadPointsInfo();
+                if (taskType === 'daily') {
+                    loadDailyTasks();
+                } else {
+                    loadGrowthTasks();
+                }
+            } else {
+                showToast(data.msg || '任务完成失败', 'error');
+            }
+        } catch (error) {
+            showToast('操作失败，请重试', 'error');
+        }
+    }
+
+    // 加载积分历史
+    async function loadPointsHistory() {
+        try {
+            const response = await fetch('/api/points/history');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                const history = data.data || [];
+                renderPointsHistory(history);
+            }
+        } catch (error) {
+            console.error('加载积分历史失败:', error);
+        }
+    }
+
+    // 渲染积分历史
+    function renderPointsHistory(history) {
+        const container = document.getElementById('points-history');
+        const noData = document.getElementById('no-history');
+
+        if (history.length === 0) {
+            container.innerHTML = '';
+            noData.classList.remove('hidden');
+            return;
+        }
+
+        noData.classList.add('hidden');
+        container.innerHTML = history.map(item => `
+            <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 ${item.points > 0 ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center">
+                        <i class="fa ${item.points > 0 ? 'fa-plus text-green-500' : 'fa-minus text-red-500'} text-sm"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm text-text-primary">${item.description}</div>
+                        <div class="text-xs text-text-secondary">${formatTime(item.create_time)}</div>
+                    </div>
+                </div>
+                <span class="text-sm font-bold ${item.points > 0 ? 'text-green-500' : 'text-red-500'}">
+                    ${item.points > 0 ? '+' : ''}${item.points}
+                </span>
+            </div>
+        `).join('');
+    }
+
+    // 加载兑换商品
+    async function loadExchangeItems() {
+        try {
+            const response = await fetch('/api/exchange/items');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                const items = data.data || [];
+                renderExchangeItems(items);
+            }
+        } catch (error) {
+            console.error('加载兑换商品失败:', error);
+        }
+    }
+
+    // 渲染兑换商品
+    function renderExchangeItems(items) {
+        const container = document.getElementById('exchange-items');
+
+        if (items.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-2 text-center py-8 text-text-secondary">
+                    <i class="fa fa-gift text-4xl mb-3"></i>
+                    <p>暂无可兑换商品</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = items.map(item => `
+            <div class="bg-white rounded-lg p-4 flex flex-col">
+                <div class="w-full h-32 bg-bg-card rounded-lg mb-3 flex items-center justify-center">
+                    ${item.image
+                        ? `<img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover rounded-lg">`
+                        : `<i class="fa fa-gift text-4xl text-text-tertiary"></i>`
+                    }
+                </div>
+                <h4 class="text-sm font-semibold text-text-primary mb-1">${item.name}</h4>
+                <p class="text-xs text-text-secondary mb-2">${item.description || ''}</p>
+                <div class="mt-auto flex items-center justify-between">
+                    <span class="text-sm font-bold text-primary">${item.points} 积分</span>
+                    <button onclick="exchangeItem(${item.id})" class="px-3 py-1 bg-primary text-white text-xs rounded-lg hover:bg-darkPrimary transition-colors">
+                        立即兑换
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 兑换商品
+    async function exchangeItem(itemId) {
+        if (!confirm('确定要兑换该商品吗？')) return;
+
+        try {
+            const response = await fetch('/api/exchange/do', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ item_id: itemId })
+            });
+            const data = await response.json();
+
+            if (data.code === 200) {
+                showToast(data.msg || '兑换成功！');
+                loadPointsInfo();
+            } else {
+                showToast(data.msg || '兑换失败', 'error');
+            }
+        } catch (error) {
+            showToast('操作失败，请重试', 'error');
+        }
+    }
+
+    // 清空积分记录
+    async function clearHistory() {
+        if (!confirm('确定要清空积分记录吗？此操作不可恢复。')) return;
+
+        try {
+            const response = await fetch('/api/points/history/clear', {
+                method: 'POST'
+            });
+            const data = await response.json();
+
+            if (data.code === 200) {
+                showToast('记录已清空');
+                loadPointsHistory();
+            } else {
+                showToast(data.msg || '清空失败', 'error');
+            }
+        } catch (error) {
+            showToast('操作失败，请重试', 'error');
+        }
+    }
+
+    // 切换标签
+    window.loadTab = function(tabName) {
+        // 根据点击的元素判断是桌面端还是移动端
+        const clickedElement = window.event?.target;
+        const isMobile = clickedElement?.closest('.mobile-content');
+        const prefix = isMobile ? 'mobile' : 'desktop';
+
+        // 查找对应的内容区域
+        const contentArea = document.getElementById(prefix + '-content-area');
+        if (!contentArea) {
+            console.error('找不到内容区域:', prefix + '-content-area');
+            return;
+        }
+
+        // 隐藏当前内容区域内的所有标签内容
+        contentArea.querySelectorAll('.tab-content').forEach((el) => el.classList.add('hidden'));
+
+        // 显示选中的标签
+        const targetTab = contentArea.querySelector('#' + prefix + '-' + tabName + '-tab');
+        if (targetTab) {
+            targetTab.classList.remove('hidden');
+        } else {
+            console.error('找不到标签:', prefix + '-' + tabName + '-tab');
+        }
+
+        // 更新按钮样式（只切换当前范围内的按钮）
+        const buttonContainer = contentArea.parentElement;
+        buttonContainer.querySelectorAll('.tab-btn').forEach((btn) => {
+            btn.classList.remove('bg-primary', 'text-white');
+            btn.classList.add('bg-bg-card', 'text-text-primary');
+        });
+
+        // 高亮当前点击的按钮
+        if (window.event && window.event.target) {
+            window.event.target.classList.remove('bg-bg-card', 'text-text-primary');
+            window.event.target.classList.add('bg-primary', 'text-white');
+        }
+    }
+
+    // 格式化时间
+    function formatTime(timestamp) {
+        const date = new Date(timestamp * 1000);
+        const now = new Date();
+        const diff = now - date;
+
+        if (diff < 60000) return '刚刚';
+        if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+        if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+        if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
+
+        return date.toLocaleDateString('zh-CN');
+    }
+
+    // 显示提示
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+
+        toast.className = `fixed top-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} text-white`;
+        toastMessage.textContent = message;
+        toast.classList.remove('hidden');
+
+        setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 3000);
+    }
+
+    // 暴露函数到全局作用域
+    window.completeTask = completeTask;
+    window.exchangeItem = exchangeItem;
+    window.clearHistory = clearHistory;
+    window.loadTab = loadTab;
+})();
+</script>
+{/block}
+
+{block name="contentMobile"}
+<!-- 移动端主内容区 -->
+<div class="container mx-auto px-3 py-4">
+    <!-- 积分总览卡片 -->
+    <div class="bg-gradient-to-r from-primary to-darkPrimary rounded-xl p-5 text-white mb-4">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-base font-semibold">我的积分</h2>
+            <div class="flex items-center gap-1 text-xs">
+                <i class="fa fa-trophy"></i>
+                <span>Lv<span id="mobile-current-level">1</span></span>
+            </div>
+        </div>
+
+        <div class="flex items-baseline gap-1 mb-3">
+            <span id="mobile-total-points" class="text-3xl font-bold">0</span>
+            <span class="text-xs opacity-80">积分</span>
+        </div>
+
+        <!-- 升级进度条 -->
+        <div class="bg-white/20 rounded-full h-2 mb-1">
+            <div id="mobile-level-progress" class="bg-white rounded-full h-2 transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <div class="flex justify-between text-xs opacity-80">
+            <span>还需 <span id="mobile-points-needed">100</span> 积分升级</span>
+            <span id="mobile-next-level-info">Lv2</span>
+        </div>
+    </div>
+
+    <!-- 积分统计卡片 -->
+    <div class="grid grid-cols-3 gap-2 mb-4">
+        <div class="bg-bg-card rounded-lg p-3 text-center">
+            <div class="text-text-secondary text-xs mb-1">今日</div>
+            <div id="mobile-today-points" class="text-lg font-bold text-primary">0</div>
+        </div>
+        <div class="bg-bg-card rounded-lg p-3 text-center">
+            <div class="text-text-secondary text-xs mb-1">本周</div>
+            <div id="mobile-week-points" class="text-lg font-bold text-primary">0</div>
+        </div>
+        <div class="bg-bg-card rounded-lg p-3 text-center">
+            <div class="text-text-secondary text-xs mb-1">累计</div>
+            <div id="mobile-total-gained" class="text-lg font-bold text-primary">0</div>
+        </div>
+    </div>
+
+    <!-- 快捷操作 -->
+    <div class="flex gap-2 mb-4 overflow-x-auto mobile-content">
+        <button onclick="loadTab('tasks')" class="tab-btn flex-1 min-w-[80px] bg-primary text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+            <i class="fa fa-tasks"></i>任务
+        </button>
+        <button onclick="loadTab('history')" class="tab-btn flex-1 min-w-[80px] bg-bg-card text-text-primary px-3 py-2 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors">
+            <i class="fa fa-history"></i>明细
+        </button>
+        <button onclick="loadTab('exchange')" class="tab-btn flex-1 min-w-[80px] bg-bg-card text-text-primary px-3 py-2 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors">
+            <i class="fa fa-gift"></i>兑换
+        </button>
+    </div>
+
+    <!-- 内容区域 -->
+    <div id="mobile-content-area" class="mobile-content">
+        <!-- 积分任务 (默认显示) -->
+        <div id="mobile-tasks-tab" class="tab-content">
+            <div class="bg-bg-card rounded-xl p-3 mb-3">
+                <h3 class="text-xs font-semibold text-text-primary mb-2">
+                    <i class="fa fa-calendar-check text-primary mr-1"></i>每日任务
+                </h3>
+                <div id="mobile-daily-tasks" class="space-y-2">
+                    <!-- 任务列表由JS加载 -->
+                </div>
+            </div>
+
+            <div class="bg-bg-card rounded-xl p-3">
+                <h3 class="text-xs font-semibold text-text-primary mb-2">
+                    <i class="fa fa-rocket text-primary mr-1"></i>成长任务
+                </h3>
+                <div id="mobile-growth-tasks" class="space-y-2">
+                    <!-- 任务列表由JS加载 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 积分明细 -->
+        <div id="mobile-history-tab" class="tab-content hidden">
+            <div class="bg-bg-card rounded-xl p-3">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-semibold text-text-primary">积分明细</h3>
+                    <button onclick="clearHistory()" class="text-xs text-text-secondary hover:text-primary transition-colors">
+                        清空
+                    </button>
+                </div>
+                <div id="mobile-points-history" class="space-y-2">
+                    <!-- 历史记录由JS加载 -->
+                </div>
+                <div id="mobile-no-history" class="text-center py-6 text-text-secondary hidden">
+                    <i class="fa fa-inbox text-3xl mb-2"></i>
+                    <p class="text-xs">暂无积分记录</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 积分兑换 -->
+        <div id="mobile-exchange-tab" class="tab-content hidden">
+            <div class="bg-bg-card rounded-xl p-3 mb-3">
+                <h3 class="text-xs font-semibold text-text-primary mb-2">
+                    <i class="fa fa-star text-primary mr-1"></i>可兑换商品
+                </h3>
+                <div id="mobile-exchange-items" class="grid grid-cols-2 gap-2">
+                    <!-- 兑换商品由JS加载 -->
+                </div>
+            </div>
+
+            <div class="bg-bg-card rounded-xl p-3">
+                <h3 class="text-xs font-semibold text-text-primary mb-2">
+                    <i class="fa fa-exchange-alt text-primary mr-1"></i>兑换记录
+                </h3>
+                <div id="mobile-exchange-history" class="space-y-2">
+                    <!-- 兑换记录由JS加载 -->
+                </div>
+                <div id="mobile-no-exchange" class="text-center py-6 text-text-secondary hidden">
+                    <i class="fa fa-inbox text-3xl mb-2"></i>
+                    <p class="text-xs">暂无兑换记录</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // 当前用户信息
+    let currentUser = null;
+
+    // 页面加载时初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        loadUserInfo();
+        loadPointsInfo();
+        loadDailyTasks();
+        loadGrowthTasks();
+        loadPointsHistory();
+        loadExchangeItems();
+    });
+
+    // 加载用户信息
+    async function loadUserInfo() {
+        try {
+            const response = await fetch('/api/user/info');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                currentUser = data.data;
+            }
+        } catch (error) {
+            console.error('加载用户信息失败:', error);
+        }
+    }
+
+    // 加载积分信息
+    async function loadPointsInfo() {
+        try {
+            const response = await fetch('/api/points/info');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                const info = data.data;
+                document.getElementById('mobile-total-points').textContent = info.total_points || 0;
+                document.getElementById('mobile-today-points').textContent = info.today_points || 0;
+                document.getElementById('mobile-week-points').textContent = info.week_points || 0;
+                document.getElementById('mobile-total-gained').textContent = info.total_gained || 0;
+                document.getElementById('mobile-current-level').textContent = info.level || 1;
+
+                const currentLevel = info.level || 1;
+                const currentPoints = info.total_points || 0;
+                const levelPoints = currentLevel * 100;
+                const progress = Math.min((currentPoints / levelPoints) * 100, 100);
+
+                document.getElementById('mobile-level-progress').style.width = progress + '%';
+                document.getElementById('mobile-points-needed').textContent = Math.max(levelPoints - currentPoints, 0);
+                document.getElementById('mobile-next-level-info').textContent = 'Lv' + (currentLevel + 1);
+            }
+        } catch (error) {
+            console.error('加载积分信息失败:', error);
+        }
+    }
+
+    // 加载每日任务
+    async function loadDailyTasks() {
+        try {
+            const response = await fetch('/api/tasks/daily');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                const tasks = data.data || [];
+                renderMobileTasks(tasks, 'mobile-daily-tasks');
+            }
+        } catch (error) {
+            console.error('加载每日任务失败:', error);
+        }
+    }
+
+    // 加载成长任务
+    async function loadGrowthTasks() {
+        try {
+            const response = await fetch('/api/tasks/growth');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                const tasks = data.data || [];
+                renderMobileTasks(tasks, 'mobile-growth-tasks');
+            }
+        } catch (error) {
+            console.error('加载成长任务失败:', error);
+        }
+    }
+
+    // 渲染任务列表
+    function renderMobileTasks(tasks, containerId) {
+        const container = document.getElementById(containerId);
+
+        if (tasks.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-3 text-text-secondary">
+                    <i class="fa fa-check-circle text-lg mb-1"></i>
+                    <p class="text-xs">所有任务已完成</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = tasks.map(task => `
+            <div class="flex items-center justify-between p-2 bg-white rounded-lg">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 ${task.completed ? 'bg-green-100' : 'bg-primary/10'} rounded-full flex items-center justify-center">
+                        <i class="fa ${task.completed ? 'fa-check text-green-500' : task.icon || 'fa-tasks'} ${task.completed ? '' : 'text-primary'} text-sm"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-medium text-text-primary">${task.name}</div>
+                        <div class="text-xs text-text-secondary">${task.description || '完成即可获得积分'}</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="text-xs font-bold text-primary">+${task.points}</span>
+                    ${task.completed
+                        ? '<span class="text-xs text-green-500">已完成</span>'
+                        : `<button onclick="completeTask(${task.id}, '${task.type}')" class="px-2 py-1 bg-primary text-white text-xs rounded-lg hover:bg-darkPrimary transition-colors">领取</button>`
+                    }
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 完成任务
+    async function completeTask(taskId, taskType) {
+        try {
+            const response = await fetch('/api/tasks/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task_id: taskId, task_type: taskType })
+            });
+            const data = await response.json();
+
+            if (data.code === 200) {
+                showToast(data.msg || '任务完成，积分已发放！');
+                loadPointsInfo();
+                if (taskType === 'daily') {
+                    loadDailyTasks();
+                } else {
+                    loadGrowthTasks();
+                }
+            } else {
+                showToast(data.msg || '任务完成失败', 'error');
+            }
+        } catch (error) {
+            showToast('操作失败，请重试', 'error');
+        }
+    }
+
+    // 加载积分历史
+    async function loadPointsHistory() {
+        try {
+            const response = await fetch('/api/points/history');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                const history = data.data || [];
+                renderMobilePointsHistory(history);
+            }
+        } catch (error) {
+            console.error('加载积分历史失败:', error);
+        }
+    }
+
+    // 渲染积分历史
+    function renderMobilePointsHistory(history) {
+        const container = document.getElementById('mobile-points-history');
+        const noData = document.getElementById('mobile-no-history');
+
+        if (history.length === 0) {
+            container.innerHTML = '';
+            noData.classList.remove('hidden');
+            return;
+        }
+
+        noData.classList.add('hidden');
+        container.innerHTML = history.map(item => `
+            <div class="flex items-center justify-between p-2 bg-white rounded-lg">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 ${item.points > 0 ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center">
+                        <i class="fa ${item.points > 0 ? 'fa-plus text-green-500' : 'fa-minus text-red-500'} text-xs"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-text-primary">${item.description}</div>
+                        <div class="text-xs text-text-secondary">${formatTime(item.create_time)}</div>
+                    </div>
+                </div>
+                <span class="text-xs font-bold ${item.points > 0 ? 'text-green-500' : 'text-red-500'}">
+                    ${item.points > 0 ? '+' : ''}${item.points}
+                </span>
+            </div>
+        `).join('');
+    }
+
+    // 加载兑换商品
+    async function loadExchangeItems() {
+        try {
+            const response = await fetch('/api/exchange/items');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                const items = data.data || [];
+                renderMobileExchangeItems(items);
+            }
+        } catch (error) {
+            console.error('加载兑换商品失败:', error);
+        }
+    }
+
+    // 渲染兑换商品
+    function renderMobileExchangeItems(items) {
+        const container = document.getElementById('mobile-exchange-items');
+
+        if (items.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-2 text-center py-6 text-text-secondary">
+                    <i class="fa fa-gift text-3xl mb-2"></i>
+                    <p class="text-xs">暂无可兑换商品</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = items.map(item => `
+            <div class="bg-white rounded-lg p-2 flex flex-col">
+                <div class="w-full h-20 bg-bg-card rounded-lg mb-2 flex items-center justify-center">
+                    ${item.image
+                        ? `<img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover rounded-lg">`
+                        : `<i class="fa fa-gift text-2xl text-text-tertiary"></i>`
+                    }
+                </div>
+                <h4 class="text-xs font-semibold text-text-primary mb-1 truncate">${item.name}</h4>
+                <p class="text-xs text-text-secondary mb-2 truncate">${item.description || ''}</p>
+                <div class="mt-auto flex items-center justify-between">
+                    <span class="text-xs font-bold text-primary">${item.points}积分</span>
+                    <button onclick="exchangeItem(${item.id})" class="px-2 py-1 bg-primary text-white text-xs rounded-lg hover:bg-darkPrimary transition-colors">
+                        兑换
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 兑换商品
+    async function exchangeItem(itemId) {
+        if (!confirm('确定要兑换该商品吗？')) return;
+
+        try {
+            const response = await fetch('/api/exchange/do', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ item_id: itemId })
+            });
+            const data = await response.json();
+
+            if (data.code === 200) {
+                showToast(data.msg || '兑换成功！');
+                loadPointsInfo();
+            } else {
+                showToast(data.msg || '兑换失败', 'error');
+            }
+        } catch (error) {
+            showToast('操作失败，请重试', 'error');
+        }
+    }
+
+    // 清空积分记录
+    async function clearHistory() {
+        if (!confirm('确定要清空积分记录吗？此操作不可恢复。')) return;
+
+        try {
+            const response = await fetch('/api/points/history/clear', {
+                method: 'POST'
+            });
+            const data = await response.json();
+
+            if (data.code === 200) {
+                showToast('记录已清空');
+                loadPointsHistory();
+            } else {
+                showToast(data.msg || '清空失败', 'error');
+            }
+        } catch (error) {
+            showToast('操作失败，请重试', 'error');
+        }
+    }
+
+    // 切换标签
+    window.loadTab = function(tabName) {
+        // 根据点击的元素判断是桌面端还是移动端
+        const clickedElement = window.event?.target;
+        const isMobile = clickedElement?.closest('.mobile-content');
+        const prefix = isMobile ? 'mobile' : 'desktop';
+
+        // 查找对应的内容区域
+        const contentArea = document.getElementById(prefix + '-content-area');
+        if (!contentArea) {
+            console.error('找不到内容区域:', prefix + '-content-area');
+            return;
+        }
+
+        // 隐藏当前内容区域内的所有标签内容
+        contentArea.querySelectorAll('.tab-content').forEach((el) => el.classList.add('hidden'));
+
+        // 显示选中的标签
+        const targetTab = contentArea.querySelector('#' + prefix + '-' + tabName + '-tab');
+        if (targetTab) {
+            targetTab.classList.remove('hidden');
+        } else {
+            console.error('找不到标签:', prefix + '-' + tabName + '-tab');
+        }
+
+        // 更新按钮样式（只切换当前范围内的按钮）
+        const buttonContainer = contentArea.parentElement;
+        buttonContainer.querySelectorAll('.tab-btn').forEach((btn) => {
+            btn.classList.remove('bg-primary', 'text-white');
+            btn.classList.add('bg-bg-card', 'text-text-primary');
+        });
+
+        // 高亮当前点击的按钮
+        if (window.event && window.event.target) {
+            window.event.target.classList.remove('bg-bg-card', 'text-text-primary');
+            window.event.target.classList.add('bg-primary', 'text-white');
+        }
+    }
+
+    // 格式化时间
+    function formatTime(timestamp) {
+        const date = new Date(timestamp * 1000);
+        const now = new Date();
+        const diff = now - date;
+
+        if (diff < 60000) return '刚刚';
+        if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+        if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+        if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
+
+        return date.toLocaleDateString('zh-CN');
+    }
+
+    // 显示提示
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+
+        toast.className = `fixed top-20 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg z-50 ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} text-white text-sm`;
+        toastMessage.textContent = message;
+        toast.classList.remove('hidden');
+
+        setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 3000);
+    }
+
+    window.completeTask = completeTask;
+    window.exchangeItem = exchangeItem;
+    window.clearHistory = clearHistory;
+    window.loadTab = loadTab;
+})();
+</script>
+{/block}

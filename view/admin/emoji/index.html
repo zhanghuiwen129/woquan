@@ -1,0 +1,292 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>表情管理 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">表情管理</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        管理聊天表情包
+    </p>
+</div>
+
+<!-- 操作按钮区域 -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="flex items-center gap-4">
+        <button onclick="openAddModal()" class="px-5 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern flex items-center gap-2">
+            <i class="fas fa-plus"></i>
+            <span>添加表情</span>
+        </button>
+        <a href="/admin/emoji/categories" class="px-5 py-2 bg-modern-light border border-modern-lightGray rounded-md hover:border-modern-primary transition-colors flex items-center gap-2">
+            <i class="fas fa-folder"></i>
+            <span>分类管理</span>
+        </a>
+    </div>
+    <div class="flex items-center gap-4">
+        <input type="text" id="keyword" placeholder="搜索表情..." class="px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+        <button onclick="search()" class="px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md hover:border-modern-primary transition-colors">
+            <i class="fas fa-search"></i>
+        </button>
+    </div>
+</div>
+
+<!-- 表情列表卡片 -->
+<div class="card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">ID</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">表情名称</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">表情图片</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">分类</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">状态</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">创建时间</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-modern-lightGray">
+                <!-- 数据将通过JS加载 -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页 -->
+    <div class="bg-modern-light px-6 py-4 flex items-center justify-between border-t border-modern-lightGray">
+        <div class="text-sm text-modern-gray">
+            共 <span id="totalCount">0</span> 条记录
+        </div>
+        <div class="flex items-center gap-2" id="pagination">
+            <!-- 分页按钮将通过JS生成 -->
+        </div>
+    </div>
+</div>
+
+<!-- 添加/编辑模态框 -->
+<div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg w-full max-w-md">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h2 class="text-xl font-semibold" id="modalTitle">添加表情</h2>
+                <button onclick="closeModal()" class="text-modern-gray hover:text-modern-dark">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="emojiForm" onsubmit="saveEmoji(event)">
+                    <input type="hidden" id="emojiId" name="id">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-modern-gray mb-2">表情名称 <span class="text-modern-danger">*</span></label>
+                            <input type="text" id="name" name="name" required class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-modern-gray mb-2">表情图片</label>
+                            <input type="text" id="image" name="image" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary" placeholder="图片URL">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-modern-gray mb-2">分类</label>
+                            <input type="text" id="category" name="category" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+                        </div>
+                        <div>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="status" name="status" value="1" checked class="mr-2">
+                                <span class="text-sm text-modern-gray">启用</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-4">
+                        <button type="button" onclick="closeModal()" class="px-6 py-2 border border-modern-lightGray rounded hover:bg-modern-light">取消</button>
+                        <button type="submit" class="px-6 py-2 bg-modern-primary text-white rounded hover:bg-modern-secondary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPage = 1;
+let pageSize = 20;
+let emojis = [];
+
+// 加载数据
+async function loadData(page = 1) {
+    currentPage = page;
+
+    const keyword = document.getElementById('keyword').value;
+
+    try {
+        const response = await fetch(`/admin/emoji/list?page=${page}&limit=${pageSize}&keyword=${encodeURIComponent(keyword)}`);
+        const result = await response.json();
+        if (result.code === 200) {
+            emojis = result.data || [];
+            renderTable(emojis);
+            renderPagination(result.total);
+        } else {
+            alert('加载失败: ' + result.msg);
+        }
+    } catch (error) {
+        console.error('加载数据失败:', error);
+        renderTable([]);
+    }
+}
+
+// 渲染表格
+function renderTable(data) {
+    const tbody = document.getElementById('tableBody');
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-12 text-center text-modern-gray">暂无数据</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = data.map(item => `
+        <tr class="hover:bg-modern-light/50 transition-colors">
+            <td class="py-4 px-6 text-sm text-modern-gray">${item.id}</td>
+            <td class="py-4 px-6 text-sm font-medium text-modern-dark">${item.name}</td>
+            <td class="py-4 px-6 text-sm text-modern-gray">${item.url ? `<img src="${item.url}" class="w-8 h-8 object-cover rounded">` : '-'}</td>
+            <td class="py-4 px-6 text-sm text-modern-dark">${item.category || '-'}</td>
+            <td class="py-4 px-6">
+                <span class="text-xs px-2 py-1 rounded ${item.status === 1 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                    ${item.status === 1 ? '启用' : '禁用'}
+                </span>
+            </td>
+            <td class="py-4 px-6 text-sm text-modern-gray">${formatDate(item.create_time)}</td>
+            <td class="py-4 px-6">
+                <div class="flex items-center gap-2">
+                    <button onclick="openEditModal(${item.id})" class="text-modern-gray hover:text-modern-primary transition-colors" title="编辑">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteEmoji(${item.id})" class="text-modern-gray hover:text-modern-danger transition-colors" title="删除">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// 渲染分页
+function renderPagination(total) {
+    const totalPages = Math.ceil(total / pageSize);
+    const pagination = document.getElementById('pagination');
+    document.getElementById('totalCount').textContent = total;
+
+    let html = '';
+
+    html += `<button onclick="loadData(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-3 py-1 border rounded hover:bg-modern-white disabled:opacity-50 disabled:cursor-not-allowed">
+        <i class="fas fa-chevron-left"></i>
+    </button>`;
+
+    for (let i = 1; i <= totalPages && i <= 5; i++) {
+        html += `<button onclick="loadData(${i})" class="px-3 py-1 border rounded ${currentPage === i ? 'bg-modern-primary text-white' : 'hover:bg-modern-white'}">${i}</button>`;
+    }
+
+    html += `<button onclick="loadData(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''} class="px-3 py-1 border rounded hover:bg-modern-white disabled:opacity-50 disabled:cursor-not-allowed">
+        <i class="fas fa-chevron-right"></i>
+    </button>`;
+
+    pagination.innerHTML = html;
+}
+
+// 搜索
+function search() {
+    loadData(1);
+}
+
+// 格式化日期
+function formatDate(timestamp) {
+    if (!timestamp) return '-';
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleString('zh-CN');
+}
+
+// 打开添加模态框
+function openAddModal() {
+    document.getElementById('editModal').classList.remove('hidden');
+    document.getElementById('modalTitle').textContent = '添加表情';
+    document.getElementById('emojiId').value = '';
+    document.getElementById('name').value = '';
+    document.getElementById('image').value = '';
+    document.getElementById('category').value = '';
+    document.getElementById('status').checked = true;
+}
+
+// 打开编辑模态框
+function openEditModal(id) {
+    const item = emojis.find(e => e.id === id);
+    if (!item) return;
+
+    document.getElementById('editModal').classList.remove('hidden');
+    document.getElementById('modalTitle').textContent = '编辑表情';
+    document.getElementById('emojiId').value = item.id;
+    document.getElementById('name').value = item.name;
+    document.getElementById('image').value = item.url || '';
+    document.getElementById('category').value = item.category || '';
+    document.getElementById('status').checked = item.status === 1;
+}
+
+// 关闭模态框
+function closeModal() {
+    document.getElementById('editModal').classList.add('hidden');
+}
+
+// 保存表情
+async function saveEmoji(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const data = {};
+    formData.forEach((value, key) => { data[key] = value; });
+    data.status = document.getElementById('status').checked ? 1 : 0;
+    data.image = data.image || '';
+
+    try {
+        const response = await fetch('/admin/emoji/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (result.code === 200) {
+            alert(result.msg || '保存成功');
+            closeModal();
+            loadData(currentPage);
+        } else {
+            alert(result.msg || '保存失败');
+        }
+    } catch (error) {
+        console.error('保存失败:', error);
+        alert('网络错误，请稍后重试');
+    }
+}
+
+// 删除表情
+async function deleteEmoji(id) {
+    if (!confirm('确定要删除该表情吗？')) return;
+
+    try {
+        const response = await fetch(`/admin/emoji/delete?id=${id}`, {
+            method: 'POST'
+        });
+        const result = await response.json();
+        if (result.code === 200) {
+            alert(result.msg || '删除成功');
+            loadData(currentPage);
+        } else {
+            alert(result.msg || '删除失败');
+        }
+    } catch (error) {
+        console.error('删除失败:', error);
+        alert('网络错误，请稍后重试');
+    }
+}
+
+// 页面加载时初始化
+document.addEventListener('DOMContentLoaded', function() {
+    loadData(1);
+});
+</script>
+{/block}

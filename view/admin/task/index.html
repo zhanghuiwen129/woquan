@@ -1,0 +1,210 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>任务列表 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">任务列表</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        管理系统任务，包括每日任务和成长任务
+    </p>
+</div>
+
+<!-- 操作按钮区域 -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="flex items-center gap-4">
+        <a href="/admin/task/add" class="px-5 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern flex items-center gap-2">
+            <i class="fas fa-plus"></i>
+            <span>添加任务</span>
+        </a>
+    </div>
+    <div class="flex items-center gap-4">
+        <input type="text" id="keyword" placeholder="搜索任务名称..." class="px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+        <select id="type" class="px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+            <option value="">全部类型</option>
+            <option value="daily">每日任务</option>
+            <option value="growth">成长任务</option>
+        </select>
+        <select id="status" class="px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+            <option value="-1">全部状态</option>
+            <option value="1">启用</option>
+            <option value="0">禁用</option>
+        </select>
+        <button onclick="search()" class="px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md hover:border-modern-primary transition-colors">
+            <i class="fas fa-search"></i>
+        </button>
+    </div>
+</div>
+
+<!-- 任务列表卡片 -->
+<div class="card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">ID</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">任务名称</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">任务类型</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">奖励</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">目标</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">排序</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">状态</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-modern-lightGray">
+                <!-- 数据将通过JS加载 -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页 -->
+    <div class="bg-modern-light px-6 py-4 flex items-center justify-between border-t border-modern-lightGray">
+        <div class="text-sm text-modern-gray">
+            共 <span id="totalCount">0</span> 条记录
+        </div>
+        <div class="flex items-center gap-2" id="pagination">
+            <!-- 分页按钮将通过JS生成 -->
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+let currentPage = 1;
+let pageSize = 20;
+
+// 加载数据
+function loadData(page = 1) {
+    currentPage = page;
+
+    const keyword = document.getElementById('keyword').value;
+    const type = document.getElementById('type').value;
+    const status = document.getElementById('status').value;
+
+    fetch(`/admin/task?page=${page}&limit=${pageSize}&keyword=${encodeURIComponent(keyword)}&type=${type}&status=${status}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+        .then(response => response.json())
+        .then(result => {
+            if (result.code === 200) {
+                renderTable(result.data.list);
+                renderPagination(result.data.total);
+            } else {
+                alert('加载失败: ' + result.msg);
+            }
+        })
+        .catch(error => {
+            console.error('加载失败:', error);
+            alert('网络错误，请稍后重试');
+        });
+}
+
+// 渲染表格
+function renderTable(data) {
+    const tbody = document.getElementById('tableBody');
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-12 text-center text-modern-gray">暂无数据</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = data.map(item => {
+        const typeMap = {
+            'daily': '<span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">每日任务</span>',
+            'growth': '<span class="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded">成长任务</span>'
+        };
+        const statusMap = {
+            '1': '<span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">启用</span>',
+            '0': '<span class="text-xs px-2 py-1 bg-red-100 text-red-800 rounded">禁用</span>'
+        };
+
+        return `
+            <tr class="hover:bg-modern-light/50 transition-colors">
+                <td class="py-4 px-6 text-sm text-modern-gray">${item.id}</td>
+                <td class="py-4 px-6">
+                    <div class="text-sm font-medium text-modern-dark">${item.name}</div>
+                    <div class="text-xs text-modern-gray mt-1">${item.description || ''}</div>
+                </td>
+                <td class="py-4 px-6">${typeMap[item.type] || '-'}</td>
+                <td class="py-4 px-6 text-sm text-modern-success font-medium">¥${parseFloat(item.reward).toFixed(2)}</td>
+                <td class="py-4 px-6 text-sm text-modern-gray">${item.target || 1}</td>
+                <td class="py-4 px-6 text-sm text-modern-gray">${item.sort || 0}</td>
+                <td class="py-4 px-6">${statusMap[item.status] || '-'}</td>
+                <td class="py-4 px-6">
+                    <div class="flex items-center gap-2">
+                        <a href="/admin/task/edit/${item.id}" class="text-modern-gray hover:text-modern-primary transition-colors" title="编辑">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button onclick="deleteTask(${item.id})" class="text-modern-gray hover:text-modern-danger transition-colors" title="删除">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// 渲染分页
+function renderPagination(total) {
+    const totalPages = Math.ceil(total / pageSize);
+    const pagination = document.getElementById('pagination');
+    document.getElementById('totalCount').textContent = total;
+
+    let html = '';
+
+    html += `<button onclick="loadData(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-3 py-1 border rounded hover:bg-modern-white disabled:opacity-50 disabled:cursor-not-allowed">
+        <i class="fas fa-chevron-left"></i>
+    </button>`;
+
+    for (let i = 1; i <= totalPages && i <= 5; i++) {
+        html += `<button onclick="loadData(${i})" class="px-3 py-1 border rounded ${currentPage === i ? 'bg-modern-primary text-white' : 'hover:bg-modern-white'}">${i}</button>`;
+    }
+
+    html += `<button onclick="loadData(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''} class="px-3 py-1 border rounded hover:bg-modern-white disabled:opacity-50 disabled:cursor-not-allowed">
+        <i class="fas fa-chevron-right"></i>
+    </button>`;
+
+    pagination.innerHTML = html;
+}
+
+// 搜索
+function search() {
+    loadData(1);
+}
+
+// 删除任务
+function deleteTask(id) {
+    if (confirm('确定要删除该任务吗?')) {
+        fetch(`/admin/task/delete/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.code === 200) {
+                alert('删除成功');
+                loadData(currentPage);
+            } else {
+                alert('删除失败: ' + result.msg);
+            }
+        })
+        .catch(error => {
+            console.error('删除失败:', error);
+            alert('网络错误，请稍后重试');
+        });
+    }
+}
+
+// 页面加载时获取数据
+document.addEventListener('DOMContentLoaded', function() {
+    loadData(1);
+});
+</script>
+{/block}

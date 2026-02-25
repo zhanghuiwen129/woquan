@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>登录调试</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .result { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>登录调试页面</h1>
+    
+    <form id="debugForm">
+        <div>
+            <label>用户名/手机号:</label>
+            <input type="text" id="username" value="testuser" required>
+        </div>
+        <div>
+            <label>密码:</label>
+            <input type="password" id="password" value="testpass" required>
+        </div>
+        <button type="submit">测试登录</button>
+    </form>
+
+    <div id="result" class="result" style="display:none;"></div>
+    <div id="cookieInfo" class="result" style="display:none;"></div>
+
+    <script>
+        document.getElementById('debugForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            const resultDiv = document.getElementById('result');
+            const cookieDiv = document.getElementById('cookieInfo');
+            
+            try {
+                console.log('发送登录请求...');
+                const response = await fetch('/user/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                console.log('响应状态:', response.status);
+                const result = await response.json();
+                console.log('响应内容:', result);
+
+                // 显示响应结果
+                resultDiv.innerHTML = `
+                    <h3>登录响应:</h3>
+                    <p><strong>状态码:</strong> ${result.code}</p>
+                    <p><strong>消息:</strong> ${result.msg}</p>
+                    <p><strong>数据:</strong> ${JSON.stringify(result.data)}</p>
+                `;
+                resultDiv.style.display = 'block';
+
+                if (result.code === 200) {
+                    resultDiv.className = 'result success';
+                    
+                    // 检查Cookie
+                    setTimeout(() => {
+                        const cookies = document.cookie;
+                        cookieDiv.innerHTML = `
+                            <h3>Cookie信息:</h3>
+                            <p><strong>所有Cookie:</strong> ${cookies || '无Cookie'}</p>
+                            <p><strong>user_id:</strong> ${getCookie('user_id') || '未设置'}</p>
+                            <p><strong>username:</strong> ${getCookie('username') || '未设置'}</p>
+                            <p><strong>nickname:</strong> ${getCookie('nickname') || '未设置'}</p>
+                        `;
+                        cookieDiv.style.display = 'block';
+                    }, 1000);
+                } else {
+                    resultDiv.className = 'result error';
+                }
+
+            } catch (error) {
+                console.error('登录失败:', error);
+                resultDiv.innerHTML = `
+                    <h3>错误:</h3>
+                    <p>${error.message}</p>
+                `;
+                resultDiv.className = 'result error';
+                resultDiv.style.display = 'block';
+            }
+        });
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+    </script>
+</body>
+</html>

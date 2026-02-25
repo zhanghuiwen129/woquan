@@ -1,0 +1,249 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="page_title"}名片设置{/block}
+
+{block name="content"}
+<!-- 基本信息 -->
+<div class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft p-6 mb-4">
+    <h2 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary mb-4 flex items-center gap-2">
+        <i class="fa fa-user text-primary"></i>
+        基本信息
+    </h2>
+
+    <div class="space-y-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">真实姓名</label>
+            <input type="text" id="real_name" placeholder="请输入真实姓名"
+                   class="w-full py-3 px-4 rounded-xl border border-gray-200 dark:border-dark-border-color bg-gray-50 dark:bg-dark-bg-main text-gray-800 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">性别</label>
+            <select id="gender"
+                    class="w-full py-3 px-4 rounded-xl border border-gray-200 dark:border-dark-border-color bg-gray-50 dark:bg-dark-bg-main text-gray-800 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                <option value="0">保密</option>
+                <option value="1">男</option>
+                <option value="2">女</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">生日</label>
+            <input type="date" id="birthday"
+                   class="w-full py-3 px-4 rounded-xl border border-gray-200 dark:border-dark-border-color bg-gray-50 dark:bg-dark-bg-main text-gray-800 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">地区</label>
+            <input type="text" id="region" placeholder="请输入地区，如：北京"
+                   class="w-full py-3 px-4 rounded-xl border border-gray-200 dark:border-dark-border-color bg-gray-50 dark:bg-dark-bg-main text-gray-800 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">职业</label>
+            <input type="text" id="occupation" placeholder="请输入职业"
+                   class="w-full py-3 px-4 rounded-xl border border-gray-200 dark:border-dark-border-color bg-gray-50 dark:bg-dark-bg-main text-gray-800 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+        </div>
+    </div>
+</div>
+
+<!-- 个性签名 -->
+<div class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft p-6 mb-4">
+    <h2 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary mb-4 flex items-center gap-2">
+        <i class="fa fa-edit text-primary"></i>
+        个性签名
+    </h2>
+
+    <div>
+        <textarea id="bio" placeholder="写一句话介绍自己吧..." maxlength="500"
+                  class="w-full py-3 px-4 rounded-xl border border-gray-200 dark:border-dark-border-color bg-gray-50 dark:bg-dark-bg-main text-gray-800 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                  rows="4"></textarea>
+        <div class="text-xs text-gray-500 mt-2">最多500字</div>
+    </div>
+</div>
+
+<!-- 名片外观 -->
+<div class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft p-6 mb-4">
+    <h2 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary mb-4 flex items-center gap-2">
+        <i class="fa fa-paint-brush text-primary"></i>
+        名片外观
+    </h2>
+
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">名片背景</label>
+        <div class="border-2 border-dashed border-gray-300 dark:border-dark-border-color rounded-xl p-6 text-center cursor-pointer hover:border-primary transition-colors"
+             onclick="document.getElementById('background-input').click()">
+            <i class="fa fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+            <p class="text-gray-500">点击上传名片背景图</p>
+        </div>
+        <input type="file" id="background-input" accept="image/*" style="display: none;" onchange="previewBackground(this)">
+        <div id="background-preview" class="mt-4 rounded-xl overflow-hidden" style="display: none;">
+            <img id="background-preview-img" src="" alt="预览" class="w-full max-h-64 object-cover">
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">主题颜色</label>
+        <div class="flex gap-3 flex-wrap">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 cursor-pointer ring-2 ring-offset-2 ring-purple-500"
+                 onclick="selectThemeColor('#667eea, #764ba2', this)"></div>
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-600 cursor-pointer hover:ring-2 hover:ring-offset-2 hover:ring-orange-500 transition-all"
+                 onclick="selectThemeColor('#f5af19, #f12711', this)"></div>
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-green-600 cursor-pointer hover:ring-2 hover:ring-offset-2 hover:ring-teal-500 transition-all"
+                 onclick="selectThemeColor('#11998e, #38ef7d', this)"></div>
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 cursor-pointer hover:ring-2 hover:ring-offset-2 hover:ring-amber-500 transition-all"
+                 onclick="selectThemeColor('#fc4a1a, #f7b733', this)"></div>
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 cursor-pointer hover:ring-2 hover:ring-offset-2 hover:ring-indigo-500 transition-all"
+                 onclick="selectThemeColor('#8E2DE2, #4A00E0', this)"></div>
+        </div>
+    </div>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">布局模板</label>
+        <select id="card_layout"
+                class="w-full py-3 px-4 rounded-xl border border-gray-200 dark:border-dark-border-color bg-gray-50 dark:bg-dark-bg-main text-gray-800 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+            <option value="default">默认模板</option>
+            <option value="simple">简约风格</option>
+            <option value="business">商务风格</option>
+            <option value="personal">个性风格</option>
+        </select>
+    </div>
+</div>
+
+<!-- 隐私设置 -->
+<div class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft p-6 mb-4">
+    <h2 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary mb-4 flex items-center gap-2">
+        <i class="fa fa-shield-alt text-primary"></i>
+        隐私设置
+    </h2>
+
+    <div class="flex items-center gap-3">
+        <input type="checkbox" id="card_stealth"
+               class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary">
+        <label for="card_stealth" class="text-gray-700 dark:text-dark-text-secondary">隐身访问（不显示在他人访客记录中）</label>
+    </div>
+</div>
+
+<!-- 保存按钮 -->
+<button id="submit-btn"
+        class="w-full bg-gradient-to-r from-primary to-secondary text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg transition-all">
+    保存设置
+</button>
+
+<script>
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    let selectedThemeColors = '#667eea, #764ba2';
+    let backgroundFile = null;
+
+    // 页面加载时获取用户信息
+    async function loadUserInfo() {
+        try {
+            const response = await fetch('/user/getCurrentUser');
+            const result = await response.json();
+
+            if (result.code === 200) {
+                const user = result.data || {};
+
+                if (user.real_name) document.getElementById('real_name').value = user.real_name;
+                if (user.gender) document.getElementById('gender').value = user.gender;
+                if (user.birthday) {
+                    const date = new Date(user.birthday * 1000);
+                    document.getElementById('birthday').value = date.toISOString().split('T')[0];
+                }
+                if (user.region) document.getElementById('region').value = user.region;
+                if (user.occupation) document.getElementById('occupation').value = user.occupation;
+                if (user.bio) document.getElementById('bio').value = user.bio;
+                if (user.card_stealth) document.getElementById('card_stealth').checked = true;
+                if (user.card_layout) document.getElementById('card_layout').value = user.card_layout;
+
+                if (user.card_background) {
+                    document.getElementById('background-preview-img').src = user.card_background;
+                    document.getElementById('background-preview').style.display = 'block';
+                }
+            }
+        } catch (error) {
+            console.error('加载用户信息失败:', error);
+        }
+    }
+
+    // 预览背景图
+    function previewBackground(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('background-preview-img').src = e.target.result;
+                document.getElementById('background-preview').style.display = 'block';
+                backgroundFile = input.files[0];
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // 选择主题颜色
+    function selectThemeColor(colors, el) {
+        selectedThemeColors = colors;
+        document.querySelectorAll('[onclick^="selectThemeColor"]').forEach(item => {
+            item.classList.remove('ring-2', 'ring-offset-2');
+            item.classList.remove('ring-purple-500', 'ring-orange-500', 'ring-teal-500', 'ring-amber-500', 'ring-indigo-500');
+        });
+        el.classList.add('ring-2', 'ring-offset-2');
+        if (colors.includes('purple')) el.classList.add('ring-purple-500');
+        else if (colors.includes('orange')) el.classList.add('ring-orange-500');
+        else if (colors.includes('teal')) el.classList.add('ring-teal-500');
+        else if (colors.includes('amber')) el.classList.add('ring-amber-500');
+        else el.classList.add('ring-indigo-500');
+    }
+
+    // 保存设置
+    async function saveSettings() {
+        const btn = document.getElementById('submit-btn');
+        btn.disabled = true;
+        btn.textContent = '保存中...';
+
+        try {
+            const formData = new FormData();
+            formData.append('real_name', document.getElementById('real_name').value);
+            formData.append('gender', document.getElementById('gender').value);
+            formData.append('birthday', document.getElementById('birthday').value);
+            formData.append('region', document.getElementById('region').value);
+            formData.append('occupation', document.getElementById('occupation').value);
+            formData.append('bio', document.getElementById('bio').value);
+            formData.append('card_stealth', document.getElementById('card_stealth').checked ? 1 : 0);
+            formData.append('card_layout', document.getElementById('card_layout').value);
+
+            if (backgroundFile) {
+                formData.append('background', backgroundFile);
+            }
+
+            const response = await fetch('/user/updateCardSettings', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                alert('保存成功！');
+                loadUserInfo();
+            } else {
+                alert(result.msg || '保存失败');
+            }
+        } catch (error) {
+            console.error('保存失败:', error);
+            alert('保存失败，请稍后重试');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '保存设置';
+        }
+    }
+
+    document.getElementById('submit-btn').addEventListener('click', saveSettings);
+    loadUserInfo();
+</script>
+{/block}

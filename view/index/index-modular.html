@@ -1,0 +1,271 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{$name} - {$subtitle}</title>
+    {if isset($config.icon) && $config.icon != ''}
+    <link rel="icon" href="{$config.icon}" type="image/x-icon" />
+    <link rel="shortcut icon" href="{$config.icon}" />
+    {else}
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    {/if}
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4A90E2',
+                        secondary: '#6AA9F2',
+                        darkPrimary: '#3A7BC8',
+                        lightBlue: '#E8F3FF',
+                        danger: '#F04848',
+                        success: '#52C480',
+                        warning: '#F5A623',
+                        'bg-main': '#FFFFFF',
+                        'bg-card': '#F7F8FA',
+                        'text-primary': '#333647',
+                        'text-secondary': '#6B6E7F',
+                        'text-tertiary': '#9EA0AF',
+                        'border-color': '#E5E6EB',
+                        'dark-bg-main': '#18191C',
+                        'dark-bg-card': '#25262B',
+                        'dark-text-primary': '#F5F6F7',
+                        'dark-text-secondary': '#C9CDD4',
+                        'dark-text-tertiary': '#868B94',
+                        'dark-border-color': '#323338',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'soft': '0 2px 8px rgba(0, 0, 0, 0.06)',
+                        'hover': '0 4px 12px rgba(74, 144, 226, 0.15)',
+                    }
+                },
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .circle-avatar {
+                @apply rounded-full object-cover border-2 border-white shadow-sm;
+            }
+            .dynamic-card {
+                @apply w-full bg-bg-card rounded-xl shadow-soft overflow-hidden transition-all duration-200 hover:shadow-hover;
+            }
+            .nav-active {
+                @apply text-primary font-medium;
+            }
+        }
+    </style>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="/fontawesome/css/font-awesome.min.css">
+
+    <!-- 评论组件样式 -->
+    <link rel="stylesheet" href="/static/css/comment.css?v=2026012801">
+
+    <!-- 首页样式 -->
+    <link rel="stylesheet" href="/static/css/home.css">
+
+    <!-- 网站配置 -->
+    <script src="/static/js/site-config.js"></script>
+
+    <!-- 当前用户信息 -->
+    <script>
+        window.currentUserInfo = <?php echo isset($isLogin) && $isLogin && $currentUser ? json_encode([
+            'userId' => $currentUser['id'],
+            'username' => $currentUser['username'],
+            'nickname' => $currentUser['nickname'],
+            'avatar' => $currentUser['avatar'] ?? '/static/images/default-avatar.png'
+        ]) : 'null'; ?>;
+    </script>
+</head>
+<body class="bg-bg-card text-text-primary dark:bg-dark-bg-main dark:text-dark-text-primary pb-16 md:pb-0">
+
+    <!-- ==================== 顶部导航栏 ==================== -->
+    {include file="index/components/header" /}
+
+    <!-- ==================== 主页三栏布局 ==================== -->
+    <main class="container mx-auto px-4 py-6 md:flex gap-6">
+        <!-- 左侧栏 -->
+        {include file="index/components/sidebar-left" /}
+
+        <!-- 中栏 - 核心内容区 -->
+        <section class="w-full md:w-2/4 lg:w-3/5 pb-16 md:pb-0">
+            <!-- 动态发布框 -->
+            <div class="w-full bg-bg-card rounded-xl shadow-soft p-4 mb-6 md:block hidden border border-border-color">
+                <?php if(isset($isLogin) && $isLogin): ?>
+                <div class="flex gap-3">
+                    <img src="{$currentUser.avatar ?? '/static/images/default-avatar.png'}" alt="我的头像" class="w-10 h-10 circle-avatar">
+                    <textarea id="pc-publish-input" placeholder="分享你的新鲜事..." class="flex-1 border border-border-color bg-bg-card rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none text-text-primary placeholder-text-tertiary" rows="3"></textarea>
+                </div>
+                <div class="mt-4 pt-3 border-t border-border-color">
+                    <div class="flex justify-between items-center">
+                        <div class="flex gap-4">
+                            <button id="imageUploadBtn" class="flex items-center gap-1 text-text-secondary hover:text-primary transition-colors py-1 px-2 rounded-lg hover:bg-lightBlue">
+                                <i class="fa fa-picture-o text-lg"></i>
+                                <span class="text-sm">图片</span>
+                            </button>
+                            <input type="file" id="imageUpload" multiple accept="image/*" class="hidden">
+
+                            <button id="emojiBtn" class="flex items-center gap-1 text-text-secondary hover:text-primary transition-colors py-1 px-2 rounded-lg hover:bg-lightBlue">
+                                <i class="fa fa-smile-o text-lg"></i>
+                                <span class="text-sm">表情</span>
+                            </button>
+
+                            <button id="topicBtn" class="flex items-center gap-1 text-text-secondary hover:text-primary transition-colors py-1 px-2 rounded-lg hover:bg-lightBlue">
+                                <i class="fa fa-hashtag text-lg"></i>
+                                <span class="text-sm">话题</span>
+                            </button>
+                        </div>
+
+                        <button id="pc-publish-btn" class="bg-primary text-white px-4 py-1 rounded-full text-sm font-medium hover:bg-darkPrimary transition-colors shadow-soft">
+                            发布
+                        </button>
+                    </div>
+                </div>
+                <?php else: ?>
+                <div class="text-center py-4">
+                    <p class="text-text-secondary mb-3">登录后发布动态,分享你的精彩生活</p>
+                    <a href="/login" class="inline-block bg-primary text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-darkPrimary transition-colors">
+                        立即登录
+                    </a>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- 动态列表容器 -->
+            <div id="moments-container">
+                <!-- 动态将通过JavaScript加载 -->
+                <div class="text-center py-12">
+                    <i class="fa fa-spinner fa-spin text-2xl text-text-tertiary mb-4"></i>
+                    <p class="text-text-secondary">加载中...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 右侧栏 -->
+        {include file="index/components/sidebar-right" /}
+    </main>
+
+    <!-- ==================== 弹窗组件 ==================== -->
+    {include file="index/components/publish-modal" /}
+    {include file="index/components/card-modal" /}
+
+    <!-- ==================== JavaScript 引入 ==================== -->
+    <!-- Toast提示组件 -->
+    <script src="/static/js/toast.js"></script>
+
+    <!-- 定位模块 -->
+    <script src="/static/js/location.js"></script>
+
+    <!-- 表情配置模块 -->
+    <script src="/static/js/emoji-config.js"></script>
+
+    <!-- 评论组件 -->
+    <script type="module" src="/static/js/comment.js?v=2026012801"></script>
+
+    <!-- 评论组件配置 -->
+    <script>
+        window.commentConfig = {
+            pageSize: 10,
+            emojis: EMOJI_CONFIG.emojis
+        };
+    </script>
+
+    <!-- 首页逻辑脚本 -->
+    <script src="/static/js/home.js"></script>
+
+    <!-- 加载动态列表 -->
+    <script>
+        // 页面加载完成后获取动态列表
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMoments();
+        });
+
+        // 加载动态列表
+        async function loadMoments(page = 1) {
+            try {
+                const response = await fetch(`/api/moments?page=${page}`);
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    renderMoments(result.data);
+                } else {
+                    showToast(result.msg || '加载动态失败');
+                }
+            } catch (error) {
+                console.error('加载动态失败:', error);
+                showToast('加载动态失败,请稍后重试');
+            }
+        }
+
+        // 渲染动态列表
+        function renderMoments(moments) {
+            const container = document.getElementById('moments-container');
+
+            if (!moments || moments.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fa fa-inbox text-4xl text-text-tertiary mb-4"></i>
+                        <p class="text-text-secondary">暂无动态</p>
+                        <p class="text-text-tertiary text-sm mt-2">发布第一条动态吧!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = moments.map(moment => `
+                <div class="dynamic-card mb-4" data-moment-id="${moment.moment_id}">
+                    <div class="p-4">
+                        <div class="flex items-center gap-3 mb-3">
+                            <a href="/card/${moment.user_id}">
+                                <img src="${moment.avatar ?? '/static/images/default-avatar.png'}" alt="头像" class="w-10 h-10 circle-avatar">
+                            </a>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <a href="/card/${moment.user_id}" class="text-sm font-semibold text-text-primary hover:text-primary truncate">
+                                        ${moment.nickname ?? moment.username}
+                                    </a>
+                                    ${moment.is_author ? '<span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">作者</span>' : ''}
+                                </div>
+                                <div class="text-xs text-text-tertiary">
+                                    ${moment.create_time}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="moment-content mb-3">
+                            <div class="text-text-primary text-sm leading-relaxed mb-2">
+                                ${moment.content}
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-3 border-t border-border-color">
+                            <div class="flex items-center gap-6">
+                                <button class="flex items-center gap-1 text-text-secondary hover:text-danger transition-colors text-sm" onclick="toggleLike(${moment.moment_id})">
+                                    <i class="fa fa-heart-o"></i>
+                                    <span>${moment.like_count ?? 0}</span>
+                                </button>
+                                <button class="flex items-center gap-1 text-text-secondary hover:text-primary transition-colors text-sm" onclick="openComments(${moment.moment_id})">
+                                    <i class="fa fa-comment-o"></i>
+                                    <span>${moment.comment_count ?? 0}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>

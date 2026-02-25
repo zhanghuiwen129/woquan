@@ -1,0 +1,92 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>任务统计 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">任务统计</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        查看任务完成情况和统计数据
+    </p>
+</div>
+
+<!-- 统计卡片 -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="card stat-card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-modern-gray text-sm">总任务数</p>
+                <p class="text-2xl font-bold text-modern-dark mt-1">{$stats.total_tasks|default=0}</p>
+            </div>
+            <div class="w-12 h-12 bg-modern-primary/10 rounded-lg flex items-center justify-center">
+                <i class="fas fa-tasks text-modern-primary text-xl"></i>
+            </div>
+        </div>
+    </div>
+    <div class="card stat-card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-modern-gray text-sm">启用任务</p>
+                <p class="text-2xl font-bold text-modern-success mt-1">{$stats.active_tasks|default=0}</p>
+            </div>
+            <div class="w-12 h-12 bg-modern-success/10 rounded-lg flex items-center justify-center">
+                <i class="fas fa-check-circle text-modern-success text-xl"></i>
+            </div>
+        </div>
+    </div>
+    <div class="card stat-card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-modern-gray text-sm">每日任务</p>
+                <p class="text-2xl font-bold text-modern-primary mt-1">{$stats.daily_tasks|default=0}</p>
+            </div>
+            <div class="w-12 h-12 bg-modern-primary/10 rounded-lg flex items-center justify-center">
+                <i class="fas fa-calendar-day text-modern-primary text-xl"></i>
+            </div>
+        </div>
+    </div>
+    <div class="card stat-card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-modern-gray text-sm">成长任务</p>
+                <p class="text-2xl font-bold text-modern-secondary mt-1">{$stats.growth_tasks|default=0}</p>
+            </div>
+            <div class="w-12 h-12 bg-modern-secondary/10 rounded-lg flex items-center justify-center">
+                <i class="fas fa-chart-line text-modern-secondary text-xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 任务完成统计 -->
+<div class="card rounded-lg p-6">
+    <h3 class="text-lg font-medium text-modern-dark mb-4">任务完成统计</h3>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">任务ID</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">任务名称</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">完成次数</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-modern-lightGray">
+                {if $stats.completion_stats && count($stats.completion_stats) > 0}
+                    {volist name="stats.completion_stats" id="stat"}
+                    <tr class="hover:bg-modern-light/50 transition-colors">
+                        <td class="py-4 px-6 text-sm text-modern-gray">{$stat.task_id}</td>
+                        <td class="py-4 px-6 text-sm text-modern-dark">任务 #{$stat.task_id}</td>
+                        <td class="py-4 px-6 text-sm text-modern-primary font-medium">{$stat.completion_count}</td>
+                    </tr>
+                    {/volist}
+                {else /}
+                <tr>
+                    <td colspan="3" class="px-6 py-12 text-center text-modern-gray">暂无数据</td>
+                </tr>
+                {/if}
+            </tbody>
+        </table>
+    </div>
+</div>
+{/block}

@@ -1,0 +1,157 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>404 - 页面未找到</title>
+    <link rel="stylesheet" href="/static/fontawesome.css">
+    <link rel="stylesheet" href="/common/styles.css">
+    <style>
+        .error-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .error-code {
+            font-size: 120px;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 20px;
+            text-shadow: 0 0 50px rgba(0, 242, 254, 0.3);
+            animation: codeFloat 3s ease-in-out infinite;
+        }
+        
+        @keyframes codeFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .error-icon {
+            font-size: 80px;
+            margin-bottom: 30px;
+            background: var(--gradient-secondary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: iconSpin 5s linear infinite;
+        }
+        
+        @keyframes iconSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+        }
+        
+        .error-desc {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            max-width: 400px;
+            line-height: 1.6;
+        }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 40px;
+            background: var(--gradient-primary);
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: var(--shadow-neon);
+        }
+        
+        .back-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(0, 242, 254, 0.5);
+        }
+        
+        .floating-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        
+        .float-item {
+            position: absolute;
+            font-size: 30px;
+            opacity: 0.1;
+            color: var(--primary-color);
+            animation: floatAround 20s linear infinite;
+        }
+        
+        @keyframes floatAround {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.1;
+            }
+            90% {
+                opacity: 0.1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .float-item:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .float-item:nth-child(2) { left: 30%; animation-delay: 5s; }
+        .float-item:nth-child(3) { left: 50%; animation-delay: 10s; }
+        .float-item:nth-child(4) { left: 70%; animation-delay: 15s; }
+        .float-item:nth-child(5) { left: 90%; animation-delay: 20s; }
+    </style>
+</head>
+<body>
+    <div class="floating-elements">
+        <div class="float-item"><i class="fa fa-rocket"></i></div>
+        <div class="float-item"><i class="fa fa-star"></i></div>
+        <div class="float-item"><i class="fa fa-globe"></i></div>
+        <div class="float-item"><i class="fa fa-moon"></i></div>
+        <div class="float-item"><i class="fa fa-sun"></i></div>
+    </div>
+
+    <div class="error-container">
+        <div class="error-icon">
+            <i class="fa fa-search"></i>
+        </div>
+        <div class="error-code">404</div>
+        <div class="error-title">页面未找到</div>
+        <div class="error-desc">
+            抱歉，您访问的页面不存在或已被移除。<br>
+            让我们带您回到探索之旅！
+        </div>
+        <a href="/" class="back-btn">
+            <i class="fa fa-home"></i>
+            返回首页
+        </a>
+    </div>
+</body>
+</html>

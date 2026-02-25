@@ -1,0 +1,30 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>位置热力图 - 后台管理</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+    <div class="main-content">
+        <div class="page-header">
+            <h2>用户位置热力图</h2>
+        </div>
+        <div class="heatmap-container">
+            <div id="map"></div>
+        </div>
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-title">总位置记录</div>
+                <div class="stat-value" id="totalLocations">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">活跃地区</div>
+                <div class="stat-value" id="activeAreas">0</div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/admin.js"></script>
+</body>
+</html>

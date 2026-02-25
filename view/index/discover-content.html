@@ -1,0 +1,58 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="content"}
+    <!-- 热门话题 -->
+    <section class="mb-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fa fa-fire text-orange-500"></i>
+            热门话题
+        </h2>
+        <div class="flex gap-4 overflow-x-auto pb-2">
+            <div id="loading-topics" class="w-full text-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            </div>
+            <div id="topics-container" class="flex gap-4 overflow-x-auto pb-2 hidden"></div>
+        </div>
+    </section>
+
+    <!-- 趋势榜单 -->
+    <section class="mb-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fa fa-chart-line text-primary"></i>
+            话题榜单
+        </h2>
+        <div class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft overflow-hidden">
+            <div id="loading-trending" class="text-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            </div>
+            <div id="trending-container" class="hidden"></div>
+        </div>
+    </section>
+
+    <!-- 推荐用户 -->
+    <section id="recommended">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fa fa-user-plus text-primary"></i>
+            推荐用户
+        </h2>
+        <div class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft overflow-hidden">
+            <div id="loading-users" class="text-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            </div>
+            <div id="users-container" class="hidden"></div>
+        </div>
+    </section>
+
+    <style>
+        .topics-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .topics-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+
+    <!-- 引入发现页面逻辑 -->
+    <script type="module" src="/static/js/discover-content.js"></script>
+{/block}

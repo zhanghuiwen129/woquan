@@ -1,0 +1,419 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="page_title"}搜索结果{/block}
+
+{block name="content"}
+<!-- 搜索框 -->
+<div class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft p-4 mb-4">
+    <div class="flex items-center gap-3">
+        <div class="flex-1 relative">
+            <input type="text" id="searchInput" placeholder="搜索用户、动态、话题..."
+                   class="w-full py-3 pl-10 pr-4 rounded-xl border border-gray-200 dark:border-dark-border-color bg-gray-50 dark:bg-dark-bg-main text-gray-800 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                   onkeypress="if(event.key==='Enter')performSearch()">
+            <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        </div>
+        <button onclick="performSearch()"
+                class="bg-gradient-to-r from-primary to-secondary text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all">
+            搜索
+        </button>
+    </div>
+</div>
+
+<!-- 热门搜索 -->
+<div id="hotKeywordsSection" class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft p-4 mb-4">
+    <h3 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary mb-4 flex items-center gap-2">
+        <i class="fa fa-fire text-red-500"></i>
+        热门搜索
+    </h3>
+    <div id="hotKeywordsList" class="flex flex-wrap gap-2">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+    </div>
+</div>
+
+<!-- 搜索结果标签 -->
+<div id="searchTabs" class="flex gap-2 mb-4 overflow-x-auto pb-2" style="display: none;">
+    <button class="tab active bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap"
+            data-type="all" onclick="switchTab('all')">
+        <i class="fa fa-th mr-1"></i> 全部
+    </button>
+    <button class="tab bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap"
+            data-type="user" onclick="switchTab('user')">
+        <i class="fa fa-user mr-1"></i> 用户
+    </button>
+    <button class="tab bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap"
+            data-type="moment" onclick="switchTab('moment')">
+        <i class="fa fa-file-text mr-1"></i> 动态
+    </button>
+    <button class="tab bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap"
+            data-type="topic" onclick="switchTab('topic')">
+        <i class="fa fa-hashtag mr-1"></i> 话题
+    </button>
+</div>
+
+<!-- 搜索结果 -->
+<div id="resultsSection" class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft p-4 min-h-96" style="display: none;">
+    <div id="resultsList"></div>
+    <div id="loadMoreSection" class="text-center py-4" style="display: none;">
+        <button onclick="loadMore()"
+                class="bg-gradient-to-r from-primary to-secondary text-white px-8 py-3 rounded-full font-medium hover:shadow-lg transition-all">
+            <i class="fa fa-refresh mr-2"></i>加载更多
+        </button>
+    </div>
+</div>
+
+<script>
+    let currentType = 'all';
+    let currentPage = 1;
+    let hasMore = true;
+    let currentKeyword = '';
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    function formatNumber(num) {
+        if (!num) return '0';
+        if (num >= 10000) return (num / 10000).toFixed(1) + 'w';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+        return num.toString();
+    }
+
+    function formatTime(timestamp) {
+        const now = Date.now() / 1000;
+        const diff = now - timestamp;
+        if (diff < 60) return '刚刚';
+        else if (diff < 3600) return Math.floor(diff / 60) + '分钟前';
+        else if (diff < 86400) return Math.floor(diff / 3600) + '小时前';
+        else if (diff < 604800) return Math.floor(diff / 86400) + '天前';
+        else return new Date(timestamp * 1000).toLocaleDateString('zh-CN');
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // 页面加载时获取热门搜索词
+    document.addEventListener('DOMContentLoaded', function() {
+        getHotKeywords();
+
+        // 检查URL参数中是否有搜索词
+        const urlParams = new URLSearchParams(window.location.search);
+        const keyword = urlParams.get('q');
+        if (keyword) {
+            document.getElementById('searchInput').value = keyword;
+            performSearch();
+        }
+    });
+
+    // 获取热门搜索词
+    async function getHotKeywords() {
+        try {
+            const response = await fetch('/search/hotKeywords', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const result = await response.json();
+
+            if (result.code === 200 && result.data && result.data.list) {
+                displayHotKeywords(result.data.list);
+            } else {
+                displayDefaultHotKeywords();
+            }
+        } catch (error) {
+            console.error('获取热门搜索词失败:', error);
+            displayDefaultHotKeywords();
+        }
+    }
+
+    // 显示热门搜索词
+    function displayHotKeywords(keywords) {
+        const container = document.getElementById('hotKeywordsList');
+        container.innerHTML = keywords.map((keyword, index) => `
+            <span class="px-4 py-2 rounded-full text-sm cursor-pointer transition-all ${index < 3
+                ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white'
+                : 'bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-gray-700'}"
+                  onclick="searchByKeyword('${escapeHtml(keyword)}')">
+                ${index + 1}. ${escapeHtml(keyword)}
+            </span>
+        `).join('');
+    }
+
+    // 显示默认热门搜索词
+    function displayDefaultHotKeywords() {
+        const defaultKeywords = ['美食', '旅行', '生活', '运动', '音乐', '电影', '游戏', '读书'];
+        displayHotKeywords(defaultKeywords);
+    }
+
+    // 通过热门搜索词搜索
+    function searchByKeyword(keyword) {
+        document.getElementById('searchInput').value = keyword;
+        performSearch();
+    }
+
+    // 执行搜索
+    async function performSearch() {
+        const keyword = document.getElementById('searchInput').value.trim();
+
+        if (!keyword) {
+            alert('请输入搜索关键词');
+            return;
+        }
+
+        currentKeyword = keyword;
+        currentPage = 1;
+        hasMore = true;
+
+        // 保存搜索历史
+        localStorage.setItem('search_history', JSON.stringify([keyword]));
+
+        // 隐藏热门搜索，显示搜索结果
+        document.getElementById('hotKeywordsSection').style.display = 'none';
+        document.getElementById('searchTabs').style.display = 'flex';
+        document.getElementById('resultsSection').style.display = 'block';
+
+        // 加载搜索结果
+        await loadSearchResults();
+    }
+
+    // 加载搜索结果
+    async function loadSearchResults() {
+        if (!hasMore) return;
+
+        const container = document.getElementById('resultsList');
+        const loadMoreSection = document.getElementById('loadMoreSection');
+
+        if (currentPage === 1) {
+            container.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p class="text-gray-500 mt-2">搜索中...</p>
+                </div>
+            `;
+        } else {
+            loadMoreSection.querySelector('button').innerHTML = '<span class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span> 加载中...';
+        }
+
+        try {
+            const response = await fetch('/search/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    keyword: currentKeyword,
+                    type: currentType,
+                    page: currentPage,
+                    limit: 10
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200 && result.data) {
+                displaySearchResults(result.data.list, currentPage === 1);
+                hasMore = result.data.has_more;
+                loadMoreSection.style.display = hasMore ? 'block' : 'none';
+
+                if (hasMore) {
+                    loadMoreSection.querySelector('button').innerHTML = '<i class="fa fa-refresh mr-2"></i>加载更多';
+                }
+            } else {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        <i class="fa fa-search-minus text-4xl mb-4 opacity-50"></i>
+                        <h3 class="text-lg font-medium mb-2">未找到相关内容</h3>
+                        <p class="text-sm">试试其他关键词吧</p>
+                    </div>
+                `;
+                loadMoreSection.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('搜索失败:', error);
+            container.innerHTML = `
+                <div class="text-center py-12 text-gray-500">
+                    <i class="fa fa-exclamation-circle text-4xl mb-4 opacity-50"></i>
+                    <h3 class="text-lg font-medium mb-2">搜索失败</h3>
+                    <p class="text-sm">请稍后重试</p>
+                </div>
+            `;
+        }
+    }
+
+    // 显示搜索结果
+    function displaySearchResults(results, isFirstPage) {
+        const container = document.getElementById('resultsList');
+
+        if (isFirstPage) {
+            container.innerHTML = '';
+        }
+
+        if (results.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-12 text-gray-500">
+                    <i class="fa fa-search-minus text-4xl mb-4 opacity-50"></i>
+                    <h3 class="text-lg font-medium mb-2">未找到相关内容</h3>
+                    <p class="text-sm">试试其他关键词吧</p>
+                </div>
+            `;
+            return;
+        }
+
+        const html = results.map(item => {
+            if (item.type === 'user') return createUserResult(item.data);
+            else if (item.type === 'moment') return createMomentResult(item.data);
+            else if (item.type === 'topic') return createTopicResult(item.data);
+        }).join('');
+
+        container.innerHTML += html;
+    }
+
+    // 创建用户结果
+    function createUserResult(user) {
+        return `
+            <div class="flex items-center gap-3 p-4 border-b border-gray-100 dark:border-dark-border-color last:border-0 hover:bg-gray-50 dark:hover:bg-dark-bg-main transition-colors">
+                <a href="/card/${user.id}" class="flex-shrink-0">
+                    <img src="${user.avatar || '/static/images/default-avatar.png'}" class="w-12 h-12 rounded-lg object-cover" alt="">
+                </a>
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium text-gray-800 dark:text-dark-text-primary truncate">${escapeHtml(user.nickname || user.username)}</div>
+                    <div class="text-sm text-gray-500 truncate">${escapeHtml(user.bio || '暂无个性签名')}</div>
+                    <div class="text-xs text-gray-400 mt-1 flex gap-3">
+                        <span><i class="fa fa-users"></i> ${formatNumber(user.followers_count || 0)} 粉丝</span>
+                        <span><i class="fa fa-heart"></i> ${formatNumber(user.following_count || 0)} 关注</span>
+                    </div>
+                </div>
+                <button class="bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-lg text-sm font-medium hover:shadow-lg transition-all"
+                        onclick="handleFollowClick(this, ${user.id})">
+                    关注
+                </button>
+            </div>
+        `;
+    }
+
+    // 创建动态结果
+    function createMomentResult(moment) {
+        let imagesHtml = '';
+        if (moment.images && moment.images.length > 0) {
+            imagesHtml = `
+                <div class="flex gap-2 mt-3">
+                    ${moment.images.slice(0, 3).map(img => `
+                        <img src="${img}" class="w-20 h-20 rounded-lg object-cover" alt="">
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        return `
+            <div class="p-4 border-b border-gray-100 dark:border-dark-border-color last:border-0 hover:bg-gray-50 dark:hover:bg-dark-bg-main transition-colors">
+                <div class="flex items-start gap-3 mb-3">
+                    <a href="/card/${moment.user_id}" class="flex-shrink-0">
+                        <img src="${moment.avatar || '/static/images/default-avatar.png'}" class="w-10 h-10 rounded-lg object-cover" alt="">
+                    </a>
+                    <div class="flex-1">
+                        <div class="font-medium text-gray-800 dark:text-dark-text-primary">${escapeHtml(moment.nickname || '用户')}</div>
+                        <div class="text-xs text-gray-500">${formatTime(moment.create_time)}</div>
+                    </div>
+                </div>
+                <div class="text-gray-700 dark:text-dark-text-secondary mb-2">${escapeHtml(moment.content)}</div>
+                ${imagesHtml}
+                <div class="flex gap-4 text-sm text-gray-500 mt-3">
+                    <span><i class="fa fa-heart"></i> ${formatNumber(moment.likes_count || 0)}</span>
+                    <span><i class="fa fa-comment"></i> ${formatNumber(moment.comments_count || 0)}</span>
+                    ${moment.topic_name ? `<a href="/topic?id=${moment.topic_id}" class="hover:text-primary"><i class="fa fa-hashtag"></i> ${escapeHtml(moment.topic_name)}</a>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    // 创建话题结果
+    function createTopicResult(topic) {
+        return `
+            <div class="flex items-center gap-3 p-4 border-b border-gray-100 dark:border-dark-border-color last:border-0 hover:bg-gray-50 dark:hover:bg-dark-bg-main transition-colors cursor-pointer"
+                 onclick="location.href='/topic?id=${topic.id}'">
+                <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white flex-shrink-0">
+                    <i class="fa fa-hashtag"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="font-medium text-gray-800 dark:text-dark-text-primary">#${escapeHtml(topic.name)}</div>
+                    <div class="text-sm text-gray-500">${escapeHtml(topic.description || '暂无描述')}</div>
+                </div>
+                <div class="text-sm text-gray-500 flex gap-3">
+                    <span><i class="fa fa-file-text"></i> ${formatNumber(topic.moments_count || 0)}</span>
+                    <span><i class="fa fa-users"></i> ${formatNumber(topic.followers_count || 0)}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    // 切换标签
+    function switchTab(type) {
+        currentType = type;
+        currentPage = 1;
+        hasMore = true;
+
+        document.querySelectorAll('.tab').forEach(tab => {
+            if (tab.dataset.type === type) {
+                tab.classList.add('active', 'bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white');
+                tab.classList.remove('bg-gray-100', 'dark:bg-dark-bg-main', 'text-gray-700', 'dark:text-dark-text-secondary');
+            } else {
+                tab.classList.remove('active', 'bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white');
+                tab.classList.add('bg-gray-100', 'dark:bg-dark-bg-main', 'text-gray-700', 'dark:text-dark-text-secondary');
+            }
+        });
+
+        loadSearchResults();
+    }
+
+    // 加载更多
+    function loadMore() {
+        currentPage++;
+        loadSearchResults();
+    }
+
+    // 关注用户
+    async function handleFollowClick(btn, userId) {
+        const currentUser = getCookie('user_id');
+        if (!currentUser) {
+            alert('请先登录');
+            window.location.href = '/login';
+            return;
+        }
+
+        const isFollowing = btn.classList.contains('followed');
+        const action = isFollowing ? 'unfollow' : 'follow';
+
+        try {
+            const response = await fetch('/user/follow', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUser,
+                    target_id: userId,
+                    action: action
+                })
+            });
+            const result = await response.json();
+
+            if (result.code === 200) {
+                if (isFollowing) {
+                    btn.classList.remove('followed', 'bg-white', 'text-primary', 'border', 'border-primary');
+                    btn.classList.add('bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white');
+                    btn.textContent = '关注';
+                } else {
+                    btn.classList.add('followed', 'bg-white', 'text-primary', 'border', 'border-primary');
+                    btn.classList.remove('bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white');
+                    btn.textContent = '已关注';
+                }
+            } else {
+                alert(result.msg || '操作失败');
+            }
+        } catch (error) {
+            console.error('关注失败:', error);
+            alert('操作失败，请重试');
+        }
+    }
+</script>
+{/block}

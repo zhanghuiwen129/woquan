@@ -1,0 +1,106 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>表情分类管理 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">表情分类管理</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        管理表情分类
+    </p>
+</div>
+
+<!-- 操作按钮区域 -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="flex items-center gap-4">
+        <a href="/admin/emoji" class="px-5 py-2 bg-modern-light border border-modern-lightGray rounded-md hover:border-modern-primary transition-colors flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回表情列表</span>
+        </a>
+    </div>
+</div>
+
+<!-- 分类列表卡片 -->
+<div class="card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">分类名称</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">表情数量</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-modern-lightGray">
+                <!-- 数据将通过JS加载 -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// 加载分类数据
+async function loadCategories() {
+    try {
+        const response = await fetch('/admin/emoji/list?limit=1000');
+        const result = await response.json();
+        if (result.code === 200) {
+            const emojis = result.data || [];
+            
+            // 统计每个分类的表情数量
+            const categoryStats = {};
+            emojis.forEach(emoji => {
+                const category = emoji.category || '未分类';
+                if (!categoryStats[category]) {
+                    categoryStats[category] = 0;
+                }
+                categoryStats[category]++;
+            });
+
+            // 转换为数组并排序
+            const categories = Object.keys(categoryStats).map(name => ({
+                name: name,
+                count: categoryStats[name]
+            })).sort((a, b) => b.count - a.count);
+
+            renderTable(categories);
+        } else {
+            alert('加载失败: ' + result.msg);
+        }
+    } catch (error) {
+        console.error('加载失败:', error);
+        renderTable([]);
+    }
+}
+
+// 渲染表格
+function renderTable(data) {
+    const tbody = document.getElementById('tableBody');
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-12 text-center text-modern-gray">暂无数据</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = data.map(item => `
+        <tr class="hover:bg-modern-light/50 transition-colors">
+            <td class="py-4 px-6 text-sm font-medium text-modern-dark">${item.name}</td>
+            <td class="py-4 px-6 text-sm text-modern-gray">${item.count}</td>
+            <td class="py-4 px-6">
+                <div class="flex items-center gap-2">
+                    <a href="/admin/emoji?category=${encodeURIComponent(item.name)}" class="text-modern-gray hover:text-modern-primary transition-colors" title="查看表情">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// 页面加载时初始化
+document.addEventListener('DOMContentLoaded', function() {
+    loadCategories();
+});
+</script>
+{/block}

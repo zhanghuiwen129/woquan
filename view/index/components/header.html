@@ -1,0 +1,184 @@
+﻿<!-- 顶部导航栏 - 仅桌面端显示 -->
+<header class="bg-bg-main shadow-sm sticky top-0 z-50 md:block hidden border-b border-border-color">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <!-- Logo + 首页链接 -->
+        <a href="/" class="flex items-center gap-2 flex-shrink-0">
+            {if isset($config.logo) && $config.logo != ''}
+            <img src="{$config.logo}" alt="{$name}" class="h-10 w-auto object-contain" style="max-height: 40px;">
+            {else}
+            <div class="w-10 h-10 bg-gradient-to-br from-primary to-darkPrimary rounded-lg flex items-center justify-center text-white shadow-soft">
+                <i class="fa fa-comments"></i>
+            </div>
+            {/if}
+            <span class="site-name text-xl font-bold text-primary">{$name}</span>
+        </a>
+
+        <!-- 全局搜索框 -->
+        <div class="flex-1 max-w-2xl mx-8">
+            <div class="relative">
+                <input
+                    type="text"
+                    id="global-search-input"
+                    placeholder="搜索动态、用户、话题..."
+                    class="w-full px-4 py-2.5 pl-10 bg-bg-card rounded-lg border border-border-color text-text-primary placeholder-text-tertiary focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    onkeydown="handleSearchKeydown(event)"
+                >
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"></i>
+            </div>
+            <!-- 搜索建议下拉框 -->
+            <div id="search-suggestions" class="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-border-color hidden z-50 max-h-80 overflow-y-auto">
+                <div class="p-2">
+                    <div id="search-history" class="mb-2">
+                        <div class="text-xs text-text-secondary px-2 py-1 flex justify-between items-center">
+                            <span>搜索历史</span>
+                            <button onclick="clearSearchHistory()" class="text-text-tertiary hover:text-primary text-xs">清除</button>
+                        </div>
+                    </div>
+                    <div id="search-hot-topics" class="mb-2">
+                        <div class="text-xs text-text-secondary px-2 py-1">热门话题</div>
+                    </div>
+                    <div id="search-suggestions-content"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 注册 + 登录链接 / 用户信息 -->
+        <?php if(isset($isLogin) && $isLogin): ?>
+        <!-- 已登录状态 -->
+        <div class="flex items-center gap-4 logged-in-section flex-shrink-0">
+            <!-- 消息铃铛 -->
+            <div class="relative">
+                <a href="/messages" class="relative text-text-secondary hover:text-primary transition-colors">
+                    <i class="fa fa-bell text-lg"></i>
+                    <span id="total-unread-count" class="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                </a>
+            </div>
+
+            <!-- 个人头像 + 下拉菜单 -->
+            <div class="relative" id="user-menu-container">
+                <button onclick="toggleUserMenu()" class="flex items-center gap-2 text-text-secondary hover:text-primary transition-colors border-0 bg-transparent cursor-pointer">
+                    <img src="<?php echo $currentUser['avatar'] ?: '/static/images/default-avatar.png'; ?>" alt="用户头像" class="w-9 h-9 circle-avatar">
+                    <span class="hidden lg:inline font-medium"><?php echo $currentUser['nickname']; ?></span>
+                    <i class="fa fa-caret-down text-sm hidden lg:inline"></i>
+                </button>
+                <!-- 下拉菜单 -->
+                <div id="user-dropdown-menu" class="dropdown-menu absolute right-0 top-full mt-2 w-48 bg-bg-card rounded-lg shadow-lg border border-border-color hidden z-50">
+                    <div class="py-2">
+                        <a href="/profile" class="flex items-center gap-2 px-4 py-2 text-text-primary hover:bg-lightBlue transition-colors">
+                            <i class="fa fa-user w-4"></i>
+                            <span>个人主页</span>
+                        </a>
+                        <a href="/settings" class="flex items-center gap-2 px-4 py-2 text-text-primary hover:bg-lightBlue transition-colors">
+                            <i class="fa fa-cog w-4"></i>
+                            <span>设置</span>
+                        </a>
+                        <hr class="my-2 border-border-color">
+                        <button onclick="handleLogout()" class="flex items-center gap-2 px-4 py-2 w-full text-left text-text-primary hover:text-danger hover:bg-lightBlue transition-colors border-0 bg-transparent cursor-pointer">
+                            <i class="fa fa-sign-out w-4"></i>
+                            <span>退出登录</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php else: ?>
+        <!-- 未登录状态 -->
+
+        <script>
+        // 全局未读消息计数更新
+        let unreadPollingTimer = null;
+
+        function startUnreadPolling() {
+            if (unreadPollingTimer) return;
+
+            // 立即获取一次
+            updateUnreadCount();
+
+            // 每30秒轮询一次
+            unreadPollingTimer = setInterval(updateUnreadCount, 30000);
+        }
+
+        function stopUnreadPolling() {
+            if (unreadPollingTimer) {
+                clearInterval(unreadPollingTimer);
+                unreadPollingTimer = null;
+            }
+        }
+
+        async function updateUnreadCount() {
+            try {
+                const response = await fetch('/api/v1/messages/unreadCount');
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    const count = result.data.unread_count;
+
+                    // 更新顶部导航角标
+                    const badge = document.getElementById('total-unread-count');
+                    if (badge) {
+                        if (count > 0) {
+                            badge.textContent = count > 99 ? '99+' : count;
+                            badge.classList.remove('hidden');
+                        } else {
+                            badge.classList.add('hidden');
+                        }
+                    }
+
+                    // 更新移动端"更多"按钮角标
+                    const mobileBadge = document.getElementById('mobile-menu-badge');
+                    if (mobileBadge) {
+                        if (count > 0) {
+                            mobileBadge.textContent = count > 99 ? '99+' : count;
+                            mobileBadge.classList.remove('hidden');
+                        } else {
+                            mobileBadge.classList.add('hidden');
+                        }
+                    }
+
+                    // 更新更多菜单内消息通知角标
+                    const menuUnread = document.getElementById('mobile-menu-unread');
+                    if (menuUnread) {
+                        if (count > 0) {
+                            menuUnread.textContent = count > 99 ? '99+' : count;
+                            menuUnread.classList.remove('hidden');
+                        } else {
+                            menuUnread.classList.add('hidden');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('获取未读数量失败:', error);
+            }
+        }
+
+        // 页面加载完成后启动轮询
+        document.addEventListener('DOMContentLoaded', function() {
+            startUnreadPolling();
+        });
+
+        // 页面可见性变化时调整轮询
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                stopUnreadPolling();
+            } else {
+                startUnreadPolling();
+            }
+        });
+
+        // 页面卸载时停止轮询
+        window.addEventListener('beforeunload', stopUnreadPolling);
+        </script>
+        <?php endif; ?>
+        <div class="flex items-center gap-4 not-logged-in-section flex-shrink-0">
+            <a href="/register" class="px-4 py-2 text-primary hover:text-primary transition-colors flex items-center gap-2 font-medium">
+                <i class="fa fa-user-plus"></i>
+                <span>注册</span>
+            </a>
+            <a href="/login" class="px-5 py-2 bg-primary text-white rounded-lg hover:bg-darkPrimary transition-colors flex items-center gap-2 shadow-soft">
+                <i class="fa fa-sign-in"></i>
+                <span>登录</span>
+            </a>
+        </div>
+        <?php endif; ?>
+    </div>
+</header>

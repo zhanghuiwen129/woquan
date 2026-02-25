@@ -1,0 +1,37 @@
+﻿<!-- 基础参数设置 -->
+<div class="tab-content" id="basic">
+    <h3 class="text-lg font-medium text-gray-800 mb-6">基础参数配置</h3>
+    <form id="basicForm" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">后台列表默认分页</label>
+                <input type="number" name="admin_page_size" value="{$config.admin_page_size|default='20'}"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">前台列表默认分页</label>
+                <input type="number" name="frontend_page_size" value="{$config.frontend_page_size|default='10'}"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">默认字符集</label>
+                <input type="text" name="default_charset" value="{$config.default_charset|default='UTF-8'}"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">时间显示格式</label>
+                <input type="text" name="time_format" value="{$config.time_format|default='Y-m-d H:i:s'}"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                <p class="text-xs text-gray-500 mt-2">使用PHP日期格式，如：Y-m-d H:i:s</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4 mt-8">
+            <button type="button" onclick="saveBasic()"
+                    class="px-5 py-2.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                保存配置
+            </button>
+        </div>
+    </form>
+</div>

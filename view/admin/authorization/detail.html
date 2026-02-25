@@ -1,0 +1,153 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>授权详情 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">授权详情</h2>
+    <p class="text-modern-gray text-sm mt-1">查看授权的详细信息</p>
+</div>
+
+<!-- 操作按钮区域 -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="flex items-center gap-4">
+        <a href="/admin/authorization" class="px-5 py-2 bg-modern-light border border-modern-lightGray rounded-md text-modern-gray hover:border-modern-primary transition-colors shadow-modern flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i>
+            <span>返回列表</span>
+        </a>
+        <a href="/admin/authorization/edit/{$authorization.id}" class="px-5 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern flex items-center gap-2">
+            <i class="fas fa-edit"></i>
+            <span>编辑授权</span>
+        </a>
+        <button class="px-5 py-2 bg-modern-danger text-white rounded-md hover:bg-red-600 transition-colors shadow-modern flex items-center gap-2" onclick="confirmDelete({$authorization.id})">
+            <i class="fas fa-trash"></i>
+            <span>删除授权</span>
+        </button>
+    </div>
+</div>
+
+<!-- 授权详情卡片 -->
+<div class="card rounded-lg p-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- 基本信息 -->
+        <div>
+            <h3 class="text-lg font-semibold text-modern-dark mb-6 pb-2 border-b">基本信息</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-modern-gray mb-1">授权编号</label>
+                    <div class="font-mono text-modern-primary text-lg bg-modern-light p-3 rounded-md">{$authorization.license_number}</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-modern-gray mb-1">授权软件</label>
+                    <div class="text-modern-dark">{$software.software_name}</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-modern-gray mb-1">授权状态</label>
+                    <div>
+                        {if $authorization.status == 1}
+                        <span class="text-xs px-2 py-1 bg-modern-success/10 text-modern-success rounded-full">有效</span>
+                        {else}
+                        <span class="text-xs px-2 py-1 bg-modern-danger/10 text-modern-danger rounded-full">无效</span>
+                        {/if}
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-modern-gray mb-1">授权域名</label>
+                    <div class="text-modern-dark">
+                        {if $authorization.domain}
+                        {$authorization.domain}
+                        {else}
+                        <span class="text-modern-gray">不限制</span>
+                        {/if}
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-modern-gray mb-1">服务器IP</label>
+                    <div class="text-modern-dark">
+                        {if $authorization.server_ip}
+                        {$authorization.server_ip}
+                        {else}
+                        <span class="text-modern-gray">不限制</span>
+                        {/if}
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-modern-gray mb-1">验证次数</label>
+                    <div class="text-modern-dark">{$authorization.verify_count|default=0}</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-modern-gray mb-1">最后验证时间</label>
+                    <div class="text-modern-dark">
+                        {if $authorization.last_verify_time > 0}
+                        {$authorization.last_verify_time|date='Y-m-d H:i:s',###}
+                        {else}
+                        <span class="text-modern-gray">未验证</span>
+                        {/if}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 时间信息 -->
+        <div>
+            <h3 class="text-lg font-semibold text-modern-dark mb-6 pb-2 border-b">时间信息</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-modern-gray mb-1">授权开始时间</label>
+                    <div class="text-modern-dark">{$authorization.start_time|date='Y-m-d H:i:s',###}</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-modern-gray mb-1">授权结束时间</label>
+                    <div class="text-modern-dark">
+                        {if $authorization.end_time == 0}
+                        永久授权
+                        {else}
+                        {$authorization.end_time|date='Y-m-d H:i:s',###}
+                        {/if}
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-modern-gray mb-1">创建时间</label>
+                    <div class="text-modern-dark">{$authorization.create_time|date='Y-m-d H:i:s',###}</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-modern-gray mb-1">更新时间</label>
+                    <div class="text-modern-dark">{$authorization.update_time|date='Y-m-d H:i:s',###}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能权限 -->
+    <div class="mt-8">
+        <h3 class="text-lg font-semibold text-modern-dark mb-4">功能权限</h3>
+        <div class="bg-modern-light p-4 rounded-md">
+            {if $authorization.features}
+            <div class="flex flex-wrap gap-2">
+                {volist name="authorization.features" id="feature"}
+                <span class="px-3 py-1 bg-modern-primary/10 text-modern-primary rounded-full text-sm">
+                    {if $feature == 'articles'}文章功能{/if}
+                    {if $feature == 'comments'}评论功能{/if}
+                    {if $feature == 'chat'}聊天功能{/if}
+                    {if $feature == 'vip'}VIP功能{/if}
+                    {if $feature == 'storage'}存储功能{/if}
+                    {if $feature == 'payment'}支付功能{/if}
+                </span>
+                {/volist}
+            </div>
+            {else}
+            <span class="text-modern-gray">无限制</span>
+            {/if}
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript 实现 -->
+<script>
+function confirmDelete(id) {
+    if (confirm('确定要删除该授权吗？此操作不可恢复！')) {
+        window.location.href = '/admin/authorization/delete/' + id;
+    }
+}
+</script>
+{/block}

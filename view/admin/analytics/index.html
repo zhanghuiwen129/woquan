@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据概览 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'analytics';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">数据概览</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name|default='管理员'}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">数据概览</h2>
+                <p class="text-gray-500 text-sm mt-1">实时查看平台各项数据指标</p>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="bg-white rounded-lg shadow-sm p-5 mb-6">
+                <div class="flex gap-3">
+                    <a href="/admin/analytics/user" class="px-5 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
+                        <i class="fas fa-users mr-1"></i>用户分析
+                    </a>
+                    <a href="/admin/analytics/content" class="px-5 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
+                        <i class="fas fa-file-alt mr-1"></i>内容分析
+                    </a>
+                    <a href="/admin/analytics/retention" class="px-5 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
+                        <i class="fas fa-chart-line mr-1"></i>留存分析
+                    </a>
+                    <a href="/admin/analytics/conversion" class="px-5 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
+                        <i class="fas fa-exchange-alt mr-1"></i>转化分析
+                    </a>
+                </div>
+            </div>
+
+            <!-- 数据指标卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <!-- 总用户数 -->
+                <div class="card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-users text-blue-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">总用户数</p>
+                                <p class="text-2xl font-bold text-gray-800">{$statistics.total_users|default=0}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 总动态数 -->
+                <div class="card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-file-alt text-green-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">总动态数</p>
+                                <p class="text-2xl font-bold text-gray-800">{$statistics.total_moments|default=0}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 总评论数 -->
+                <div class="card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-comments text-yellow-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">总评论数</p>
+                                <p class="text-2xl font-bold text-gray-800">{$statistics.total_comments|default=0}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 今日活跃 -->
+                <div class="card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-user-check text-purple-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">今日活跃</p>
+                                <p class="text-2xl font-bold text-gray-800">{$statistics.today_active|default=0}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据详情 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- 用户增长 -->
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">用户增长</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">昨日新增</span>
+                            <span class="text-gray-800 font-semibold">{$statistics.yesterday_new|default=0}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">本周新增</span>
+                            <span class="text-gray-800 font-semibold">{$statistics.week_new|default=0}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">本月新增</span>
+                            <span class="text-gray-800 font-semibold">{$statistics.month_new|default=0}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">增长率</span>
+                            <span class="text-gray-800 font-semibold">{$statistics.growth_rate|default=0}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 内容统计 -->
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">内容统计</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">今日动态</span>
+                            <span class="text-gray-800 font-semibold">{$statistics.today_moments|default=0}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">今日评论</span>
+                            <span class="text-gray-800 font-semibold">{$statistics.today_comments|default=0}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">平均每日动态</span>
+                            <span class="text-gray-800 font-semibold">{$statistics.avg_moments|default=0}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">平均每日评论</span>
+                            <span class="text-gray-800 font-semibold">{$statistics.avg_comments|default=0}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据分析建议 -->
+            <div class="card p-6 mt-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">数据分析建议</h3>
+                <div class="space-y-3">
+                    <div class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <div>
+                            <p class="text-gray-800 font-medium">用户增长分析</p>
+                            <p class="text-gray-500 text-sm mt-1">关注用户增长趋势，分析用户来源渠道，优化用户获取策略</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <div>
+                            <p class="text-gray-800 font-medium">内容质量提升</p>
+                            <p class="text-gray-500 text-sm mt-1">鼓励用户发布优质内容，提升用户互动率</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <div>
+                            <p class="text-gray-800 font-medium">活跃度提升</p>
+                            <p class="text-gray-500 text-sm mt-1">通过活动和激励机制提高用户活跃度</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <div>
+                            <p class="text-gray-800 font-medium">留存率优化</p>
+                            <p class="text-gray-500 text-sm mt-1">分析用户流失原因，优化产品体验</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 模拟实时更新数据
+        setInterval(function() {
+            // 这里可以添加 AJAX 请求获取实时数据
+            console.log('数据已更新');
+        }, 5000);
+    </script>
+</body>
+</html>

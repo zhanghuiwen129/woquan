@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>回复模板 - 后台管理</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+    <div class="main-content">
+        <div class="page-header">
+            <h2>快捷回复模板</h2>
+            <button class="btn btn-primary" onclick="window.location.href='/admin/quick-reply/templates/add'">添加模板</button>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>分类</th>
+                        <th>模板内容</th>
+                        <th>排序</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- 数据将通过JS加载 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script src="/static/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,798 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="content"}
+<!-- 主内容区 -->
+<main class="container mx-auto px-4 py-6 max-w-3xl">
+    <!-- 动态详情加载中 -->
+    <div id="moment-loading" class="text-center py-12">
+        <i class="fa fa-spinner fa-spin text-3xl text-primary mb-4"></i>
+        <p class="text-text-secondary">加载中...</p>
+    </div>
+
+    <!-- 动态详情容器 -->
+    <div id="moment-detail" class="hidden"></div>
+
+    <!-- 错误提示 -->
+    <div id="moment-error" class="hidden text-center py-12">
+        <i class="fa fa-exclamation-circle text-3xl text-danger mb-4"></i>
+        <p id="error-message" class="text-text-secondary">加载失败</p>
+        <a href="/" class="inline-block mt-4 px-4 py-2 bg-primary text-white rounded-lg">返回首页</a>
+    </div>
+</main>
+
+<script>
+    // 获取动态ID
+    const momentId = window.location.pathname.split('/').pop();
+    const currentUserId = window.currentUserInfo?.id || null;
+
+    // 页面加载完成后获取动态详情
+    window.addEventListener('DOMContentLoaded', function() {
+        loadMomentDetail();
+    });
+
+    // 加载动态详情
+    async function loadMomentDetail() {
+        const loadingEl = document.getElementById('moment-loading');
+        const detailEl = document.getElementById('moment-detail');
+        const errorEl = document.getElementById('moment-error');
+
+        try {
+            const response = await fetch(`/api/moments/detail?id=${momentId}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                const moment = result.data;
+                loadingEl.classList.add('hidden');
+                errorEl.classList.add('hidden');
+                detailEl.classList.remove('hidden');
+                renderMomentDetail(moment);
+            } else {
+                loadingEl.classList.add('hidden');
+                detailEl.classList.add('hidden');
+                errorEl.classList.remove('hidden');
+                document.getElementById('error-message').textContent = result.msg || '加载失败';
+            }
+        } catch (error) {
+            console.error('加载动态详情失败:', error);
+            loadingEl.classList.add('hidden');
+            detailEl.classList.add('hidden');
+            errorEl.classList.remove('hidden');
+            document.getElementById('error-message').textContent = '加载失败，请稍后重试';
+        }
+    }
+
+    // 渲染动态详情
+    function renderMomentDetail(moment) {
+        const detailEl = document.getElementById('moment-detail');
+
+        // 格式化时间
+        const createTime = new Date(moment.create_time * 1000);
+        const timeStr = formatTime(createTime);
+
+        // 处理图片HTML
+        let imagesHtml = '';
+        if (moment.images && moment.images.length > 0) {
+            const imageClass = moment.images.length === 1 ? 'grid-images-1' :
+                               moment.images.length === 2 ? 'grid-images-2' :
+                               moment.images.length === 4 ? 'grid-images-4' :
+                               'grid-images-3';
+            imagesHtml = `
+                <div class="moment-images ${imageClass} mt-3">
+                    ${moment.images.map(img => `
+                        <img src="${img}" alt="动态图片" class="w-full object-cover cursor-pointer" onclick="previewImage('${img}')">
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // 处理视频HTML
+        let videosHtml = '';
+        if (moment.videos && moment.videos.length > 0) {
+            videosHtml = `
+                <div class="moment-videos mt-3">
+                    ${moment.videos.map(video => `
+                        <video src="${video}" controls class="w-full rounded-lg"></video>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        detailEl.innerHTML = `
+            <div class="bg-bg-card rounded-xl shadow-soft overflow-hidden">
+                <!-- 用户信息 -->
+                <div class="p-4 flex items-center justify-between border-b border-border-color">
+                    <div class="flex items-center">
+                        <img src="${moment.avatar || '/static/images/default-avatar.png'}" alt="用户头像" class="w-10 h-10 rounded-full object-cover mr-3">
+                        <div>
+                            <div class="font-medium text-text-primary">${moment.nickname}</div>
+                            <div class="text-xs text-text-secondary">${timeStr}</div>
+                        </div>
+                    </div>
+                    ${currentUserId === moment.user_id ? `
+                        <button onclick="deleteMoment(${moment.id})" class="text-text-secondary hover:text-danger transition-colors">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    ` : ''}
+                </div>
+
+                <!-- 动态内容 -->
+                <div class="p-4">
+                    <div class="moment-content text-text-primary whitespace-pre-wrap">${moment.content}</div>
+                    ${imagesHtml}
+                    ${videosHtml}
+                    ${moment.location ? `
+                        <div class="mt-3 text-sm text-text-secondary">
+                            <i class="fa fa-map-marker mr-1"></i>${moment.location}
+                        </div>
+                    ` : ''}
+                </div>
+
+                <!-- 互动按钮 -->
+                <div class="px-4 py-3 border-t border-border-color flex items-center justify-around">
+                    <button onclick="toggleLike(${moment.id})" class="flex items-center text-text-secondary hover:text-primary transition-colors">
+                        <i class="fa ${moment.is_liked ? 'fa-heart text-red-500' : 'fa-heart-o'} mr-1"></i>
+                        <span id="like-count">${moment.likes}</span>
+                    </button>
+                    <button onclick="toggleComments()" class="flex items-center text-text-secondary hover:text-primary transition-colors">
+                        <i class="fa fa-comment-o mr-1"></i>
+                        <span id="comment-count">${moment.comments}</span>
+                    </button>
+                </div>
+
+                <!-- 评论区 -->
+                <div id="comment-section" class="hidden border-t border-border-color">
+                    <div class="p-4">
+                        <div id="comment-list" class="space-y-3 mb-4"></div>
+                        <div id="load-more-comments" onclick="loadMoreComments()" class="text-center text-text-secondary text-sm hidden cursor-pointer hover:text-primary py-2">加载更多</div>
+                        <div id="no-more-comments" class="text-center text-text-tertiary text-sm hidden py-2">没有更多评论了</div>
+                    </div>
+                    <div class="px-4 py-3 border-t border-border-color">
+                        <div class="flex items-center">
+                            <img src="${window.currentUserInfo?.avatar || '/static/images/default-avatar.png'}" alt="用户头像" class="w-8 h-8 rounded-full mr-3">
+                            <input
+                                type="text"
+                                id="comment-input"
+                                placeholder="发条评论，大家一起讨论"
+                                class="flex-1 px-3 py-2 bg-white rounded-lg border border-border-color focus:outline-none focus:border-primary"
+                                maxlength="500"
+                            >
+                            <button onclick="sendComment()" class="ml-3 px-4 py-2 bg-primary text-white rounded-lg hover:bg-darkPrimary transition-colors">发送</button>
+                        </div>
+                        <div id="reply-info" class="hidden text-sm text-text-secondary mt-2">
+                            回复 <span id="reply-to-nickname" class="font-medium"></span>
+                            <button onclick="cancelReply()" class="ml-2 text-text-tertiary hover:text-primary">取消</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 加载评论
+        loadComments();
+    }
+
+    // 格式化时间
+    function formatTime(date) {
+        const now = new Date();
+        const diff = now - date;
+
+        if (diff < 60000) return '刚刚';
+        if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+        if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+        if (diff < 2592000000) return Math.floor(diff / 86400000) + '天前';
+        return date.toLocaleDateString('zh-CN');
+    }
+
+    // 切换点赞
+    async function toggleLike(momentId) {
+        try {
+            const response = await fetch('/api/v1/moments/like', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ moment_id: momentId })
+            });
+
+            const result = await response.json();
+            if (result.code === 200) {
+                const likeCount = document.getElementById('like-count');
+                const count = parseInt(likeCount.textContent);
+                likeCount.textContent = result.data.liked ? count + 1 : count - 1;
+            }
+        } catch (error) {
+            console.error('点赞失败:', error);
+        }
+    }
+
+    // 评论分页状态
+    let commentPage = 1;
+    let commentPageSize = 10;
+    let commentTotal = 0;
+    let hasMoreComments = true;
+    let replyToInfo = null; // 存储回复目标信息 {id, nickname, parentId}
+
+    // 切换评论区显示
+    function toggleComments() {
+        const commentSection = document.getElementById('comment-section');
+        commentSection.classList.toggle('hidden');
+    }
+
+    // 加载评论
+    async function loadComments(page = 1, append = false) {
+        try {
+            console.log(`加载评论 - moment_id: ${momentId}, page: ${page}, append: ${append}`);
+
+            const response = await fetch(`/comments/list?moment_id=${momentId}&page=${page}&limit=${commentPageSize}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const result = await response.json();
+            console.log('后端返回数据:', result);
+
+            if (result.code === 200) {
+                const commentList = document.getElementById('comment-list');
+                commentPage = result.data.page;
+                commentTotal = result.data.total;
+                const comments = result.data.list || result.data.comments || [];
+
+                console.log('解析后的评论数据:', {
+                    page: commentPage,
+                    total: commentTotal,
+                    commentsCount: comments.length,
+                    comments: comments
+                });
+
+                if (!append) {
+                    commentList.innerHTML = '';
+                }
+
+                // 渲染评论
+                comments.forEach(comment => {
+                    const commentHtml = renderComment(comment);
+                    commentList.insertAdjacentHTML('beforeend', commentHtml);
+                });
+
+                // 更新"加载更多"按钮状态
+                updateLoadMoreButton();
+            } else {
+                console.error('后端返回错误:', result.msg);
+            }
+        } catch (error) {
+            console.error('加载评论失败:', error);
+        }
+    }
+
+    // 渲染单个评论
+    function renderComment(comment) {
+        let repliesHtml = '';
+        if (comment.replies && comment.replies.length > 0) {
+            repliesHtml = `
+                <div class="mt-3 space-y-3 ml-10">
+                    ${comment.replies.map(reply => `
+                        <div>
+                            <!-- 第三排：子评论用户头像、昵称、@主评论昵称、日期时间 -->
+                            <div style="display: flex; align-items: center;">
+                                <img src="${reply.avatar || '/static/images/default-avatar.png'}" alt="用户头像" class="w-5 h-5 rounded-full mr-2">
+                                <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                                    <span class="font-medium text-xs mr-1">${reply.nickname}</span>
+                                    ${reply.is_author ? '<span class="text-xs text-primary bg-lightBlue px-1 py-0.5 rounded mr-1">作者</span>' : ''}
+                                    <span class="text-xs text-text-tertiary mr-1">@${reply.reply_nickname || comment.nickname}</span>
+                                    <span class="text-xs text-text-tertiary">${formatTime(new Date(reply.create_time * 1000))}</span>
+                                </div>
+                            </div>
+                            <!-- 第四排：子评论内容和回复按钮 -->
+                            <div style="display: flex; align-items: start; margin-top: 4px;">
+                                <span class="text-xs text-text-secondary" style="flex: 1;">${reply.content}</span>
+                                <button class="text-xs text-text-tertiary hover:text-primary" style="margin-left: 8px; flex-shrink: 0;" onclick="replyTo(${reply.id}, '${reply.nickname}', ${comment.id})">回复</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        return `
+            <div class="py-3 border-b border-border-color last:border-0">
+                <!-- 第一排：头像、昵称、日期时间（横排） -->
+                <div class="flex items-center">
+                    <img src="${comment.avatar || '/static/images/default-avatar.png'}" alt="用户头像" class="w-8 h-8 rounded-full mr-2">
+                    <div class="flex items-center flex-wrap">
+                        <span class="font-medium text-sm mr-2">${comment.nickname}</span>
+                        ${comment.is_author ? '<span class="text-xs text-primary bg-lightBlue px-2 py-0.5 rounded mr-2">作者</span>' : ''}
+                        <span class="text-xs text-text-tertiary">${formatTime(new Date(comment.create_time * 1000))}</span>
+                    </div>
+                </div>
+                <!-- 第二排：评论内容 -->
+                <div class="text-sm text-text-secondary mt-2 ml-10">${comment.content}</div>
+                ${repliesHtml}
+            </div>
+        `;
+    }
+
+    // 更新"加载更多"按钮状态
+    function updateLoadMoreButton() {
+        const loadMoreBtn = document.getElementById('load-more-comments');
+        const noMoreDiv = document.getElementById('no-more-comments');
+
+        // total 是顶级评论的总数，page 是当前页码
+        // 如果 (page * pageSize) >= total，说明没有更多顶级评论了
+        const loadedTopLevelCount = commentPage * commentPageSize;
+        hasMoreComments = loadedTopLevelCount < commentTotal;
+
+        if (hasMoreComments) {
+            loadMoreBtn.classList.remove('hidden');
+            noMoreDiv.classList.add('hidden');
+        } else {
+            loadMoreBtn.classList.add('hidden');
+            noMoreDiv.classList.remove('hidden');
+        }
+
+        // 调试日志
+        console.log('评论分页状态:', {
+            page: commentPage,
+            pageSize: commentPageSize,
+            total: commentTotal,
+            loadedTopLevelCount: loadedTopLevelCount,
+            hasMoreComments: hasMoreComments
+        });
+    }
+
+    // 加载更多评论
+    async function loadMoreComments() {
+        if (!hasMoreComments) return;
+
+        commentPage++;
+        await loadComments(commentPage, true);
+    }
+
+    // 回复评论
+    function replyTo(commentId, nickname, parentId = null) {
+        replyToInfo = { id: commentId, nickname: nickname, parentId: parentId };
+        const input = document.getElementById('comment-input');
+        const replyInfo = document.getElementById('reply-info');
+        const replyToNickname = document.getElementById('reply-to-nickname');
+
+        replyToNickname.textContent = nickname;
+        replyInfo.classList.remove('hidden');
+        input.placeholder = `回复 @${nickname}`;
+        input.focus();
+    }
+
+    // 取消回复
+    function cancelReply() {
+        replyToInfo = null;
+        const input = document.getElementById('comment-input');
+        const replyInfo = document.getElementById('reply-info');
+
+        replyInfo.classList.add('hidden');
+        input.placeholder = '发条评论，大家一起讨论';
+        input.value = '';
+    }
+
+    // 发送评论
+    async function sendComment() {
+        const input = document.getElementById('comment-input');
+        const content = input.value.trim();
+
+        if (!content) {
+            alert('请输入评论内容');
+            return;
+        }
+
+        try {
+            const requestData = {
+                moment_id: momentId,
+                content: content
+            };
+
+            // 如果是回复评论，添加 parent_id 和 reply_to_id
+            if (replyToInfo) {
+                requestData.parent_id = replyToInfo.parentId || replyToInfo.id;
+                requestData.reply_to_id = replyToInfo.id;
+            }
+
+            const response = await fetch('/comments/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            });
+
+            const result = await response.json();
+            if (result.code === 200) {
+                // 取消回复状态
+                cancelReply();
+
+                // 重新加载评论
+                loadComments();
+
+                const commentCount = document.getElementById('comment-count');
+                commentCount.textContent = parseInt(commentCount.textContent) + 1;
+            } else {
+                alert(result.msg || '评论失败');
+            }
+        } catch (error) {
+            console.error('评论失败:', error);
+            alert('评论失败，请稍后重试');
+        }
+    }
+
+    // 预览图片
+    function previewImage(src) {
+        const img = new Image();
+        img.src = src;
+        img.style.maxWidth = '90vw';
+        img.style.maxHeight = '90vh';
+        img.style.objectFit = 'contain';
+
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 bg-black/80 z-50 flex items-center justify-center';
+        overlay.onclick = () => overlay.remove();
+
+        overlay.appendChild(img);
+        document.body.appendChild(overlay);
+    }
+</script>
+{/block}
+
+{block name="contentMobile"}
+<!-- 移动端主内容区 -->
+<main class="container mx-auto px-4 py-4">
+    <!-- 动态详情加载中 -->
+    <div id="moment-mobile-loading" class="text-center py-12">
+        <i class="fa fa-spinner fa-spin text-3xl text-primary mb-4"></i>
+        <p class="text-text-secondary text-sm">加载中...</p>
+    </div>
+
+    <!-- 动态详情容器 -->
+    <div id="moment-mobile-detail" class="hidden"></div>
+
+    <!-- 错误提示 -->
+    <div id="moment-mobile-error" class="hidden text-center py-12">
+        <i class="fa fa-exclamation-circle text-3xl text-danger mb-4"></i>
+        <p id="mobile-error-message" class="text-text-secondary text-sm">加载失败</p>
+        <a href="/" class="inline-block mt-4 px-4 py-2 bg-primary text-white rounded-lg text-sm">返回首页</a>
+    </div>
+</main>
+
+<script>
+    // 获取动态ID
+    const mobileMomentId = window.location.pathname.split('/').pop();
+
+    // 移动端回复评论
+    function replyTo(commentId, nickname, parentId = null) {
+        mobileReplyToInfo = { id: commentId, nickname: nickname, parentId: parentId };
+        const input = document.getElementById('mobile-comment-input');
+        const replyInfo = document.getElementById('mobile-reply-info');
+        const replyToNickname = document.getElementById('mobile-reply-to-nickname');
+
+        replyToNickname.textContent = nickname;
+        replyInfo.classList.remove('hidden');
+        input.placeholder = `回复 @${nickname}`;
+        input.focus();
+    }
+
+    // 页面加载完成后获取动态详情
+    window.addEventListener('DOMContentLoaded', function() {
+        if (!document.getElementById('moment-detail')) {
+            loadMobileMomentDetail();
+        }
+    });
+
+    // 加载动态详情（移动端）
+    async function loadMobileMomentDetail() {
+        const loadingEl = document.getElementById('moment-mobile-loading');
+        const detailEl = document.getElementById('moment-mobile-detail');
+        const errorEl = document.getElementById('moment-mobile-error');
+
+        try {
+            const response = await fetch(`/api/moments/detail?id=${mobileMomentId}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                const moment = result.data;
+                loadingEl.classList.add('hidden');
+                errorEl.classList.add('hidden');
+                detailEl.classList.remove('hidden');
+                renderMobileMomentDetail(moment);
+            } else {
+                loadingEl.classList.add('hidden');
+                detailEl.classList.add('hidden');
+                errorEl.classList.remove('hidden');
+                document.getElementById('mobile-error-message').textContent = result.msg || '加载失败';
+            }
+        } catch (error) {
+            console.error('加载动态详情失败:', error);
+            loadingEl.classList.add('hidden');
+            detailEl.classList.add('hidden');
+            errorEl.classList.remove('hidden');
+            document.getElementById('mobile-error-message').textContent = '加载失败，请稍后重试';
+        }
+    }
+
+    // 渲染动态详情（移动端）
+    function renderMobileMomentDetail(moment) {
+        const detailEl = document.getElementById('moment-mobile-detail');
+
+        // 格式化时间
+        const createTime = new Date(moment.create_time * 1000);
+        const timeStr = formatTime(createTime);
+
+        // 处理图片HTML
+        let imagesHtml = '';
+        if (moment.images && moment.images.length > 0) {
+            imagesHtml = `
+                <div class="grid grid-cols-3 gap-1 mt-3">
+                    ${moment.images.map(img => `
+                        <img src="${img}" alt="动态图片" class="w-full aspect-square object-cover cursor-pointer" onclick="previewImage('${img}')">
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        detailEl.innerHTML = `
+            <div class="bg-bg-card rounded-lg shadow-sm overflow-hidden">
+                <!-- 用户信息 -->
+                <div class="p-3 flex items-center justify-between border-b border-border-color">
+                    <div class="flex items-center">
+                        <img src="${moment.avatar || '/static/images/default-avatar.png'}" alt="用户头像" class="w-9 h-9 rounded-full object-cover mr-2">
+                        <div>
+                            <div class="font-medium text-sm text-text-primary">${moment.nickname}</div>
+                            <div class="text-xs text-text-secondary">${timeStr}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 动态内容 -->
+                <div class="p-3">
+                    <div class="moment-content text-text-primary text-sm whitespace-pre-wrap">${moment.content}</div>
+                    ${imagesHtml}
+                </div>
+
+                <!-- 互动按钮 -->
+                <div class="px-3 py-2 border-t border-border-color flex items-center justify-around">
+                    <button onclick="toggleLike(${moment.id})" class="flex items-center text-text-secondary hover:text-primary transition-colors">
+                        <i class="fa ${moment.is_liked ? 'fa-heart text-red-500' : 'fa-heart-o'} mr-1"></i>
+                        <span>${moment.likes}</span>
+                    </button>
+                    <button onclick="toggleMobileComments()" class="flex items-center text-text-secondary hover:text-primary transition-colors">
+                        <i class="fa fa-comment-o mr-1"></i>
+                        <span>${moment.comments}</span>
+                    </button>
+                </div>
+
+                <!-- 评论区 -->
+                <div id="mobile-comment-section" class="hidden border-t border-border-color">
+                    <div class="p-3">
+                        <div id="mobile-comment-list" class="space-y-2 mb-3"></div>
+                        <div id="mobile-load-more-comments" onclick="loadMoreMobileComments()" class="text-center text-text-secondary text-sm hidden cursor-pointer hover:text-primary py-2">加载更多</div>
+                        <div id="mobile-no-more-comments" class="text-center text-text-tertiary text-sm hidden py-2">没有更多评论了</div>
+                    </div>
+                    <div class="px-3 py-2 border-t border-border-color">
+                        <div class="flex items-center">
+                            <input
+                                type="text"
+                                id="mobile-comment-input"
+                                placeholder="发条评论"
+                                class="flex-1 px-3 py-2 bg-white rounded-lg border border-border-color text-sm focus:outline-none focus:border-primary"
+                                maxlength="500"
+                            >
+                            <button onclick="sendMobileComment()" class="ml-2 px-3 py-2 bg-primary text-white rounded-lg text-sm">发送</button>
+                        </div>
+                        <div id="mobile-reply-info" class="hidden text-xs text-text-secondary mt-1">
+                            回复 <span id="mobile-reply-to-nickname" class="font-medium"></span>
+                            <button onclick="cancelMobileReply()" class="ml-2 text-text-tertiary hover:text-primary">取消</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 加载评论
+        loadMobileComments();
+    }
+
+    // 切换评论区显示（移动端）
+    function toggleMobileComments() {
+        const commentSection = document.getElementById('mobile-comment-section');
+        commentSection.classList.toggle('hidden');
+    }
+
+    // 移动端评论分页状态
+    let mobileCommentPage = 1;
+    let mobileCommentPageSize = 10;
+    let mobileCommentTotal = 0;
+    let hasMoreMobileComments = true;
+    let mobileReplyToInfo = null;
+
+    // 加载评论（移动端）
+    async function loadMobileComments(page = 1, append = false) {
+        try {
+            console.log(`加载移动端评论 - moment_id: ${mobileMomentId}, page: ${page}, append: ${append}`);
+
+            const response = await fetch(`/comments/list?moment_id=${mobileMomentId}&page=${page}&limit=${mobileCommentPageSize}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const result = await response.json();
+            console.log('移动端后端返回数据:', result);
+
+            if (result.code === 200) {
+                const commentList = document.getElementById('mobile-comment-list');
+                mobileCommentPage = result.data.page;
+                mobileCommentTotal = result.data.total;
+                const comments = result.data.list || result.data.comments || [];
+
+                console.log('移动端解析后的评论数据:', {
+                    page: mobileCommentPage,
+                    total: mobileCommentTotal,
+                    commentsCount: comments.length,
+                    comments: comments
+                });
+
+                if (!append) {
+                    commentList.innerHTML = '';
+                }
+
+                // 渲染评论
+                comments.forEach(comment => {
+                    const commentHtml = renderMobileComment(comment);
+                    commentList.insertAdjacentHTML('beforeend', commentHtml);
+                });
+
+                // 更新"加载更多"按钮状态
+                updateMobileLoadMoreButton();
+            } else {
+                console.error('移动端后端返回错误:', result.msg);
+            }
+        } catch (error) {
+            console.error('加载评论失败:', error);
+        }
+    }
+
+    // 渲染移动端单个评论
+    function renderMobileComment(comment) {
+        let repliesHtml = '';
+        if (comment.replies && comment.replies.length > 0) {
+            repliesHtml = `
+                <div class="mt-2 space-y-2 ml-8">
+                    ${comment.replies.map(reply => `
+                        <div>
+                            <!-- 第三排：子评论用户头像、昵称、@主评论昵称、日期时间 -->
+                            <div style="display: flex; align-items: center;">
+                                <img src="${reply.avatar || '/static/images/default-avatar.png'}" alt="用户头像" class="w-4 h-4 rounded-full mr-1">
+                                <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                                    <span class="font-medium text-xs mr-1">${reply.nickname}</span>
+                                    ${reply.is_author ? '<span class="text-xs text-primary bg-lightBlue px-1 py-0.5 rounded mr-1">作者</span>' : ''}
+                                    <span class="text-xs text-text-tertiary mr-1">@${reply.reply_nickname || comment.nickname}</span>
+                                    <span class="text-xs text-text-tertiary">${formatTime(new Date(reply.create_time * 1000))}</span>
+                                </div>
+                            </div>
+                            <!-- 第四排：子评论内容和回复按钮 -->
+                            <div style="display: flex; align-items: start; margin-top: 2px;">
+                                <span class="text-xs text-text-secondary" style="flex: 1;">${reply.content}</span>
+                                <button class="text-xs text-text-tertiary hover:text-primary" style="margin-left: 4px; flex-shrink: 0;" onclick="replyTo(${reply.id}, '${reply.nickname}', ${comment.id})">回复</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        return `
+            <div class="py-2 border-b border-border-color last:border-0">
+                <!-- 第一排：头像、昵称、日期时间（横排） -->
+                <div class="flex items-center">
+                    <img src="${comment.avatar || '/static/images/default-avatar.png'}" alt="用户头像" class="w-6 h-6 rounded-full mr-2">
+                    <div class="flex items-center flex-wrap">
+                        <span class="font-medium text-xs mr-1">${comment.nickname}</span>
+                        ${comment.is_author ? '<span class="text-xs text-primary bg-lightBlue px-1.5 py-0.5 rounded mr-1">作者</span>' : ''}
+                        <span class="text-xs text-text-tertiary">${formatTime(new Date(comment.create_time * 1000))}</span>
+                    </div>
+                </div>
+                <!-- 第二排：评论内容 -->
+                <div class="text-xs text-text-secondary mt-1 ml-8">${comment.content}</div>
+                ${repliesHtml}
+            </div>
+        `;
+    }
+
+    // 更新移动端"加载更多"按钮状态
+    function updateMobileLoadMoreButton() {
+        const loadMoreBtn = document.getElementById('mobile-load-more-comments');
+        const noMoreDiv = document.getElementById('mobile-no-more-comments');
+
+        // total 是顶级评论的总数，page 是当前页码
+        const loadedTopLevelCount = mobileCommentPage * mobileCommentPageSize;
+        hasMoreMobileComments = loadedTopLevelCount < mobileCommentTotal;
+
+        if (hasMoreMobileComments) {
+            loadMoreBtn.classList.remove('hidden');
+            noMoreDiv.classList.add('hidden');
+        } else {
+            loadMoreBtn.classList.add('hidden');
+            noMoreDiv.classList.remove('hidden');
+        }
+
+        // 调试日志
+        console.log('移动端评论分页状态:', {
+            page: mobileCommentPage,
+            pageSize: mobileCommentPageSize,
+            total: mobileCommentTotal,
+            loadedTopLevelCount: loadedTopLevelCount,
+            hasMoreMobileComments: hasMoreMobileComments
+        });
+    }
+
+    // 加载更多评论（移动端）
+    async function loadMoreMobileComments() {
+        if (!hasMoreMobileComments) return;
+
+        mobileCommentPage++;
+        await loadMobileComments(mobileCommentPage, true);
+    }
+
+    // 取消回复（移动端）
+    function cancelMobileReply() {
+        mobileReplyToInfo = null;
+        const input = document.getElementById('mobile-comment-input');
+        const replyInfo = document.getElementById('mobile-reply-info');
+
+        replyInfo.classList.add('hidden');
+        input.placeholder = '发条评论';
+        input.value = '';
+    }
+
+    // 发送评论（移动端）
+    async function sendMobileComment() {
+        const input = document.getElementById('mobile-comment-input');
+        const content = input.value.trim();
+
+        if (!content) {
+            alert('请输入评论内容');
+            return;
+        }
+
+        try {
+            const requestData = {
+                moment_id: mobileMomentId,
+                content: content
+            };
+
+            // 如果是回复评论，添加 parent_id 和 reply_to_id
+            if (mobileReplyToInfo) {
+                requestData.parent_id = mobileReplyToInfo.parentId || mobileReplyToInfo.id;
+                requestData.reply_to_id = mobileReplyToInfo.id;
+            }
+
+            const response = await fetch('/comments/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            });
+
+            const result = await response.json();
+            if (result.code === 200) {
+                // 取消回复状态
+                cancelMobileReply();
+
+                // 重新加载评论
+                loadMobileComments();
+            } else {
+                alert(result.msg || '评论失败');
+            }
+        } catch (error) {
+            console.error('评论失败:', error);
+            alert('评论失败，请稍后重试');
+        }
+    }
+</script>
+{/block}

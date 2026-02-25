@@ -1,0 +1,308 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加公告 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .bg-modern-white {
+            background-color: #ffffff;
+        }
+        .bg-modern-light {
+            background-color: #f8fafc;
+        }
+        .text-modern-dark {
+            color: #1e293b;
+        }
+        .text-modern-gray {
+            color: #64748b;
+        }
+        .bg-modern-primary {
+            background-color: #3b82f6;
+        }
+        .text-modern-primary {
+            color: #3b82f6;
+        }
+        .bg-modern-secondary {
+            background-color: #2563eb;
+        }
+        .bg-modern-success {
+            background-color: #10b981;
+        }
+        .text-modern-success {
+            color: #10b981;
+        }
+        .bg-modern-gray {
+            background-color: #64748b;
+        }
+        .bg-modern-darkGray {
+            background-color: #475569;
+        }
+        .bg-modern-lightGray {
+            background-color: #e2e8f0;
+        }
+        .border-modern-lightGray {
+            border-color: #e2e8f0;
+        }
+        .shadow-modern {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+        .editor {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            min-height: 200px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        use think\facade\Session;
+        $current_active = 'announcement';
+        if (!isset($admin_name)) {
+            $admin_name = Session::get('admin_name', '管理员');
+        }
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <div class="flex items-center">
+                <h1 class="text-xl font-semibold text-gray-800">添加公告</h1>
+                <a href="/admin/announcement" class="ml-4 text-blue-500 hover:text-blue-700 flex items-center text-sm">
+                    <i class="fas fa-arrow-left mr-1"></i> 返回列表
+                </a>
+            </div>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                <form id="announcementForm">
+                    <div class="grid grid-cols-1 gap-y-6">
+                        <!-- 公告标题 -->
+                        <div>
+                            <label for="title" class="block text-sm font-medium text-modern-dark">公告标题</label>
+                            <input type="text" id="title" name="title" class="mt-1 block w-full px-3 py-2 border border-modern-lightGray rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-modern-primary/20 focus:border-modern-primary sm:text-sm" placeholder="请输入公告标题">
+                        </div>
+
+                        <!-- 公告内容 -->
+                        <div>
+                            <label for="content" class="block text-sm font-medium text-modern-dark">公告内容</label>
+                            <textarea id="content" name="content" class="mt-1 block w-full px-3 py-2 border border-modern-lightGray rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-modern-primary/20 focus:border-modern-primary sm:text-sm editor" placeholder="请输入公告内容"></textarea>
+                        </div>
+
+                        <!-- 发布状态 -->
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-modern-dark">状态</label>
+                                <div class="mt-2 flex items-center space-x-4">
+                                    <div class="flex items-center">
+                                        <input id="status_1" name="status" type="radio" class="h-4 w-4 text-modern-primary focus:ring-modern-primary border-modern-lightGray" value="1" checked>
+                                        <label for="status_1" class="ml-2 block text-sm text-modern-dark">启用</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input id="status_0" name="status" type="radio" class="h-4 w-4 text-modern-primary focus:ring-modern-primary border-modern-lightGray" value="0">
+                                        <label for="status_0" class="ml-2 block text-sm text-modern-dark">禁用</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-modern-dark">是否发布</label>
+                                <div class="mt-2 flex items-center space-x-4">
+                                    <div class="flex items-center">
+                                        <input id="is_publish_1" name="is_publish" type="radio" class="h-4 w-4 text-modern-primary focus:ring-modern-primary border-modern-lightGray" value="1">
+                                        <label for="is_publish_1" class="ml-2 block text-sm text-modern-dark">已发布</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input id="is_publish_0" name="is_publish" type="radio" class="h-4 w-4 text-modern-primary focus:ring-modern-primary border-modern-lightGray" value="0" checked>
+                                        <label for="is_publish_0" class="ml-2 block text-sm text-modern-dark">未发布</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-modern-dark">是否弹窗</label>
+                                <div class="mt-2 flex items-center space-x-4">
+                                    <div class="flex items-center">
+                                        <input id="is_popup_1" name="is_popup" type="radio" class="h-4 w-4 text-modern-primary focus:ring-modern-primary border-modern-lightGray" value="1" checked>
+                                        <label for="is_popup_1" class="ml-2 block text-sm text-modern-dark">弹窗</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input id="is_popup_0" name="is_popup" type="radio" class="h-4 w-4 text-modern-primary focus:ring-modern-primary border-modern-lightGray" value="0">
+                                        <label for="is_popup_0" class="ml-2 block text-sm text-modern-dark">不弹窗</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 发布时间 -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="publish_time" class="block text-sm font-medium text-modern-dark">发布时间</label>
+                                <input type="datetime-local" id="publish_time" name="publish_time" class="mt-1 block w-full px-3 py-2 border border-modern-lightGray rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-modern-primary/20 focus:border-modern-primary sm:text-sm">
+                                <p class="mt-1 text-xs text-modern-gray">留空则立即发布</p>
+                            </div>
+
+                            <!-- 过期时间 -->
+                            <div>
+                                <label for="expire_time" class="block text-sm font-medium text-modern-dark">过期时间</label>
+                                <input type="datetime-local" id="expire_time" name="expire_time" class="mt-1 block w-full px-3 py-2 border border-modern-lightGray rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-modern-primary/20 focus:border-modern-primary sm:text-sm">
+                                <p class="mt-1 text-xs text-modern-gray">留空则永不过期</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="mt-8 flex justify-end space-x-4">
+                        <button type="button" id="cancelBtn" class="px-4 py-2 border border-modern-lightGray rounded-md shadow-sm text-sm font-medium text-modern-dark bg-modern-white hover:bg-modern-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-modern-primary">
+                            取消
+                        </button>
+                        <button type="submit" id="saveBtn" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-modern-primary hover:bg-modern-secondary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-modern-primary">
+                            保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // 取消按钮
+            $('#cancelBtn').click(function() {
+                window.location.href = '/admin/announcement';
+            });
+
+            // 表单提交
+            $('#announcementForm').submit(function(e) {
+                e.preventDefault();
+
+                var data = {
+                    title: $('#title').val(),
+                    content: $('#content').val(),
+                    status: $('input[name="status"]:checked').val(),
+                    is_publish: $('input[name="is_publish"]:checked').val(),
+                    publish_time: $('#publish_time').val(),
+                    expire_time: $('#expire_time').val(),
+                    is_popup: $('input[name="is_popup"]:checked').val()
+                };
+
+                // 验证
+                if (!data.title) {
+                    alert('请输入公告标题');
+                    return;
+                }
+
+                if (!data.content) {
+                    alert('请输入公告内容');
+                    return;
+                }
+
+                // 保存公告
+                $.ajax({
+                    url: '/admin/announcement/save',
+                    type: 'POST',
+                    data: data,
+                    dataType: 'json',
+                    beforeSend: function() {
+                        $('#saveBtn').attr('disabled', true).text('保存中...');
+                    },
+                    success: function(res) {
+                        if (res.code == 200) {
+                            alert('保存成功！');
+                            window.location.href = '/admin/announcement';
+                        } else {
+                            alert('保存失败：' + res.msg);
+                            $('#saveBtn').attr('disabled', false).text('保存');
+                        }
+                    },
+                    error: function() {
+                        alert('网络错误，请重试！');
+                        $('#saveBtn').attr('disabled', false).text('保存');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

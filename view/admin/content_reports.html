@@ -1,0 +1,566 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>举报管理 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        .inline-emoji {
+            width: 16px !important;
+            height: 16px !important;
+            vertical-align: middle;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'reports';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">举报管理</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+                <!-- 统计卡片 -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                                <i class="fas fa-flag text-2xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-gray-600 text-sm">总举报数</p>
+                                <p class="text-2xl font-bold text-gray-800" id="totalReports">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                                <i class="fas fa-clock text-2xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-gray-600 text-sm">待处理</p>
+                                <p class="text-2xl font-bold text-gray-800" id="pendingReports">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-green-100 text-green-600">
+                                <i class="fas fa-check text-2xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-gray-600 text-sm">已处理</p>
+                                <p class="text-2xl font-bold text-gray-800" id="processedReports">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-red-100 text-red-600">
+                                <i class="fas fa-trash text-2xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-gray-600 text-sm">已删除</p>
+                                <p class="text-2xl font-bold text-gray-800" id="deletedReports">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 举报列表 -->
+                <div class="bg-white rounded-lg shadow">
+                    <!-- 筛选栏 -->
+                    <div class="p-4 border-b">
+                        <div class="flex gap-4">
+                            <select id="statusFilter" class="border rounded px-4 py-2" onchange="loadData()">
+                                <option value="">全部状态</option>
+                                <option value="0">待处理</option>
+                                <option value="1">已处理</option>
+                            </select>
+                            <select id="typeFilter" class="border rounded px-4 py-2" onchange="loadData()">
+                                <option value="">全部类型</option>
+                                <option value="1">动态举报</option>
+                                <option value="2">评论举报</option>
+                                <option value="3">用户举报</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 列表 -->
+                    <div id="reportsList" class="divide-y divide-gray-200">
+                        <!-- 加载中 -->
+                        <div class="p-8 text-center text-gray-500">
+                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                            <p>数据加载中...</p>
+                        </div>
+                    </div>
+
+                    <!-- 分页 -->
+                    <div class="p-4 border-t flex justify-between items-center">
+                        <div id="pageInfo" class="text-gray-600"></div>
+                        <div id="pagination" class="flex gap-2"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 处理弹窗 -->
+    <div id="handleModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
+            <div class="p-6 border-b">
+                <h3 class="text-lg font-semibold">处理举报</h3>
+            </div>
+            <div class="p-6">
+                <div id="reportDetail" class="mb-4">
+                    <!-- 举报详情 -->
+                </div>
+                <div class="space-y-4">
+                    <button onclick="handleReport('ignore')" class="w-full py-3 px-4 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                        <i class="fas fa-eye-slash mr-2"></i>忽略举报（不处理）
+                    </button>
+                    <button onclick="handleReport('delete_moment')" class="w-full py-3 px-4 bg-red-500 text-white rounded hover:bg-red-600">
+                        <i class="fas fa-trash mr-2"></i>删除被举报内容
+                    </button>
+                    <button onclick="closeModal()" class="w-full py-3 px-4 border rounded hover:bg-gray-100">
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详情弹窗 -->
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-lg font-semibold">举报详情</h3>
+                <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6" id="detailContent">
+                <!-- 详情内容 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const pageSize = 20;
+        let currentReportId = null;
+
+        // 格式化内容，处理表情图片
+        function formatContent(content) {
+            if (!content) return '';
+            // 处理表情图片，确保它们正确显示
+            return content.replace(/<img[^>]+class\s*=\s*["']inline-emoji["'][^>]*>/gi, function(match) {
+                const srcMatch = match.match(/src\s*=\s*["']([^"']+)["']/);
+                const src = srcMatch ? srcMatch[1] : '';
+                return `<img src="${src}" class="inline-emoji" style="width: 16px; height: 16px; vertical-align: middle; display: inline-block;">`;
+            });
+        }
+
+        // 加载统计数据
+        async function loadStats() {
+            try {
+                const response = await fetch('/admin/content/statistics');
+                const result = await response.json();
+                if (result.code === 200) {
+                    document.getElementById('totalReports').textContent = result.data.total_reports || 0;
+                    document.getElementById('pendingReports').textContent = result.data.pending_reports || 0;
+                    document.getElementById('processedReports').textContent = (result.data.total_reports - result.data.pending_reports) || 0;
+                }
+            } catch (error) {
+                console.error('加载统计数据失败:', error);
+            }
+        }
+
+        // 加载举报列表
+        async function loadData(page = 1) {
+            currentPage = page;
+            const status = document.getElementById('statusFilter').value;
+            const type = document.getElementById('typeFilter').value;
+
+            try {
+                const response = await fetch(`/admin/content/reportsData?page=${page}&status=${status}&type=${type}`);
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    renderReports(result.data.list);
+                    renderPagination(result.data.total, page, pageSize);
+                    updatePageInfo(result.data.total, page, pageSize);
+                } else {
+                    alert('加载数据失败：' + result.msg);
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                alert('网络错误，请稍后重试');
+            }
+        }
+
+        // 渲染举报列表
+        function renderReports(data) {
+            const container = document.getElementById('reportsList');
+            window.reportListData = data;
+
+            if (!data || data.length === 0) {
+                container.innerHTML = `
+                    <div class="p-12 text-center text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-4 text-gray-300"></i>
+                        <p>暂无举报记录</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = data.map(item => `
+                <div class="p-6 hover:bg-gray-50">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center">
+                            <img src="${item.user_avatar || '/static/images/default-avatar.png'}" 
+                                 class="h-10 w-10 rounded-full mr-3" alt="">
+                            <div>
+                                <div class="font-medium text-gray-900">${item.username || item.nickname || '未知用户'}</div>
+                                <div class="text-sm text-gray-500">
+                                    ${new Date(item.create_time * 1000).toLocaleString('zh-CN')}
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            ${item.status === 0
+                                ? '<span class="px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">待处理</span>'
+                                : '<span class="px-3 py-1 text-xs rounded-full bg-green-100 text-green-800">已处理</span>'
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-4 flex gap-8">
+                        <div class="flex-1">
+                            <div class="text-sm font-medium text-gray-700 mb-2">举报类型：</div>
+                            <div class="text-gray-600">${this.getTypeName(item.type) || '-'}</div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm font-medium text-gray-700 mb-2">举报原因：</div>
+                            <div class="text-gray-600">${this.getReasonName(item.reason) || '未填写'}</div>
+                        </div>
+                    </div>
+
+                    ${item.moment_content ? `
+                        <div class="mb-4 bg-gray-50 rounded p-4">
+                            <div class="text-sm font-medium text-gray-700 mb-2">被举报内容：</div>
+                            <div class="text-gray-600 line-clamp-2">${formatContent(item.moment_content)}</div>
+                        </div>
+                    ` : ''}
+
+                    <div class="flex justify-end space-x-2">
+                        ${item.status === 0 ? `
+                            <button onclick="showHandleModal(${item.id})" 
+                                    class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                                <i class="fas fa-cog mr-2"></i>处理
+                            </button>
+                        ` : `
+                            <button onclick="viewDetail(${item.id})" 
+                                    class="px-4 py-2 border rounded hover:bg-gray-100">
+                                查看详情
+                            </button>
+                        `}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 渲染分页
+        function renderPagination(total, current, pageSize) {
+            const totalPages = Math.ceil(total / pageSize);
+            const container = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            if (current > 1) {
+                html += `<button onclick="loadData(${current - 1})" class="px-3 py-1 border rounded hover:bg-gray-100">上一页</button>`;
+            }
+
+            for (let i = Math.max(1, current - 2); i <= Math.min(totalPages, current + 2); i++) {
+                if (i === current) {
+                    html += `<button class="px-3 py-1 border rounded bg-blue-500 text-white">${i}</button>`;
+                } else {
+                    html += `<button onclick="loadData(${i})" class="px-3 py-1 border rounded hover:bg-gray-100">${i}</button>`;
+                }
+            }
+
+            if (current < totalPages) {
+                html += `<button onclick="loadData(${current + 1})" class="px-3 py-1 border rounded hover:bg-gray-100">下一页</button>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // 更新页面信息
+        function updatePageInfo(total, current, pageSize) {
+            const start = (current - 1) * pageSize + 1;
+            const end = Math.min(current * pageSize, total);
+            document.getElementById('pageInfo').textContent = `显示 ${start}-${end} 共 ${total} 条`;
+        }
+
+        // 显示处理弹窗
+        function showHandleModal(reportId) {
+            currentReportId = reportId;
+            const reportData = window.reportListData.find(item => item.id === reportId);
+            
+            if (reportData) {
+                const reportDetail = document.getElementById('reportDetail');
+                reportDetail.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <img src="${reportData.user_avatar || '/static/images/default-avatar.png'}" 
+                                 class="h-8 w-8 rounded-full mr-2" alt="">
+                            <div>
+                                <div class="font-medium text-sm">${reportData.username || reportData.nickname || '未知用户'}</div>
+                                <div class="text-xs text-gray-500">${new Date(reportData.create_time * 1000).toLocaleString('zh-CN')}</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                                <span class="text-gray-500">类型：</span>
+                                <span class="text-gray-700">${getTypeName(reportData.type)}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">原因：</span>
+                                <span class="text-gray-700">${getReasonName(reportData.reason)}</span>
+                            </div>
+                        </div>
+                        ${reportData.moment_content ? `
+                            <div class="text-sm">
+                                <div class="text-gray-500 mb-1">被举报内容：</div>
+                                <div class="bg-gray-50 p-2 rounded text-gray-600 line-clamp-3">${formatContent(reportData.moment_content)}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            document.getElementById('handleModal').classList.remove('hidden');
+        }
+
+        // 关闭弹窗
+        function closeModal() {
+            currentReportId = null;
+            document.getElementById('handleModal').classList.add('hidden');
+        }
+
+        // 处理举报
+        async function handleReport(action) {
+            if (!currentReportId) return;
+
+            try {
+                const response = await fetch('/admin/content/handleReport', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: `id=${currentReportId}&action=${action}`
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    alert('处理成功');
+                    closeModal();
+                    loadData(currentPage);
+                    loadStats();
+                } else {
+                    alert('处理失败：' + result.msg);
+                }
+            } catch (error) {
+                console.error('处理失败:', error);
+                alert('网络错误，请稍后重试');
+            }
+        }
+
+        // 查看详情
+        function viewDetail(reportId) {
+            const reportData = window.reportListData.find(item => item.id === reportId);
+            if (!reportData) {
+                alert('未找到举报记录');
+                return;
+            }
+
+            const detailContent = document.getElementById('detailContent');
+            detailContent.innerHTML = `
+                <div class="space-y-6">
+                    <!-- 举报人信息 -->
+                    <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <img src="${reportData.user_avatar || '/static/images/default-avatar.png'}" 
+                             class="h-12 w-12 rounded-full mr-4" alt="">
+                        <div>
+                            <div class="font-medium text-gray-900">${reportData.username || reportData.nickname || '未知用户'}</div>
+                            <div class="text-sm text-gray-500">
+                                举报时间：${new Date(reportData.create_time * 1000).toLocaleString('zh-CN')}
+                            </div>
+                        </div>
+                        <div class="ml-auto">
+                            ${reportData.status === 0
+                                ? '<span class="px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">待处理</span>'
+                                : '<span class="px-3 py-1 text-xs rounded-full bg-green-100 text-green-800">已处理</span>'
+                            }
+                        </div>
+                    </div>
+
+                    <!-- 举报信息 -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="text-sm font-medium text-gray-700 mb-1">举报类型</div>
+                            <div class="text-gray-600">${getTypeName(reportData.type)}</div>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-gray-700 mb-1">举报原因</div>
+                            <div class="text-gray-600">${getReasonName(reportData.reason)}</div>
+                        </div>
+                    </div>
+
+                    ${reportData.moment_content ? `
+                        <!-- 被举报内容 -->
+                        <div>
+                            <div class="text-sm font-medium text-gray-700 mb-2">被举报内容</div>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <div class="text-gray-600 whitespace-pre-wrap">${formatContent(reportData.moment_content)}</div>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${reportData.handle_time ? `
+                        <!-- 处理信息 -->
+                        <div class="p-4 bg-blue-50 rounded-lg">
+                            <div class="text-sm font-medium text-blue-700 mb-1">
+                                <i class="fas fa-check-circle mr-2"></i>处理时间
+                            </div>
+                            <div class="text-blue-600">${new Date(reportData.handle_time * 1000).toLocaleString('zh-CN')}</div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        // 关闭详情弹窗
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        // 获取类型名称
+        function getTypeName(type) {
+            const typeMap = {
+                '1': '动态举报',
+                '2': '评论举报',
+                '3': '用户举报'
+            };
+            return typeMap[type] || '未知类型';
+        }
+
+        // 获取举报原因名称
+        function getReasonName(reason) {
+            if (!reason) return '';
+            const reasonMap = {
+                'spam': '垃圾信息',
+                'inappropriate': '不当内容',
+                'harassment': '骚扰行为',
+                'other': '其他',
+                '垃圾信息': '垃圾信息',
+                '不当内容': '不当内容',
+                '骚扰行为': '骚扰行为',
+                '其他': '其他'
+            };
+            return reasonMap[reason] || formatContent(reason);
+        }
+
+        // 页面加载
+        loadStats();
+        loadData();
+    </script>
+</body>
+</html>

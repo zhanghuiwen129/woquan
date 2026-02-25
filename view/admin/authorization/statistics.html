@@ -1,0 +1,322 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>授权统计 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .stat-card.blue {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .stat-card.green {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+    .stat-card.red {
+        background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+    }
+    .stat-card.orange {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    .stat-card.purple {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    .stat-card.indigo {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+</style>
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">授权统计分析</h2>
+    <p class="text-modern-gray text-sm mt-1">查看授权数据的详细统计信息</p>
+</div>
+
+<!-- 统计卡片 -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+    <div class="stat-card blue">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm opacity-80">总授权数</p>
+                <p class="text-3xl font-bold mt-1">{$total|default=0}</p>
+            </div>
+            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <i class="fas fa-key text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card green">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm opacity-80">有效授权</p>
+                <p class="text-3xl font-bold mt-1">{$valid|default=0}</p>
+            </div>
+            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <i class="fas fa-check-circle text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card red">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm opacity-80">无效授权</p>
+                <p class="text-3xl font-bold mt-1">{$invalid|default=0}</p>
+            </div>
+            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <i class="fas fa-times-circle text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card orange">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm opacity-80">永久授权</p>
+                <p class="text-3xl font-bold mt-1">{$permanent|default=0}</p>
+            </div>
+            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <i class="fas fa-infinity text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card purple">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm opacity-80">已过期</p>
+                <p class="text-3xl font-bold mt-1">{$expired|default=0}</p>
+            </div>
+            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <i class="fas fa-clock text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card indigo">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm opacity-80">即将过期</p>
+                <p class="text-3xl font-bold mt-1">{$expiring_soon|default=0}</p>
+            </div>
+            <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <i class="fas fa-exclamation-triangle text-2xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- 授权趋势 -->
+    <div class="card rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-modern-dark mb-4 pb-2 border-b">新增授权趋势</h3>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="text-center p-4 bg-modern-light rounded-lg">
+                <p class="text-sm text-modern-gray">最近7天</p>
+                <p class="text-2xl font-bold text-modern-dark mt-1">{$last_7_days|default=0}</p>
+            </div>
+            <div class="text-center p-4 bg-modern-light rounded-lg">
+                <p class="text-sm text-modern-gray">最近30天</p>
+                <p class="text-2xl font-bold text-modern-dark mt-1">{$last_30_days|default=0}</p>
+            </div>
+        </div>
+        <canvas id="trendChart" height="200"></canvas>
+    </div>
+
+    <!-- 按软件统计 -->
+    <div class="card rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-modern-dark mb-4 pb-2 border-b">按软件统计</h3>
+        <div class="space-y-3 max-h-72 overflow-y-auto">
+            {volist name="by_software" id="item"}
+            <div class="flex items-center justify-between p-3 bg-modern-light rounded-lg" data-count="{$item.count}">
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-modern-dark">{$item.software_name}</p>
+                    <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-modern-primary h-2 rounded-full software-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="ml-4 text-right">
+                    <p class="text-lg font-bold text-modern-primary">{$item.count}</p>
+                    <p class="text-xs text-modern-gray software-percent">0%</p>
+                </div>
+            </div>
+            {/volist}
+            {if empty($by_software)}
+            <div class="text-center py-8 text-modern-gray">
+                <i class="fas fa-chart-bar text-4xl mb-3 opacity-50"></i>
+                <p class="text-sm">暂无数据</p>
+            </div>
+            {/if}
+        </div>
+    </div>
+</div>
+
+<!-- 授权状态分布图 -->
+<div class="card rounded-lg p-6">
+    <h3 class="text-lg font-semibold text-modern-dark mb-4 pb-2 border-b">授权状态分布</h3>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+            <canvas id="statusChart" height="250"></canvas>
+        </div>
+        <div>
+            <canvas id="typeChart" height="250"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- 快捷操作 -->
+<div class="card rounded-lg p-6 mt-6">
+    <h3 class="text-lg font-semibold text-modern-dark mb-4 pb-2 border-b">快捷操作</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href="/admin/authorization/add" class="flex items-center gap-3 p-4 bg-modern-light rounded-lg hover:bg-modern-primary/10 transition-colors">
+            <div class="w-10 h-10 bg-modern-primary rounded-full flex items-center justify-center">
+                <i class="fas fa-plus text-white"></i>
+            </div>
+            <div>
+                <p class="font-medium text-modern-dark">新增授权</p>
+                <p class="text-xs text-modern-gray">创建单个授权码</p>
+            </div>
+        </a>
+        <a href="/admin/authorization/batch" class="flex items-center gap-3 p-4 bg-modern-light rounded-lg hover:bg-modern-primary/10 transition-colors">
+            <div class="w-10 h-10 bg-modern-success rounded-full flex items-center justify-center">
+                <i class="fas fa-magic text-white"></i>
+            </div>
+            <div>
+                <p class="font-medium text-modern-dark">批量生成</p>
+                <p class="text-xs text-modern-gray">一次性生成多个</p>
+            </div>
+        </a>
+        <a href="/admin/authorization" class="flex items-center gap-3 p-4 bg-modern-light rounded-lg hover:bg-modern-primary/10 transition-colors">
+            <div class="w-10 h-10 bg-modern-primary rounded-full flex items-center justify-center">
+                <i class="fas fa-list text-white"></i>
+            </div>
+            <div>
+                <p class="font-medium text-modern-dark">授权列表</p>
+                <p class="text-xs text-modern-gray">查看所有授权</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- JavaScript 实现 -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    window.authStats = {
+        total: {$total|default=0},
+        valid: {$valid|default=0},
+        invalid: {$invalid|default=0},
+        permanent: {$permanent|default=0},
+        expired: {$expired|default=0}
+    };
+
+    const trendCtx = document.getElementById('trendChart');
+    if (trendCtx) {
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: {$trend_labels|raw|default='[]'},
+                datasets: [{
+                    label: '新增授权数',
+                    data: {$trend_data|raw|default='[]'},
+                    borderColor: '#60a5fa',
+                    backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const statusCtx = document.getElementById('statusChart');
+    if (statusCtx) {
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['有效', '无效', '已过期', '即将过期'],
+                datasets: [{
+                    data: [window.authStats.valid, window.authStats.invalid, window.authStats.expired, {$expiring_soon|default=0}],
+                    backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#8b5cf6'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    const typeCtx = document.getElementById('typeChart');
+    if (typeCtx) {
+        new Chart(typeCtx, {
+            type: 'pie',
+            data: {
+                labels: ['永久授权', '临时授权'],
+                datasets: [{
+                    data: [window.authStats.permanent, window.authStats.total - window.authStats.permanent],
+                    backgroundColor: ['#8b5cf6', '#60a5fa'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    const softwareItems = document.querySelectorAll('[data-count]');
+    const maxCount = Math.max(...Array.from(softwareItems).map(item => parseInt(item.dataset.count) || 0));
+
+    softwareItems.forEach(item => {
+        const count = parseInt(item.dataset.count) || 0;
+        const progress = maxCount > 0 ? (count / maxCount * 100).toFixed(1) : 0;
+        const progressBar = item.querySelector('.software-progress');
+        const percentText = item.querySelector('.software-percent');
+
+        if (progressBar) {
+            progressBar.style.width = progress + '%';
+        }
+        if (percentText) {
+            percentText.textContent = progress + '%';
+        }
+    });
+});
+</script>
+{/block}

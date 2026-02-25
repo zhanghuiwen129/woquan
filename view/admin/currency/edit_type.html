@@ -1,0 +1,129 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>编辑货币类型 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">编辑货币/积分类型</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        修改现有的货币或积分类型
+    </p>
+</div>
+
+<!-- 操作按钮 -->
+<div class="card rounded-lg p-4 mb-6">
+    <a href="/admin/currency" class="px-4 py-2 bg-modern-gray text-white text-sm rounded-md hover:bg-modern-darkGray transition-colors flex items-center gap-2">
+        <i class="fas fa-arrow-left"></i>
+        <span>返回列表</span>
+    </a>
+</div>
+
+<!-- 编辑表单 -->
+<div class="card rounded-lg p-6 max-w-3xl">
+    <form id="currencyForm">
+        <input type="hidden" name="id" value="{$currencyType.id}">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <!-- 基本信息 -->
+            <div>
+                <h3 class="text-lg font-medium text-modern-dark mb-4">基本信息</h3>
+                <div class="mb-4">
+                    <label class="block text-sm text-modern-gray mb-2">
+                        货币名称 <span class="text-modern-danger">*</span>
+                    </label>
+                    <input type="text" name="name" value="{$currencyType.name}" placeholder="如：金币、积分、钻石" 
+                           class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-modern-gray mb-2">
+                        货币符号 <span class="text-modern-danger">*</span>
+                    </label>
+                    <input type="text" name="symbol" value="{$currencyType.symbol}" placeholder="如：💰、🪙、💎" 
+                           class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-modern-gray mb-2">描述</label>
+                    <textarea name="description" rows="3" placeholder="请输入货币描述" 
+                              class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary resize-none">{$currencyType.description}</textarea>
+                </div>
+            </div>
+
+            <!-- 设置 -->
+            <div>
+                <h3 class="text-lg font-medium text-modern-dark mb-4">设置</h3>
+                <div class="mb-4">
+                    <label class="block text-sm text-modern-gray mb-2">排序</label>
+                    <input type="number" name="sort" value="{$currencyType.sort}" placeholder="0"
+                           class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+                    <p class="text-xs text-modern-gray mt-2">数字越小越靠前</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-modern-gray mb-2">状态</label>
+                    <select name="status" 
+                            class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+                        <option value="1" {$currencyType.status == 1 ? 'selected' : ''}>启用</option>
+                        <option value="0" {$currencyType.status == 0 ? 'selected' : ''}>禁用</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-modern-gray mb-2">主要货币</label>
+                    <div class="flex items-center gap-3">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="is_primary" value="1" {$currencyType.is_primary ? 'checked' : ''}
+                                   class="w-4 h-4 rounded border-modern-lightGray text-modern-primary focus:ring-modern-primary">
+                            <span class="text-sm text-modern-dark">设置为主要货币</span>
+                        </label>
+                    </div>
+                    <p class="text-xs text-modern-gray mt-2">系统中只能有一个主要货币，设置后会自动取消其他货币的主要货币状态</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="flex justify-end gap-4 pt-4 border-t border-modern-lightGray">
+            <a href="/admin/currency" class="px-5 py-2 bg-modern-lightGray text-modern-gray rounded-md hover:bg-gray-300 transition-colors flex items-center gap-2">
+                <i class="fas fa-arrow-left"></i>
+                <span>返回列表</span>
+            </a>
+            <button type="submit" class="px-5 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern flex items-center gap-2">
+                <i class="fas fa-save"></i>
+                <span>保存修改</span>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script>
+$('#currencyForm').submit(function(e) {
+    e.preventDefault();
+    
+    var data = $(this).serialize();
+    
+    $.ajax({
+        url: '/admin/currency/updateType',
+        type: 'POST',
+        data: data,
+        dataType: 'json',
+        beforeSend: function() {
+            $('button[type="submit"]').attr('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>保存中...');
+        },
+        success: function(res) {
+            if (res.code == 200) {
+                alert('更新成功！');
+                window.location.href = '/admin/currency';
+            } else {
+                alert('更新失败：' + res.msg);
+            }
+        },
+        error: function() {
+            alert('网络错误，请重试！');
+        },
+        complete: function() {
+            $('button[type="submit"]').attr('disabled', false).html('<i class="fas fa-save mr-2"></i>保存修改');
+        }
+    });
+});
+</script>
+{/block}

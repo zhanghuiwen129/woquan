@@ -1,0 +1,70 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>热门搜索 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">热门搜索</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        用户搜索最多的关键词排行榜
+    </p>
+</div>
+
+<!-- 热门搜索榜单 -->
+<div class="card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">排名</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">关键词</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">搜索次数</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">最后搜索时间</th>
+                </tr>
+            </thead>
+            <tbody>
+                {volist name="hotKeywords" id="item" key="k"}
+                <tr class="hover:bg-modern-light/50 transition-colors">
+                    <td class="py-4 px-6">
+                        {if $k <= 3}
+                        <span class="w-8 h-8 inline-flex items-center justify-center rounded-full
+                            {if $k == 1}bg-gradient-to-r from-yellow-400 to-yellow-500 text-white{/if}
+                            {if $k == 2}bg-gradient-to-r from-gray-300 to-gray-400 text-white{/if}
+                            {if $k == 3}bg-gradient-to-r from-orange-400 to-orange-500 text-white{/if}
+                            font-bold">{$k}</span>
+                        {else/}
+                        <span class="w-8 h-8 inline-flex items-center justify-center rounded-full bg-modern-light text-modern-gray font-medium">{$k}</span>
+                        {/if}
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="text-sm font-medium text-modern-dark">{$item.keyword}</span>
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">{$item.count}</span>
+                    </td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">
+                        {$item.last_search_time ? date('Y-m-d H:i:s', $item.last_search_time) : '-'}
+                    </td>
+                </tr>
+                {/volist}
+                {if $hotKeywords->count() == 0}
+                <tr>
+                    <td colspan="4" class="px-6 py-12 text-center text-modern-gray">暂无热门搜索数据</td>
+                </tr>
+                {/if}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 快捷操作 -->
+<div class="flex items-center gap-4 mt-6">
+    <a href="/admin/search" class="px-4 py-2 bg-modern-light border border-modern-lightGray text-modern-gray rounded-md hover:border-modern-primary transition-colors">
+        <i class="fas fa-list mr-1"></i>搜索日志
+    </a>
+    <a href="/admin/search/history" class="px-4 py-2 bg-modern-light border border-modern-lightGray text-modern-gray rounded-md hover:border-modern-primary transition-colors">
+        <i class="fas fa-history mr-1"></i>搜索历史
+    </a>
+</div>
+{/block}

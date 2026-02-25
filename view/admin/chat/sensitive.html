@@ -1,0 +1,289 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>敏感词监控 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .bg-modern-white {
+            background-color: #ffffff;
+        }
+        .bg-modern-light {
+            background-color: #f8fafc;
+        }
+        .text-modern-dark {
+            color: #1e293b;
+        }
+        .text-modern-gray {
+            color: #64748b;
+        }
+        .bg-modern-primary {
+            background-color: #3b82f6;
+        }
+        .text-modern-primary {
+            color: #3b82f6;
+        }
+        .bg-modern-secondary {
+            background-color: #2563eb;
+        }
+        .bg-modern-success {
+            background-color: #10b981;
+        }
+        .text-modern-success {
+            color: #10b981;
+        }
+        .bg-modern-gray {
+            background-color: #64748b;
+        }
+        .bg-modern-darkGray {
+            background-color: #475569;
+        }
+        .bg-modern-lightGray {
+            background-color: #e2e8f0;
+        }
+        .border-modern-lightGray {
+            border-color: #e2e8f0;
+        }
+        .shadow-modern {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'chat';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">敏感词监控</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-modern-dark">敏感词监控</h2>
+                <p class="text-modern-gray text-sm mt-1">监控敏感内容</p>
+            </div>
+
+            <!-- 搜索栏 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-5 mb-6">
+                <form action="" method="get" class="flex flex-wrap items-center gap-4">
+                    <!-- 关键词搜索 -->
+                    <div class="flex-1 min-w-[200px]">
+                        <input type="text" name="keyword" value="<?php echo isset($keyword) ? $keyword : ''; ?>"
+                               placeholder="搜索敏感内容"
+                               class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                    </div>
+
+                    <!-- 状态筛选 -->
+                    <div class="min-w-[140px]">
+                        <select name="status"
+                                class="w-full bg-modern-light border border-modern-lightGray rounded-lg px-4 py-2 text-sm text-modern-dark focus:outline-none focus:border-modern-primary focus:ring-2 focus:ring-modern-primary/20 transition-all">
+                            <option value="-1" <?php echo isset($status) && $status == '-1' ? 'selected' : ''; ?>>全部状态</option>
+                            <option value="0" <?php echo isset($status) && $status === '0' ? 'selected' : ''; ?>>待处理</option>
+                            <option value="1" <?php echo isset($status) && $status == '1' ? 'selected' : ''; ?>>已忽略</option>
+                        </select>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="flex gap-3">
+                        <button type="submit" class="px-5 py-2 bg-modern-primary text-white text-sm rounded-lg hover:bg-modern-secondary transition-colors shadow-sm">
+                            <i class="fas fa-search mr-1"></i>搜索
+                        </button>
+                        <a href="/admin/chat/sensitive" class="px-5 py-2 bg-modern-gray text-white text-sm rounded-lg hover:bg-modern-darkGray transition-colors shadow-sm">
+                            <i class="fas fa-redo mr-1"></i>重置
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 敏感词列表 -->
+            <div class="bg-modern-white rounded-lg shadow-modern overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-modern-light border-b border-modern-lightGray">
+                        <tr>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold w-[80px]">ID</th>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold">敏感内容</th>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold w-[80px]">状态</th>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold w-[140px]">检测时间</th>
+                            <th class="py-3 px-3 text-left text-modern-gray font-semibold w-[140px]">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($sensitiveMessages)): ?>
+                        <tr class="border-b border-modern-lightGray">
+                            <td colspan="5" class="py-12 text-center text-modern-gray">
+                                <i class="fas fa-shield-alt text-4xl text-modern-lightGray mb-3"></i>
+                                <p class="text-sm">暂无敏感词数据</p>
+                            </td>
+                        </tr>
+                        <?php else: foreach ($sensitiveMessages as $msg): ?>
+                        <tr class="border-b border-modern-lightGray hover:bg-modern-light transition-colors">
+                            <td class="py-3 px-3 text-modern-dark text-xs whitespace-nowrap">
+                                <?php echo $msg['id']; ?>
+                            </td>
+                            <td class="py-3 px-3">
+                                <div class="text-modern-gray text-sm truncate max-w-xs" title="<?php echo htmlspecialchars($msg['content'] ?? ''); ?>">
+                                    <?php echo htmlspecialchars($msg['content'] ?? ''); ?>
+                                </div>
+                            </td>
+                            <td class="py-3 px-3 whitespace-nowrap">
+                                <span class="px-2.5 py-1 text-xs font-medium rounded-full <?php echo $msg['status'] ? 'bg-modern-success/10 text-modern-success' : 'bg-red-100 text-red-600'; ?>">
+                                    <?php echo $msg['status'] ? '已忽略' : '待处理'; ?>
+                                </span>
+                            </td>
+                            <td class="py-3 px-3 text-modern-dark text-xs whitespace-nowrap">
+                                <?php echo date('Y-m-d H:i', $msg['create_time']); ?>
+                            </td>
+                            <td class="py-3 px-3">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <?php if (!$msg['status']): ?>
+                                    <a href="javascript:void(0);"
+                                       class="ignore-sensitive px-2 py-1 bg-modern-success/10 text-modern-success hover:bg-modern-success hover:text-white cursor-pointer text-xs rounded transition-colors"
+                                       data-id="<?php echo $msg['id']; ?>"
+                                       title="忽略">
+                                        忽略
+                                    </a>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+
+                <!-- 分页 -->
+                <?php if (isset($sensitiveMessages) && $sensitiveMessages->total() > $sensitiveMessages->listRows()): ?>
+                <div class="px-5 py-4 border-t border-modern-lightGray flex justify-center bg-modern-light">
+                    <nav class="flex items-center justify-between" aria-label="Pagination">
+                        <div class="flex items-center gap-2">
+                            <p class="text-sm text-modern-gray">
+                                显示第 <span class="font-semibold text-modern-dark"><?php echo $sensitiveMessages->currentPage(); ?></span> 页，
+                                共 <span class="font-semibold text-modern-dark"><?php echo $sensitiveMessages->lastPage(); ?></span> 页
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <?php if ($sensitiveMessages->currentPage() > 1): ?>
+                            <a href="<?php echo $sensitiveMessages->previousPageUrl(); ?>" class="px-4 py-2 border border-modern-lightGray text-sm font-medium rounded-md text-modern-dark bg-modern-white hover:bg-modern-light transition-colors">
+                                上一页
+                            </a>
+                            <?php endif; ?>
+                            <?php if ($sensitiveMessages->currentPage() < $sensitiveMessages->lastPage()): ?>
+                            <a href="<?php echo $sensitiveMessages->nextPageUrl(); ?>" class="px-4 py-2 border border-modern-lightGray text-sm font-medium rounded-md text-modern-dark bg-modern-white hover:bg-modern-light transition-colors">
+                                下一页
+                            </a>
+                            <?php endif; ?>
+                        </div>
+                    </nav>
+                </div>
+                <?php endif; ?>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 忽略敏感词
+        $('.ignore-sensitive').click(function() {
+            var id = $(this).data('id');
+            if (confirm('确定要忽略该敏感词吗？')) {
+                $.ajax({
+                    url: '/admin/chat/ignoreSensitive',
+                    type: 'POST',
+                    data: { id: id },
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.code == 200) {
+                            alert('操作成功！');
+                            window.location.reload();
+                        } else {
+                            alert('操作失败：' + res.msg);
+                        }
+                    },
+                    error: function() {
+                        alert('网络错误，请重试！');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

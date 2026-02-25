@@ -1,0 +1,117 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="content"}
+<style>
+    .favorite-item {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s;
+    }
+
+    .favorite-item:hover {
+        box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .favorite-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        object-fit: cover;
+    }
+
+    .favorite-time {
+        font-size: 12px;
+        color: var(--text-tertiary);
+    }
+</style>
+
+<!-- 收藏列表 - 使用PHP渲染的数据 -->
+{if isset($favorites) && count($favorites) > 0}
+<div id="favorites-list" class="space-y-4">
+    {volist name="favorites" id="item"}
+    <div class="favorite-item">
+        <a href="/card/{$item.user_id}" class="flex items-center gap-3">
+            <img src="{$item.avatar|default='/static/images/default-avatar.png'}" alt="头像" class="favorite-avatar">
+            <div class="flex-1">
+                <h3 class="font-semibold text-gray-800">{$item.nickname|default=$item.username}</h3>
+                <p class="text-sm text-gray-500 truncate">{$item.bio|default='暂无个性签名'}</p>
+            </div>
+        </a>
+    </div>
+    {/volist}
+</div>
+{else}
+<div id="empty" class="text-center py-16">
+    <div class="w-24 h-24 bg-lightBlue rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fa fa-star text-4xl text-primary"></i>
+    </div>
+    <h2 class="text-xl font-bold text-gray-800 mb-2">暂无收藏</h2>
+    <p class="text-gray-500 mb-4">快去发现有趣的内容吧</p>
+    <a href="/discover" class="inline-block bg-primary text-white px-6 py-2 rounded-full hover:bg-secondary transition-colors">
+        去发现
+    </a>
+</div>
+{/if}
+{/block}
+
+{block name="contentMobile"}
+<style>
+    .favorite-item {
+        background: white;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s;
+    }
+
+    .favorite-item:hover {
+        box-shadow: 0 4px 10px rgba(74, 144, 226, 0.15);
+        transform: translateY(-1px);
+    }
+
+    .favorite-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        object-fit: cover;
+    }
+
+    .favorite-time {
+        font-size: 11px;
+        color: var(--text-tertiary);
+    }
+</style>
+
+<!-- 收藏列表 - 使用PHP渲染的数据 -->
+{if isset($favorites) && count($favorites) > 0}
+<div id="mobile-favorites-list" class="space-y-3">
+    {volist name="favorites" id="item"}
+    <div class="favorite-item">
+        <a href="/card/{$item.user_id}" class="flex items-center gap-3">
+            <img src="{$item.avatar|default='/static/images/default-avatar.png'}" alt="头像" class="favorite-avatar">
+            <div class="flex-1 min-w-0">
+                <h3 class="font-semibold text-gray-800 text-sm truncate">{$item.nickname|default=$item.username}</h3>
+                <p class="text-xs text-gray-500 truncate">{$item.bio|default='暂无个性签名'}</p>
+            </div>
+        </a>
+    </div>
+    {/volist}
+</div>
+{else}
+<div id="mobile-empty" class="text-center py-16">
+    <div class="w-20 h-20 bg-lightBlue rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fa fa-star text-3xl text-primary"></i>
+    </div>
+    <h2 class="text-lg font-bold text-gray-800 mb-2">暂无收藏</h2>
+    <p class="text-gray-500 text-sm mb-4">快去发现有趣的内容吧</p>
+    <a href="/discover" class="inline-block bg-primary text-white px-5 py-2 rounded-full hover:bg-secondary transition-colors text-sm">
+        去发现
+    </a>
+</div>
+{/if}
+{/block}

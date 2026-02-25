@@ -1,0 +1,854 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="content"}
+<!-- 存储当前用户信息到JavaScript变量 -->
+<script>
+    window.currentUserInfo = <?php echo isset($isLogin) && $isLogin && $currentUser ? json_encode([
+        'id' => $currentUser['id'] ?? '',
+        'username' => $currentUser['username'] ?? '',
+        'nickname' => $currentUser['nickname'] ?? '',
+        'avatar' => $currentUser['avatar'] ?? '/static/images/default-avatar.png'
+    ]) : 'null'; ?>;
+    window.otherUserInfo = <?php echo isset($otherUser) ? json_encode([
+        'id' => $otherUser['id'] ?? '',
+        'nickname' => $otherUser['nickname'] ?? '用户',
+        'avatar' => $otherUser['avatar'] ?? '/static/images/default-avatar.png',
+        'level' => $otherUser['level'] ?? 0,
+        'bio' => $otherUser['bio'] ?? ''
+    ]) : 'null'; ?>;
+</script>
+
+<style>
+    .message-container { position: relative; }
+    .message-content { position: relative; }
+    .message-status { position: absolute; right: -20px; bottom: 2px; font-size: 10px; }
+    .typing-indicator { animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+    .context-menu { position: absolute; background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.15); z-index: 100; overflow: hidden; }
+    .context-menu-item { padding: 10px 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s; }
+    .context-menu-item:hover { background: #f5f5f5; }
+    .reply-preview { background: #f0f0f0; border-left: 3px solid #007bff; padding: 8px 12px; margin-bottom: 8px; border-radius: 4px; }
+    .reply-preview .reply-content { font-size: 12px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .long-press { user-select: none; -webkit-user-select: none; }
+</style>
+
+<!-- 主内容区 -->
+<main class="container mx-auto px-4 py-6 max-w-4xl">
+    <!-- 聊天头部 -->
+    <div class="flex items-center justify-between mb-6 bg-white rounded-xl shadow-sm p-4">
+        <div class="flex items-center">
+            <a href="/messages" class="mr-3 text-gray-500 hover:text-gray-700">
+                <i class="fa fa-arrow-left"></i>
+            </a>
+            <img src="<?php echo $otherUser['avatar'] ?? '/static/images/default-avatar.png'; ?>" alt="用户头像" class="w-10 h-10 rounded-full object-cover mr-3">
+            <div>
+                <div class="font-medium"><?php echo $otherUser['nickname'] ?? '用户'; ?></div>
+                <div class="text-xs text-gray-500 flex items-center gap-1">
+                    等级 <?php echo $otherUser['level'] ?? 0; ?>
+                    <span id="online-status" class="typing-indicator" style="display: none;">● 在线</span>
+                    <span id="typing-indicator" class="typing-indicator" style="display: none; color: #007bff;">正在输入...</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="/card/<?php echo $otherUser['id'] ?? 0; ?>" class="text-gray-500 hover:text-gray-700">
+                <i class="fa fa-user"></i>
+            </a>
+            <button class="text-gray-500 hover:text-gray-700" onclick="showChatOptions()">
+                <i class="fa fa-ellipsis-v"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 聊天内容区 -->
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-6 h-[60vh] overflow-y-auto" id="chat-content">
+        <div class="text-center py-8 text-gray-500">
+            <i class="fa fa-spinner fa-spin text-xl mb-2"></i>
+            <p>加载中...</p>
+        </div>
+    </div>
+
+    <!-- 引用回复预览 -->
+    <div id="reply-preview" class="hidden bg-white rounded-xl shadow-sm p-3 mb-3 mx-4">
+        <div class="flex items-center justify-between">
+            <div class="reply-preview flex-1">
+                <div class="text-xs text-gray-500 mb-1">回复: <span id="reply-author"></span></div>
+                <div id="reply-content" class="reply-content text-sm text-gray-700"></div>
+            </div>
+            <button onclick="cancelReply()" class="text-gray-400 hover:text-gray-600 ml-2">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 消息输入区 -->
+    <div class="bg-white rounded-xl shadow-sm p-4">
+        <div class="flex items-center gap-3">
+            <div class="relative">
+                <button id="emoji-button" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-smile-o"></i>
+                </button>
+                <div id="emoji-picker" class="hidden absolute bottom-12 left-0 bg-white rounded-lg shadow-xl border border-gray-200 p-3 z-50 w-80">
+                    <div class="grid grid-cols-8 gap-2 max-h-60 overflow-y-auto">
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('😀')">😀</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('😁')">😁</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('😂')">😂</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('🤣')">🤣</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('😊')">😊</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('😍')">😍</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('🥰')">🥰</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('😘')">😘</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('😎')">😎</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('🤔')">🤔</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('😴')">😴</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('😢')">😢</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('😭')">😭</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('😤')">😤</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('😱')">😱</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('👍')">👍</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('👎')">👎</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('👏')">👏</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('🙏')">🙏</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('💪')">💪</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('❤️')">❤️</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('💔')">💔</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('🎉')">🎉</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('🔥')">🔥</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('✨')">✨</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('⭐')">⭐</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('🌟')">🌟</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('💯')">💯</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('🎁')">🎁</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('👋')">👋</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('🤝')">🤝</button>
+                        <button class="emoji-btn text-2xl hover:bg-gray-100 rounded p-1" onclick="insertEmoji('🙌')">🙌</button>
+                    </div>
+                </div>
+            </div>
+            <div class="relative">
+                <button class="text-gray-500 hover:text-gray-700" onclick="document.getElementById('file-input').click()">
+                    <i class="fa fa-picture-o"></i>
+                </button>
+                <input type="file" id="file-input" accept="image/*" hidden onchange="handleFileUpload(event)">
+            </div>
+            <div class="flex-1">
+                <input type="text" id="message-input" placeholder="输入消息..." class="w-full px-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+            </div>
+            <button id="send-button" class="bg-primary text-white px-4 py-2 rounded-full hover:bg-primary/90 transition-colors">
+                <i class="fa fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</main>
+
+<!-- 右键菜单 -->
+<div id="context-menu" class="context-menu hidden">
+    <div class="context-menu-item" onclick="handleMenuAction('copy')">
+        <i class="fa fa-copy text-gray-500"></i> 复制
+    </div>
+    <div class="context-menu-item" onclick="handleMenuAction('reply')">
+        <i class="fa fa-reply text-blue-500"></i> 回复
+    </div>
+    <div class="context-menu-item" onclick="handleMenuAction('forward')">
+        <i class="fa fa-share text-green-500"></i> 转发
+    </div>
+    <div class="context-menu-item" onclick="handleMenuAction('delete')">
+        <i class="fa fa-trash text-red-500"></i> 删除
+    </div>
+</div>
+
+<script src="/static/js/websocket-client.js"></script>
+<script>
+    // 获取当前用户ID和对方用户ID
+    if (typeof window.CHAT_USER_ID === 'undefined') {
+        if (window.currentUserInfo && window.currentUserInfo.id) {
+            window.CHAT_USER_ID = parseInt(window.currentUserInfo.id);
+        } else {
+            window.location.href = '/login';
+            return;
+        }
+    }
+    const CURRENT_USER_ID = window.CHAT_USER_ID;
+    const OTHER_USER_ID = window.otherUserInfo ? parseInt(window.otherUserInfo.id) : null;
+
+    // 轮询定时器
+    let pollingTimer = null;
+
+    // 当前回复的消息ID
+    let currentReplyId = null;
+    let selectedMessage = null;
+
+    // 长按检测
+    let longPressTimer = null;
+    let isLongPress = false;
+
+    // 消息状态映射
+    const messageStates = {
+        'sending': '<i class="fa fa-spinner fa-spin" style="color: #999;"></i>',
+        'sent': '<i class="fa fa-check" style="color: #999;"></i>',
+        'read': '<i class="fa fa-check-double" style="color: #007bff;"></i>',
+        'failed': '<i class="fa fa-exclamation-circle" style="color: #ff4d4f;"></i>'
+    };
+
+    // 页面加载完成后获取数据
+    window.addEventListener('DOMContentLoaded', function() {
+        if (!OTHER_USER_ID) {
+            window.location.href = '/messages';
+            return;
+        }
+
+        loadChatHistory();
+
+        document.getElementById('send-button').addEventListener('click', sendMessage);
+
+        document.getElementById('message-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+            // 发送正在输入状态
+            sendTypingStatus(true);
+        });
+
+        document.getElementById('message-input').addEventListener('input', function() {
+            sendTypingStatus(true);
+        });
+
+        // 停止输入检测
+        let typingTimeout;
+        document.getElementById('message-input').addEventListener('keyup', function() {
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => sendTypingStatus(false), 1000);
+        });
+
+        document.getElementById('emoji-button').addEventListener('click', function(e) {
+            e.stopPropagation();
+            document.getElementById('emoji-picker').classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', function(e) {
+            const picker = document.getElementById('emoji-picker');
+            const button = document.getElementById('emoji-button');
+            const menu = document.getElementById('context-menu');
+            if (!picker.contains(e.target) && !button.contains(e.target)) {
+                picker.classList.add('hidden');
+            }
+            if (!menu.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        startPolling();
+
+        // 初始化WebSocket
+        if (typeof wsClient !== 'undefined') {
+            wsClient.on('new_message', handleNewMessage);
+            wsClient.on('typing', handleTyping);
+            wsClient.on('messages_read', handleMessagesRead);
+            wsClient.on('message_recalled', handleMessageRecalled);
+            wsClient.connect(CURRENT_USER_ID);
+        }
+    });
+
+    window.addEventListener('beforeunload', stopPolling);
+
+    function startPolling() {
+        if (pollingTimer) return;
+
+        pollingTimer = setInterval(async () => {
+            const container = document.getElementById('chat-content');
+            const lastMessage = container.lastElementChild;
+            const lastTime = lastMessage?.dataset?.time || 0;
+
+            try {
+                const response = await fetch(`/api/v1/messages/getNewMessages?user_id=${OTHER_USER_ID}&since=${lastTime}`);
+                const result = await response.json();
+
+                if (result.code === 200 && result.data.length > 0) {
+                    result.data.forEach(msg => {
+                        const element = createMessageElement(msg);
+                        element.dataset.time = msg.create_time;
+                        container.appendChild(element);
+                    });
+                    container.scrollTop = container.scrollHeight;
+                }
+            } catch (error) {
+                console.error('轮询新消息失败:', error);
+            }
+        }, 3000);
+    }
+
+    function stopPolling() {
+        if (pollingTimer) {
+            clearInterval(pollingTimer);
+            pollingTimer = null;
+        }
+    }
+
+    function insertEmoji(emoji) {
+        const input = document.getElementById('message-input');
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        input.value = input.value.substring(0, start) + emoji + input.value.substring(end);
+        input.focus();
+        input.setSelectionRange(start + emoji.length, start + emoji.length);
+        document.getElementById('emoji-picker').classList.add('hidden');
+    }
+
+    function loadChatHistory(page = 1) {
+        const container = document.getElementById('chat-content');
+
+        fetch(`/api/v1/messages/getChatHistory?user_id=${OTHER_USER_ID}&page=${page}`)
+            .then(res => res.json())
+            .then(result => {
+                if (result.code === 200) {
+                    const { messages } = result.data;
+
+                    if (messages.length > 0) {
+                        container.innerHTML = '';
+                        messages.forEach(message => {
+                            const messageElement = createMessageElement(message);
+                            container.appendChild(messageElement);
+                        });
+                        container.scrollTop = container.scrollHeight;
+                    } else {
+                        container.innerHTML = `
+                            <div class="text-center py-12 text-gray-500">
+                                <i class="fa fa-comments-o text-4xl mb-3"></i>
+                                <p>暂无聊天记录</p>
+                            </div>
+                        `;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('加载聊天记录失败:', error);
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        <i class="fa fa-exclamation-circle text-xl mb-2"></i>
+                        <p>加载失败,请稍后重试</p>
+                    </div>
+                `;
+            });
+    }
+
+    function createMessageElement(message) {
+        const div = document.createElement('div');
+        const isCurrentUser = message.sender_id == CURRENT_USER_ID;
+
+        div.className = `flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-4 message-container long-press`;
+        div.dataset.messageId = message.id;
+
+        const avatarUrl = isCurrentUser
+            ? (window.currentUserInfo?.avatar || '/static/images/default-avatar.png')
+            : (window.otherUserInfo?.avatar || '/static/images/default-avatar.png');
+
+        const time = new Date(message.create_time * 1000);
+        const timeText = time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+
+        if (message.is_recalled == 1) {
+            div.innerHTML = `
+                ${!isCurrentUser ? `<img src="${avatarUrl}" alt="用户头像" class="w-8 h-8 rounded-full object-cover mr-2 self-end">` : ''}
+                <div class="max-w-[70%]">
+                    <div class="bg-gray-100 text-gray-400 rounded-lg p-3 shadow-sm text-sm">
+                        <i class="fa fa-undo"></i> 消息已撤回
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1 ${isCurrentUser ? 'text-right' : 'text-left'}">${timeText}</div>
+                </div>
+                ${isCurrentUser ? `<img src="${avatarUrl}" alt="用户头像" class="w-8 h-8 rounded-full object-cover ml-2 self-end">` : ''}
+            `;
+            return div;
+        }
+
+        let contentHtml = '';
+        if (message.message_type == 2 && message.file_url) {
+            contentHtml = `<img src="${message.file_url}" alt="图片" class="max-w-full rounded-lg cursor-pointer" onclick="window.open('${message.file_url}', '_blank')">`;
+        } else {
+            contentHtml = message.content || '';
+        }
+
+        // 引用回复预览
+        let replyHtml = '';
+        if (message.reply_to_id > 0 && message.reply_to) {
+            const reply = message.reply_to;
+            const replyAuthor = reply.sender_id == CURRENT_USER_ID ? '我' : (window.otherUserInfo?.nickname || '对方');
+            replyHtml = `
+                <div class="reply-preview">
+                    <div class="text-xs text-gray-500">回复: ${replyAuthor}</div>
+                    <div class="reply-content">${reply.content || '[图片]'}</div>
+                </div>
+            `;
+        }
+
+        const currentTime = Math.floor(Date.now() / 1000);
+        const canRecall = isCurrentUser && (currentTime - message.create_time) <= 120;
+
+        div.innerHTML = `
+            ${!isCurrentUser ? `<img src="${avatarUrl}" alt="用户头像" class="w-8 h-8 rounded-full object-cover mr-2 self-end">` : ''}
+            <div class="max-w-[70%]">
+                <div class="${isCurrentUser ? 'bg-primary text-white' : 'bg-gray-100 text-gray-800'} rounded-lg p-3 shadow-sm message-content">
+                    ${replyHtml}
+                    ${contentHtml}
+                </div>
+                <div class="text-xs text-gray-400 mt-1 ${isCurrentUser ? 'text-right' : 'text-left'} flex items-center gap-2">
+                    <span>${timeText}</span>
+                    ${canRecall ? `<button onclick="recallMessage(${message.id})" class="text-gray-400 hover:text-red-500 text-xs">
+                        <i class="fa fa-undo"></i> 撤回
+                    </button>` : ''}
+                </div>
+            </div>
+            ${isCurrentUser ? `<img src="${avatarUrl}" alt="用户头像" class="w-8 h-8 rounded-full object-cover ml-2 self-end">` : ''}
+        `;
+
+        // 长按事件
+        addLongPressEvent(div, message);
+
+        return div;
+    }
+
+    function addLongPressEvent(element, message) {
+        element.addEventListener('touchstart', (e) => {
+            longPressTimer = setTimeout(() => {
+                isLongPress = true;
+                showContextMenu(e.touches[0].clientX, e.touches[0].clientY, message);
+            }, 500);
+        });
+
+        element.addEventListener('touchend', () => {
+            clearTimeout(longPressTimer);
+        });
+
+        element.addEventListener('touchmove', () => {
+            clearTimeout(longPressTimer);
+        });
+
+        element.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showContextMenu(e.clientX, e.clientY, message);
+        });
+    }
+
+    function showContextMenu(x, y, message) {
+        selectedMessage = message;
+        const menu = document.getElementById('context-menu');
+        menu.style.left = x + 'px';
+        menu.style.top = y + 'px';
+        menu.classList.remove('hidden');
+
+        // 调整位置防止溢出
+        const rect = menu.getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+            menu.style.left = (window.innerWidth - rect.width - 10) + 'px';
+        }
+        if (rect.bottom > window.innerHeight) {
+            menu.style.top = (window.innerHeight - rect.height - 10) + 'px';
+        }
+    }
+
+    function handleMenuAction(action) {
+        document.getElementById('context-menu').classList.add('hidden');
+
+        if (!selectedMessage) return;
+
+        switch (action) {
+            case 'copy':
+                copyMessage(selectedMessage.content);
+                break;
+            case 'reply':
+                replyToMessage(selectedMessage);
+                break;
+            case 'forward':
+                forwardMessage(selectedMessage);
+                break;
+            case 'delete':
+                deleteMessage(selectedMessage.id);
+                break;
+        }
+    }
+
+    function copyMessage(content) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(content).then(() => {
+                showToast('复制成功');
+            });
+        } else {
+            const textarea = document.createElement('textarea');
+            textarea.value = content;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast('复制成功');
+        }
+    }
+
+    function replyToMessage(message) {
+        currentReplyId = message.id;
+        const preview = document.getElementById('reply-preview');
+        const author = message.sender_id == CURRENT_USER_ID ? '我' : (window.otherUserInfo?.nickname || '对方');
+        document.getElementById('reply-author').textContent = author;
+        document.getElementById('reply-content').textContent = message.content || '[图片]';
+        preview.classList.remove('hidden');
+        document.getElementById('message-input').focus();
+    }
+
+    function cancelReply() {
+        currentReplyId = null;
+        document.getElementById('reply-preview').classList.add('hidden');
+    }
+
+    function forwardMessage(message) {
+        showToast('转发功能开发中...');
+    }
+
+    function deleteMessage(messageId) {
+        if (!confirm('确定要删除这条消息吗?')) return;
+
+        fetch('/api/v1/messages/deleteMessage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message_id: messageId })
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.code === 200) {
+                showToast('删除成功');
+                loadChatHistory();
+            } else {
+                showToast(result.msg || '删除失败');
+            }
+        })
+        .catch(error => {
+            console.error('删除失败:', error);
+            showToast('删除失败,请重试');
+        });
+    }
+
+    function recallMessage(messageId) {
+        if (!confirm('确定要撤回这条消息吗?')) return;
+
+        fetch('/api/v1/messages/recallMessage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message_id: messageId })
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.code === 200) {
+                showToast('撤回成功');
+                loadChatHistory();
+            } else {
+                showToast(result.msg || '撤回失败');
+            }
+        })
+        .catch(error => {
+            console.error('撤回失败:', error);
+            showToast('撤回失败,请重试');
+        });
+    }
+
+    function sendMessage(content = null, messageType = 1, fileUrl = '') {
+        const input = document.getElementById('message-input');
+        if (content === null) {
+            content = input.value.trim();
+            if (!content) return;
+            input.value = '';
+        }
+
+        const container = document.getElementById('chat-content');
+        const tempId = 'temp-' + Date.now();
+        const sendingMessageElement = createSendingMessageElement(content, messageType, fileUrl, tempId);
+        container.appendChild(sendingMessageElement);
+        container.scrollTop = container.scrollHeight;
+
+        fetch('/api/v1/messages/sendMessage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                receiver_id: OTHER_USER_ID,
+                content: content,
+                message_type: messageType,
+                file_url: fileUrl,
+                reply_to_id: currentReplyId || 0
+            })
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.code === 200) {
+                const tempElement = container.querySelector(`[data-temp-id="${tempId}"]`);
+                if (tempElement) tempElement.remove();
+
+                const messageElement = createMessageElement({
+                    id: result.data.id,
+                    sender_id: CURRENT_USER_ID,
+                    receiver_id: OTHER_USER_ID,
+                    content: content,
+                    message_type: messageType,
+                    file_url: fileUrl,
+                    reply_to_id: currentReplyId || 0,
+                    reply_to: result.data.reply_to,
+                    is_read: 0,
+                    create_time: Math.floor(Date.now() / 1000)
+                });
+                messageElement.dataset.time = result.data.create_time;
+                container.appendChild(messageElement);
+                container.scrollTop = container.scrollHeight;
+
+                cancelReply();
+            } else {
+                const tempElement = container.querySelector(`[data-temp-id="${tempId}"]`);
+                if (tempElement) {
+                    tempElement.querySelector('.message-status').innerHTML = messageStates.failed;
+                    tempElement.querySelector('.message-status').style.cursor = 'pointer';
+                    tempElement.querySelector('.message-status').onclick = () => {
+                        tempElement.remove();
+                        sendMessage(content, messageType, fileUrl);
+                    };
+                }
+
+                if (messageType === 1) {
+                    input.value = content;
+                }
+
+                showToast(result.msg || '发送失败');
+            }
+        })
+        .catch(error => {
+            console.error('发送消息失败:', error);
+
+            const tempElement = container.querySelector(`[data-temp-id="${tempId}"]`);
+            if (tempElement) {
+                tempElement.querySelector('.message-status').innerHTML = messageStates.failed;
+                tempElement.querySelector('.message-status').style.cursor = 'pointer';
+                tempElement.querySelector('.message-status').onclick = () => {
+                    tempElement.remove();
+                    sendMessage(content, messageType, fileUrl);
+                };
+            }
+
+            if (messageType === 1) {
+                input.value = content;
+            }
+
+            showToast('发送失败,请稍后重试');
+        });
+    }
+
+    function createSendingMessageElement(content, messageType, fileUrl, tempId) {
+        const div = document.createElement('div');
+        div.className = 'flex justify-end mb-4';
+        div.dataset.tempId = tempId;
+
+        const avatarUrl = window.currentUserInfo?.avatar || '/static/images/default-avatar.png';
+
+        div.innerHTML = `
+            <div class="max-w-[70%]">
+                <div class="bg-primary text-white rounded-lg p-3 shadow-sm message-content">
+                    ${messageType === 2 && fileUrl ? `<img src="${fileUrl}" alt="图片" class="max-w-full rounded-lg">` : content}
+                </div>
+                <div class="text-xs text-gray-400 mt-1 text-right flex items-center gap-1 justify-end">
+                    发送中 <span class="message-status">${messageStates.sending}</span>
+                </div>
+            </div>
+            <img src="${avatarUrl}" alt="用户头像" class="w-8 h-8 rounded-full object-cover ml-2 self-end">
+        `;
+
+        return div;
+    }
+
+    async function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            showToast('只能上传图片');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('图片大小不能超过5MB');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            showToast('上传中...');
+            const response = await fetch('/api/v1/upload/chat', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+
+            if (result.code === 200) {
+                await sendMessage(result.data.url, 2, result.data.url);
+            } else {
+                showToast(result.msg || '上传失败');
+            }
+        } catch (error) {
+            console.error('上传失败:', error);
+            showToast('上传失败,请重试');
+        }
+
+        event.target.value = '';
+    }
+
+    function sendTypingStatus(isTyping) {
+        if (typeof wsClient !== 'undefined' && wsClient.isConnected()) {
+            wsClient.sendTyping(OTHER_USER_ID, isTyping);
+        }
+    }
+
+    function handleTyping(data) {
+        const indicator = document.getElementById('typing-indicator');
+        if (data.is_typing) {
+            indicator.style.display = 'inline';
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 3000);
+        } else {
+            indicator.style.display = 'none';
+        }
+    }
+
+    function handleNewMessage(message) {
+        if (message.sender_id === OTHER_USER_ID) {
+            const container = document.getElementById('chat-content');
+            const element = createMessageElement(message);
+            element.dataset.time = message.create_time;
+            container.appendChild(element);
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+
+    function handleMessagesRead(data) {
+        // 更新消息为已读状态
+        const container = document.getElementById('chat-content');
+        const messages = container.querySelectorAll('[data-message-id]');
+        messages.forEach(msg => {
+            const msgId = parseInt(msg.dataset.messageId);
+            if (data.message_ids && data.message_ids.includes(msgId)) {
+                const statusEl = msg.querySelector('.message-status');
+                if (statusEl) {
+                    statusEl.innerHTML = messageStates.read;
+                }
+            }
+        });
+    }
+
+    function handleMessageRecalled(data) {
+        const container = document.getElementById('chat-content');
+        const messageEl = container.querySelector(`[data-message-id="${data.message_id}"]`);
+        if (messageEl) {
+            loadChatHistory();
+        }
+    }
+
+    function showChatOptions() {
+        const popup = document.createElement('div');
+        popup.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm';
+
+        popup.innerHTML = `
+            <div class="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold">聊天选项</h3>
+                    <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <button class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-3" onclick="markAllRead()">
+                        <i class="fa fa-check-circle text-primary"></i>
+                        <span>标记所有消息为已读</span>
+                    </button>
+                    <button class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-3" onclick="deleteChat()">
+                        <i class="fa fa-trash text-red-500"></i>
+                        <span>删除聊天记录</span>
+                    </button>
+                    <button class="w-full text-left py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-3" onclick="goToUserCard(${OTHER_USER_ID})">
+                        <i class="fa fa-user text-gray-500"></i>
+                        <span>查看用户名片</span>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(popup);
+
+        popup.addEventListener('click', (e) => {
+            if (e.target === popup) {
+                popup.remove();
+            }
+        });
+    }
+
+    async function markAllRead() {
+        try {
+            const response = await fetch('/api/v1/messages/markAsRead', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: OTHER_USER_ID })
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                showToast('标记已读成功');
+            } else {
+                throw new Error(result.msg || '标记已读失败');
+            }
+        } catch (error) {
+            console.error('标记已读失败:', error);
+            showToast('标记已读失败,请稍后重试');
+        }
+    }
+
+    async function deleteChat() {
+        if (!confirm('确定要删除与该用户的所有聊天记录吗?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/v1/messages/deleteMessage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: OTHER_USER_ID })
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                showToast('删除成功');
+                window.location.href = '/messages';
+            } else {
+                throw new Error(result.msg || '删除失败');
+            }
+        } catch (error) {
+            console.error('删除聊天记录失败:', error);
+            showToast('删除失败,请稍后重试');
+        }
+    }
+
+    function goToUserCard(userId) {
+        window.location.href = `/card/${userId}`;
+    }
+
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity duration-300 opacity-0';
+        toast.textContent = message;
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.remove('opacity-0');
+        }, 100);
+
+        setTimeout(() => {
+            toast.classList.add('opacity-0');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 3000);
+    }
+</script>
+{/block}

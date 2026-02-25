@@ -1,0 +1,220 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>软件管理 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">软件管理</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        软件列表、版本更新、安装管理
+    </p>
+</div>
+
+<!-- 操作按钮区域 -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="flex items-center gap-4">
+        <a href="/admin/software/add" class="px-5 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern flex items-center gap-2">
+            <i class="fas fa-plus"></i>
+            <span>安装软件</span>
+        </a>
+        <button onclick="checkUpdates()" class="px-5 py-2 bg-modern-warning text-white rounded-md hover:bg-amber-600 transition-colors shadow-modern flex items-center gap-2">
+            <i class="fas fa-arrow-up"></i>
+            <span>检查更新</span>
+        </button>
+        <button onclick="location.reload()" class="px-5 py-2 bg-modern-light border border-modern-lightGray rounded-md text-modern-gray hover:border-modern-primary transition-colors flex items-center gap-2">
+            <i class="fas fa-sync-alt"></i>
+            <span>刷新列表</span>
+        </button>
+    </div>
+    <div class="relative w-full md:w-80">
+        <input type="text" id="searchInput" placeholder="搜索软件名称..." class="w-full pl-10 pr-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+        <i class="fas fa-search absolute left-3 top-2.5 text-modern-gray text-sm"></i>
+    </div>
+</div>
+
+<!-- 软件列表表格 -->
+<div class="card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">软件名称</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">当前版本</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">最新版本</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">安装服务器</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">更新状态</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {volist name="software_list" id="software"}
+                <tr class="border-b border-modern-lightGray hover:bg-modern-light/50 transition-colors">
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-laptop-code text-modern-primary text-lg"></i>
+                            <span class="text-modern-dark font-medium">{$software.software_name}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6 text-modern-dark">{$software.current_version}</td>
+                    <td class="py-4 px-6 text-modern-primary">{$software.latest_version}</td>
+                    <td class="py-4 px-6 text-modern-dark">{$software.server_count} 台</td>
+                    <td class="py-4 px-6">
+                        {if $software.update_available}
+                        <span class="text-xs px-2 py-1 bg-modern-warning/10 text-modern-warning rounded-full">有更新</span>
+                        {else}
+                        <span class="text-xs px-2 py-1 bg-modern-success/10 text-modern-success rounded-full">最新</span>
+                        {/if}
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-2">
+                            <a href="/admin/software/detail/{$software.id}" class="text-modern-primary hover:text-modern-secondary transition-colors" title="查看详情">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {if $software.update_available}
+                            <a href="/admin/software/update/{$software.id}" class="text-modern-warning hover:text-amber-600 transition-colors" title="更新">
+                                <i class="fas fa-arrow-up"></i>
+                            </a>
+                            {/if}
+                            <button onclick="deleteSoftware({$software.id})" class="text-modern-danger hover:text-red-600 transition-colors" title="卸载">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {/volist}
+                {if empty($software_list)}
+                <tr>
+                    <td colspan="6" class="py-12 text-center text-modern-gray">
+                        <i class="fas fa-box-open text-4xl mb-3"></i>
+                        <p>暂无软件数据</p>
+                    </td>
+                </tr>
+                {/if}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- JavaScript 实现 -->
+<script>
+// 搜索软件
+let searchTimeout;
+const searchInput = document.getElementById('searchInput');
+
+searchInput.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const keyword = this.value.trim();
+
+    if (keyword === '') {
+        location.reload();
+        return;
+    }
+
+    searchTimeout = setTimeout(() => {
+        searchSoftware(keyword);
+    }, 500);
+});
+
+async function searchSoftware(keyword) {
+    try {
+        const response = await fetch(`/admin/software/search?keyword=${encodeURIComponent(keyword)}`);
+        const result = await response.json();
+
+        if (result.code === 200) {
+            renderSearchResults(result.data.list);
+        } else {
+            alert('搜索失败：' + result.msg);
+        }
+    } catch (error) {
+        console.error('搜索失败:', error);
+    }
+}
+
+function renderSearchResults(softwareList) {
+    const tableBody = document.querySelector('tbody');
+
+    if (softwareList.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="py-12 text-center text-modern-gray">
+                    <i class="fas fa-search text-4xl mb-3 opacity-50"></i>
+                    <p>未找到匹配的软件</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = '';
+    softwareList.forEach(software => {
+        const updateClass = software.update_available 
+            ? 'bg-modern-warning/10 text-modern-warning' 
+            : 'bg-modern-success/10 text-modern-success';
+        const updateText = software.update_available ? '有更新' : '最新';
+
+        html += `
+            <tr class="border-b border-modern-lightGray hover:bg-modern-light/50 transition-colors">
+                <td class="py-4 px-6">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-laptop-code text-modern-primary text-lg"></i>
+                        <span class="text-modern-dark font-medium">${software.software_name}</span>
+                    </div>
+                </td>
+                <td class="py-4 px-6 text-modern-dark">${software.current_version}</td>
+                <td class="py-4 px-6 text-modern-primary">${software.latest_version}</td>
+                <td class="py-4 px-6 text-modern-dark">${software.server_count} 台</td>
+                <td class="py-4 px-6">
+                    <span class="text-xs px-2 py-1 ${updateClass} rounded-full">${updateText}</span>
+                </td>
+                <td class="py-4 px-6">
+                    <div class="flex items-center gap-2">
+                        <a href="/admin/software/detail/${software.id}" class="text-modern-primary hover:text-modern-secondary transition-colors" title="查看详情">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        ${software.update_available ? `
+                            <a href="/admin/software/update/${software.id}" class="text-modern-warning hover:text-amber-600 transition-colors" title="更新">
+                                <i class="fas fa-arrow-up"></i>
+                            </a>
+                        ` : ''}
+                        <button onclick="deleteSoftware(${software.id})" class="text-modern-danger hover:text-red-600 transition-colors" title="卸载">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tableBody.innerHTML = html;
+}
+
+// 删除软件
+function deleteSoftware(id) {
+    if (confirm('确定要卸载这个软件吗？')) {
+        fetch('/admin/software/delete/' + id, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.text())
+        .then(data => {
+            if (data.includes('index.html')) {
+                window.location.href = '/admin/software';
+            } else {
+                alert('卸载失败：' + data);
+            }
+        })
+        .catch(error => {
+            alert('卸载失败：' + error);
+        });
+    }
+}
+
+// 检查更新
+function checkUpdates() {
+    alert('检查更新功能开发中...');
+}
+</script>
+{/block}

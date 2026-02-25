@@ -1,0 +1,15 @@
+{
+    "version": "1.0",
+    "install_time": "2026-02-24 22:34:38",
+    "db_config": {
+        "host": "localhost",
+        "port": "3306",
+        "database": "quanzi",
+        "prefix": "qq"
+    },
+    "admin_info": {
+        "username": "woquan",
+        "email": "1@1.com",
+        "nickname": "我圈"
+    }
+}

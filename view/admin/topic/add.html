@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo isset($topic) && $topic ? '编辑话题' : '添加话题'; ?> - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        
+        /* 自定义弹窗样式 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+        .modal-content {
+            background-color: white;
+            border-radius: 16px;
+            padding: 32px 28px;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+            animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .modal-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .modal-icon.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            animation: iconPulse 0.6s ease-out;
+        }
+        .modal-icon.error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            animation: iconShake 0.5s ease-out;
+        }
+        .modal-icon.warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        .modal-icon.info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        @keyframes iconPulse {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes iconShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111827;
+            text-align: center;
+            margin-bottom: 12px;
+            letter-spacing: -0.025em;
+        }
+        .modal-message {
+            font-size: 15px;
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 28px;
+            line-height: 1.6;
+            padding: 0 8px;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            letter-spacing: 0.025em;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .modal-btn:active {
+            transform: translateY(0);
+        }
+        .modal-btn.primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        .modal-btn.primary:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+        .modal-btn.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        .modal-btn.success:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+        .modal-btn.danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        .modal-btn.danger:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'topic';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800"><?php echo isset($topic) && $topic ? '编辑话题' : '添加话题'; ?></h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回列表 -->
+                <a href="/admin/content/topics" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-arrow-left"></i>
+                    <span class="text-sm font-medium">返回列表</span>
+                </a>
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="max-w-3xl mx-auto">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <form id="topicForm">
+                        <input type="hidden" name="id" id="id" value="<?php echo isset($topic['id']) ? $topic['id'] : ''; ?>">
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-700 mb-2">话题名称</label>
+                                <input type="text" id="name" name="name" 
+                                       class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="请输入话题名称"
+                                       value="<?php echo isset($topic['name']) ? htmlspecialchars($topic['name']) : ''; ?>">
+                            </div>
+                            
+                            <div>
+                                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">话题描述</label>
+                                <textarea id="description" name="description" rows="4"
+                                          class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                          placeholder="请输入话题描述"><?php echo isset($topic['description']) ? htmlspecialchars($topic['description']) : ''; ?></textarea>
+                            </div>
+                            
+                            <div>
+                                <label for="cover" class="block text-sm font-medium text-gray-700 mb-2">封面图片</label>
+                                <div class="space-y-3">
+                                    <div class="flex gap-3">
+                                        <input type="text" id="cover" name="cover" 
+                                               class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                               placeholder="请输入封面图片URL（可选）"
+                                               value="<?php echo isset($topic['cover']) ? htmlspecialchars($topic['cover']) : ''; ?>">
+                                        <button type="button" id="uploadCoverBtn" 
+                                                class="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors">
+                                            <i class="fas fa-upload mr-1"></i>上传
+                                        </button>
+                                    </div>
+                                    <input type="file" id="coverFile" accept="image/*" class="hidden">
+                                    <?php if (isset($topic['cover']) && $topic['cover']): ?>
+                                    <div class="mt-2">
+                                        <img src="<?php echo $topic['cover']; ?>" alt="封面预览" class="w-32 h-32 object-cover rounded-lg border border-gray-200">
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="is_hot" name="is_hot" value="1" 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                       <?php echo isset($topic['is_hot']) && $topic['is_hot'] ? 'checked' : ''; ?>>
+                                <label for="is_hot" class="ml-2 block text-sm text-gray-700">设置为热门话题</label>
+                            </div>
+                            
+                            <div>
+                                <label for="sort_order" class="block text-sm font-medium text-gray-700 mb-2">排序值</label>
+                                <input type="number" id="sort_order" name="sort_order" 
+                                       class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="请输入排序值"
+                                       value="<?php echo isset($topic['sort_order']) ? $topic['sort_order'] : 0; ?>">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">状态</label>
+                                <div class="flex space-x-4">
+                                    <div class="flex items-center">
+                                        <input type="radio" id="statusEnabled" name="status" value="1" 
+                                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                               <?php echo !isset($topic['status']) || $topic['status'] == 1 ? 'checked' : ''; ?>>
+                                        <label for="statusEnabled" class="ml-2 block text-sm text-gray-700">启用</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="radio" id="statusDisabled" name="status" value="0" 
+                                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                               <?php echo isset($topic['status']) && $topic['status'] == 0 ? 'checked' : ''; ?>>
+                                        <label for="statusDisabled" class="ml-2 block text-sm text-gray-700">禁用</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-4 flex gap-4">
+                                <button type="button" id="submitBtn" 
+                                        class="flex-1 py-3 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                                    <i class="fas fa-save mr-2"></i>保存
+                                </button>
+                                <a href="/admin/content/topics" 
+                                   class="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-center">
+                                    <i class="fas fa-times mr-2"></i>取消
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 成功弹窗 -->
+    <div id="successModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-icon success">
+                <i class="fas fa-check-circle text-2xl"></i>
+            </div>
+            <div class="modal-title">操作成功</div>
+            <div class="modal-message" id="successMessage">操作成功！</div>
+            <div class="modal-buttons">
+                <button class="modal-btn success" id="successOk">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 错误弹窗 -->
+    <div id="errorModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-icon error">
+                <i class="fas fa-times-circle text-2xl"></i>
+            </div>
+            <div class="modal-title">操作失败</div>
+            <div class="modal-message" id="errorMessage">操作失败！</div>
+            <div class="modal-buttons">
+                <button class="modal-btn danger" id="errorOk">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 显示成功弹窗
+        function showSuccess(message, callback) {
+            var modal = $('#successModal');
+            var messageEl = $('#successMessage');
+            var okBtn = $('#successOk');
+            
+            messageEl.text(message);
+            modal.addClass('show');
+            
+            okBtn.off('click').on('click', function() {
+                modal.removeClass('show');
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            });
+            
+            modal.off('click').on('click', function(e) {
+                if (e.target === this) {
+                    modal.removeClass('show');
+                }
+            });
+        }
+
+        // 显示错误弹窗
+        function showError(message, callback) {
+            var modal = $('#errorModal');
+            var messageEl = $('#errorMessage');
+            var okBtn = $('#errorOk');
+            
+            messageEl.text(message);
+            modal.addClass('show');
+            
+            okBtn.off('click').on('click', function() {
+                modal.removeClass('show');
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            });
+            
+            modal.off('click').on('click', function(e) {
+                if (e.target === this) {
+                    modal.removeClass('show');
+                }
+            });
+        }
+
+        // 表单提交
+        $('#submitBtn').click(function() {
+            var data = $('#topicForm').serialize();
+            var id = $('#id').val();
+            var url = id ? '/admin/content/saveTopic' : '/admin/content/saveTopic';
+            
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: data,
+                dataType: 'json',
+                beforeSend: function() {
+                    $('#submitBtn').attr('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>保存中...');
+                },
+                success: function(res) {
+                    if (res.code == 200) {
+                        showSuccess(id ? '更新成功！' : '添加成功！', function() {
+                            window.location.href = '/admin/content/topics';
+                        });
+                    } else {
+                        showError((id ? '更新失败：' : '添加失败：') + res.msg);
+                    }
+                },
+                error: function() {
+                    showError('网络错误，请重试！');
+                },
+                complete: function() {
+                    $('#submitBtn').attr('disabled', false).html('<i class="fas fa-save mr-2"></i>保存');
+                }
+            });
+        });
+
+        // 上传封面图片
+        $('#uploadCoverBtn').click(function() {
+            $('#coverFile').click();
+        });
+
+        $('#coverFile').change(function() {
+            var file = this.files[0];
+            if (!file) return;
+
+            if (!file.type.match('image.*')) {
+                showError('请选择图片文件！');
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                showError('图片大小不能超过5MB！');
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('file', file);
+
+            $.ajax({
+                url: '/admin/upload/image',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                xhr: function() {
+                    var xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) {
+                            var percent = (e.loaded / e.total) * 100;
+                            $('#uploadCoverBtn').html('<i class="fas fa-spinner fa-spin mr-1"></i>上传中 ' + Math.round(percent) + '%');
+                        }
+                    });
+                    return xhr;
+                },
+                success: function(res) {
+                    if (res.code == 200) {
+                        $('#cover').val(res.data.url);
+                        $('#uploadCoverBtn').html('<i class="fas fa-upload mr-1"></i>上传');
+                        showSuccess('上传成功！');
+                        
+                        // 显示预览
+                        var previewHtml = '<div class="mt-2"><img src="' + res.data.url + '" alt="封面预览" class="w-32 h-32 object-cover rounded-lg border border-gray-200"></div>';
+                        $('#cover').parent().find('img').parent().remove();
+                        $('#cover').parent().append(previewHtml);
+                    } else {
+                        $('#uploadCoverBtn').html('<i class="fas fa-upload mr-1"></i>上传');
+                        showError('上传失败：' + res.msg);
+                    }
+                },
+                error: function() {
+                    $('#uploadCoverBtn').html('<i class="fas fa-upload mr-1"></i>上传');
+                    showError('网络错误，请重试！');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

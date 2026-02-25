@@ -1,0 +1,263 @@
+﻿{extend name="admin/layout" /}
+
+{block name="title"}<title>授权管理 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">授权列表</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        管理软件授权信息 · 支持<span class="text-modern-primary font-medium">批量生成</span>、<span class="text-modern-primary font-medium">统计</span>、<span class="text-modern-primary font-medium">导出</span>等功能
+    </p>
+</div>
+
+<!-- 操作按钮区域 -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="flex items-center gap-4">
+        <a href="/admin/authorization/add" class="px-5 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern flex items-center gap-2">
+            <i class="fas fa-plus"></i>
+            <span>新增授权</span>
+        </a>
+        <a href="/admin/authorization/batch" class="px-5 py-2 bg-modern-success text-white rounded-md hover:bg-green-600 transition-colors shadow-modern flex items-center gap-2">
+            <i class="fas fa-magic"></i>
+            <span>批量生成</span>
+        </a>
+        <a href="/admin/authorization/statistics" class="px-5 py-2 bg-modern-light border border-modern-lightGray rounded-md text-modern-gray hover:border-modern-primary transition-colors flex items-center gap-2">
+            <i class="fas fa-chart-bar"></i>
+            <span>统计数据</span>
+        </a>
+        <a href="/admin/authorization/export" class="px-5 py-2 bg-modern-light border border-modern-lightGray rounded-md text-modern-gray hover:border-modern-primary transition-colors flex items-center gap-2">
+            <i class="fas fa-download"></i>
+            <span>导出授权</span>
+        </a>
+        <button onclick="location.reload()" class="px-5 py-2 bg-modern-light border border-modern-lightGray rounded-md text-modern-gray hover:border-modern-primary transition-colors flex items-center gap-2">
+            <i class="fas fa-sync-alt"></i>
+            <span>刷新</span>
+        </button>
+    </div>
+    <div class="relative w-full md:w-80">
+        <input type="text" id="searchInput" placeholder="搜索授权编号..." class="w-full pl-10 pr-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+        <i class="fas fa-search absolute left-3 top-2.5 text-modern-gray text-sm"></i>
+    </div>
+</div>
+
+<!-- 授权列表表格 -->
+<div class="card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">授权编号</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">软件名称</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">授权期限</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">域名/IP</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">开始时间</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">结束时间</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">验证次数</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">状态</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {volist name="authorizations" id="auth"}
+                <tr class="border-b border-modern-lightGray hover:bg-modern-light/50 transition-colors">
+                    <td class="py-4 px-6 font-mono text-modern-dark">
+                        <div class="flex items-center gap-2">
+                            <span>{$auth.license_number}</span>
+                            <button onclick="copyLicense('{$auth.license_number}')" class="text-modern-gray hover:text-modern-primary transition-colors" title="复制">
+                                <i class="fas fa-copy text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6 text-modern-dark">{$softwareMap[$auth.software_id]|default='未知软件'}</td>
+                    <td class="py-4 px-6">
+                        {if $auth.end_time == 0}
+                        <span class="text-xs px-2 py-1 bg-modern-primary/10 text-modern-primary rounded-full">永久授权</span>
+                        {else/}
+                        <span class="text-xs px-2 py-1 bg-modern-secondary/10 text-modern-secondary rounded-full">限时授权</span>
+                        {/if}
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="space-y-1">
+                            {if !empty($auth.domain)}
+                            <div class="text-xs text-modern-gray">
+                                <i class="fas fa-globe mr-1"></i>
+                                {$auth.domain}
+                            </div>
+                            {/if}
+                            {if !empty($auth.server_ip)}
+                            <div class="text-xs text-modern-gray">
+                                <i class="fas fa-server mr-1"></i>
+                                {$auth.server_ip}
+                            </div>
+                            {/if}
+                            {if empty($auth.domain) && empty($auth.server_ip)}
+                            <div class="text-xs text-modern-gray">不限</div>
+                            {/if}
+                        </div>
+                    </td>
+                    <td class="py-4 px-6 text-modern-gray">{if $auth.start_time > 0}{$auth.start_time|date='Y-m-d'}{else/}-{/if}</td>
+                    <td class="py-4 px-6 text-modern-gray">{if $auth.end_time > 0}{$auth.end_time|date='Y-m-d'}{else/}永久{/if}</td>
+                    <td class="py-4 px-6">
+                        <div class="text-xs text-modern-gray">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            {$auth.verify_count|default=0} 次
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        {if $auth.status == 1}
+                        <span class="text-xs px-2 py-1 bg-modern-success/10 text-modern-success rounded-full">有效</span>
+                        {else/}
+                        <span class="text-xs px-2 py-1 bg-red-100 text-red-600 rounded-full">无效</span>
+                        {/if}
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-3">
+                            <a href="/admin/authorization/detail/{$auth.id}" class="text-modern-primary hover:text-modern-secondary transition-colors" title="查看详情">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="/admin/authorization/edit/{$auth.id}" class="text-amber-500 hover:text-amber-600 transition-colors" title="编辑">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button onclick="deleteAuthorization({$auth.id})" class="text-red-500 hover:text-red-600 transition-colors" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {/volist}
+                {if empty($authorizations)}
+                <tr>
+                    <td colspan="9" class="py-12 text-center text-modern-gray">
+                        <i class="fas fa-key text-4xl mb-3"></i>
+                        <p>暂无授权数据</p>
+                    </td>
+                </tr>
+                {/if}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- JavaScript 实现 -->
+<script>
+// 删除授权
+function deleteAuthorization(id) {
+    if (confirm('确定要删除这个授权吗？')) {
+        fetch('/admin/authorization/delete/' + id, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.text())
+        .then(data => {
+            if (data.includes('index.html')) {
+                window.location.href = '/admin/authorization';
+            } else {
+                alert('删除失败：' + data);
+            }
+        })
+        .catch(error => {
+            alert('删除失败：' + error);
+        });
+    }
+}
+
+// 搜索授权
+let searchTimeout;
+const searchInput = document.getElementById('searchInput');
+const tableBody = document.querySelector('tbody');
+
+searchInput.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const keyword = this.value.trim();
+
+    if (keyword === '') {
+        location.reload();
+        return;
+    }
+
+    searchTimeout = setTimeout(() => {
+        searchAuthorization(keyword);
+    }, 500);
+});
+
+async function searchAuthorization(keyword) {
+    try {
+        const response = await fetch(`/admin/authorization/search?keyword=${encodeURIComponent(keyword)}`);
+        const result = await response.json();
+
+        if (result.code === 200) {
+            renderSearchResults(result.data.list);
+        } else {
+            alert('搜索失败：' + result.msg);
+        }
+    } catch (error) {
+        console.error('搜索失败:', error);
+    }
+}
+
+function renderSearchResults(authorizations) {
+    if (authorizations.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="7" class="py-12 text-center text-modern-gray">
+                    <i class="fas fa-search text-4xl mb-3 opacity-50"></i>
+                    <p>未找到匹配的授权</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = '';
+    authorizations.forEach(auth => {
+        const endTime = auth.end_time == 0 ? '永久' : (auth.end_time > 0 ? new Date(auth.end_time * 1000).toLocaleDateString() : '-');
+        const statusClass = auth.status == 1 ? 'bg-modern-success/10 text-modern-success' : 'bg-red-100 text-red-600';
+        const statusText = auth.status == 1 ? '有效' : '无效';
+        const typeClass = auth.end_time == 0 ? 'bg-modern-primary/10 text-modern-primary' : 'bg-modern-secondary/10 text-modern-secondary';
+        const typeText = auth.end_time == 0 ? '永久授权' : '限时授权';
+
+        html += `
+            <tr class="border-b border-modern-lightGray hover:bg-modern-light/50 transition-colors">
+                <td class="py-4 px-6 font-mono text-modern-dark">${auth.license_number}</td>
+                <td class="py-4 px-6 text-modern-dark">${auth.software_name || '未知软件'}</td>
+                <td class="py-4 px-6">
+                    <span class="text-xs px-2 py-1 ${typeClass} rounded-full">${typeText}</span>
+                </td>
+                <td class="py-4 px-6 text-modern-gray">${auth.start_time > 0 ? new Date(auth.start_time * 1000).toLocaleDateString() : '-'}</td>
+                <td class="py-4 px-6 text-modern-gray">${endTime}</td>
+                <td class="py-4 px-6">
+                    <span class="text-xs px-2 py-1 ${statusClass} rounded-full">${statusText}</span>
+                </td>
+                <td class="py-4 px-6">
+                    <div class="flex items-center gap-3">
+                        <a href="/admin/authorization/detail/${auth.id}" class="text-modern-primary hover:text-modern-secondary transition-colors" title="查看详情">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="/admin/authorization/edit/${auth.id}" class="text-amber-500 hover:text-amber-600 transition-colors" title="编辑">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button onclick="deleteAuthorization(${auth.id})" class="text-red-500 hover:text-red-600 transition-colors" title="删除">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tableBody.innerHTML = html;
+}
+
+// 复制授权码
+function copyLicense(code) {
+    navigator.clipboard.writeText(code).then(() => {
+        alert('已复制：' + code);
+    }).catch(() => {
+        prompt('请复制：', code);
+    });
+}
+</script>
+{/block}

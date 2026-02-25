@@ -1,0 +1,587 @@
+﻿/* ========================================
+   我圈社交平台 - 现代化科幻风格设计系统
+   ======================================== */
+
+:root {
+    /* 主色调 - 科幻霓虹色系 */
+    --primary-color: #00f2fe;
+    --secondary-color: #4facfe;
+    --accent-color: #f093fb;
+    --success-color: #00d26a;
+    --warning-color: #ffc107;
+    --danger-color: #ff4757;
+    
+    /* 背景色 */
+    --bg-dark: #0a0e27;
+    --bg-card: rgba(20, 30, 60, 0.8);
+    --bg-light: rgba(255, 255, 255, 0.05);
+    
+    /* 渐变色 */
+    --gradient-primary: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+    --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --gradient-dark: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+    
+    /* 阴影 */
+    --shadow-neon: 0 0 20px rgba(0, 242, 254, 0.3);
+    --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --shadow-glow: 0 0 40px rgba(79, 172, 254, 0.2);
+    
+    /* 边框 */
+    --border-glass: 1px solid rgba(255, 255, 255, 0.1);
+    --border-neon: 1px solid rgba(0, 242, 254, 0.5);
+    
+    /* 文字 */
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-muted: rgba(255, 255, 255, 0.5);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* 背景动画效果 */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(79, 172, 254, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(240, 147, 251, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 50% 100%, rgba(0, 242, 254, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+    animation: backgroundPulse 8s ease-in-out infinite;
+}
+
+@keyframes backgroundPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--gradient-primary);
+    border-radius: 3px;
+}
+
+/* 通用头部 */
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10, 14, 39, 0.95);
+    backdrop-filter: blur(20px);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: var(--border-neon);
+    box-shadow: var(--shadow-glow);
+}
+
+.header .back-btn {
+    color: var(--primary-color);
+    font-size: 22px;
+    text-decoration: none;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(0, 242, 254, 0.1);
+    transition: all 0.3s;
+}
+
+.header .back-btn:hover {
+    background: rgba(0, 242, 254, 0.2);
+    transform: scale(1.1);
+}
+
+.header .title {
+    font-size: 20px;
+    font-weight: 700;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 2px;
+}
+
+/* 玻璃拟态卡片 */
+.glass-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: var(--border-glass);
+    padding: 20px;
+    box-shadow: var(--shadow-card);
+    transition: all 0.3s;
+}
+
+.glass-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-neon);
+    border: var(--border-neon);
+}
+
+/* 霓虹按钮 */
+.btn-neon {
+    background: var(--gradient-primary);
+    color: #fff;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 30px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: var(--shadow-neon);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-neon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+}
+
+.btn-neon:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 30px rgba(0, 242, 254, 0.5);
+}
+
+.btn-neon:hover::before {
+    left: 100%;
+}
+
+.btn-neon:active {
+    transform: scale(0.95);
+}
+
+.btn-neon.secondary {
+    background: var(--gradient-secondary);
+}
+
+.btn-neon.outline {
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    box-shadow: none;
+}
+
+/* 输入框 */
+.input-neon {
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 20px;
+    border: 2px solid rgba(0, 242, 254, 0.3);
+    background: rgba(10, 14, 39, 0.8);
+    color: var(--text-primary);
+    font-size: 15px;
+    outline: none;
+    transition: all 0.3s;
+}
+
+.input-neon::placeholder {
+    color: var(--text-muted);
+}
+
+.input-neon:focus {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-neon);
+}
+
+/* 标签页 */
+.tabs {
+    display: flex;
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 5px;
+    border: var(--border-glass);
+    gap: 5px;
+}
+
+.tab {
+    flex: 1;
+    text-align: center;
+    padding: 12px;
+    border-radius: 15px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    color: var(--text-secondary);
+    position: relative;
+    overflow: hidden;
+}
+
+.tab.active {
+    background: var(--gradient-primary);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: var(--shadow-neon);
+}
+
+.tab::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 3px;
+    background: var(--primary-color);
+    border-radius: 2px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tab.active::after {
+    opacity: 1;
+}
+
+/* 徽章 */
+.badge {
+    position: absolute;
+    background: var(--danger-color);
+    color: #fff;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+    font-weight: 600;
+    box-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+    animation: badgePulse 2s infinite;
+}
+
+@keyframes badgePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 70px;
+    margin-bottom: 20px;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    font-size: 15px;
+    color: var(--text-secondary);
+}
+
+/* 加载状态 */
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}
+
+.loading::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--primary-color);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 图标 */
+.icon-neon {
+    color: var(--primary-color);
+    font-size: 20px;
+    transition: all 0.3s;
+}
+
+.icon-neon:hover {
+    text-shadow: 0 0 20px var(--primary-color);
+    transform: scale(1.2);
+}
+
+/* 底部导航 */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(10, 14, 39, 0.95);
+    backdrop-filter: blur(20px);
+    border-top: var(--border-neon);
+    display: flex;
+    padding: 10px 0;
+    box-shadow: var(--shadow-glow);
+    z-index: 100;
+}
+
+.nav-item {
+    flex: 1;
+    text-align: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 8px 0;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.nav-item i {
+    font-size: 22px;
+    display: block;
+    margin-bottom: 4px;
+    transition: all 0.3s;
+}
+
+.nav-item span {
+    font-size: 11px;
+}
+
+.nav-item.active {
+    color: var(--primary-color);
+}
+
+.nav-item.active i {
+    transform: scale(1.2);
+    text-shadow: 0 0 15px var(--primary-color);
+}
+
+.nav-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 3px;
+    background: var(--gradient-primary);
+    border-radius: 2px;
+    box-shadow: var(--shadow-neon);
+}
+
+/* 分割线 */
+.divider {
+    height: 1px;
+    background: var(--gradient-primary);
+    opacity: 0.3;
+    margin: 20px 0;
+}
+
+/* 响应式设计 */
+
+/* 移动设备 (最大宽度 576px) */
+@media (max-width: 576px) {
+    .header {
+        padding: 12px 14px;
+    }
+    
+    .header .title {
+        font-size: 17px;
+        letter-spacing: 1px;
+    }
+    
+    .glass-card {
+        padding: 14px;
+        border-radius: 14px;
+    }
+    
+    .btn-neon {
+        padding: 10px 24px;
+        font-size: 14px;
+        border-radius: 25px;
+    }
+    
+    .input-neon {
+        padding: 12px 18px;
+        font-size: 14px;
+        border-radius: 18px;
+    }
+    
+    .tabs {
+        padding: 4px;
+        border-radius: 16px;
+    }
+    
+    .tab {
+        padding: 10px;
+        font-size: 13px;
+        border-radius: 12px;
+    }
+    
+    .bottom-nav {
+        padding: 8px 0;
+    }
+    
+    .nav-item i {
+        font-size: 20px;
+    }
+    
+    .nav-item span {
+        font-size: 10px;
+    }
+    
+    /* 空状态 */
+    .empty-state {
+        padding: 60px 16px;
+    }
+    
+    .empty-state i {
+        font-size: 50px;
+    }
+    
+    /* 加载状态 */
+    .loading {
+        padding: 30px 16px;
+    }
+}
+
+/* 平板设备 (最小宽度 577px, 最大宽度 768px) */
+@media (min-width: 577px) and (max-width: 768px) {
+    .header {
+        padding: 14px 16px;
+    }
+    
+    .header .title {
+        font-size: 18px;
+        letter-spacing: 1.5px;
+    }
+    
+    .glass-card {
+        padding: 16px;
+        border-radius: 16px;
+    }
+    
+    .btn-neon {
+        padding: 11px 28px;
+        font-size: 14px;
+        border-radius: 28px;
+    }
+    
+    .input-neon {
+        padding: 13px 19px;
+        font-size: 14px;
+        border-radius: 19px;
+    }
+    
+    .tabs {
+        padding: 4px;
+        border-radius: 18px;
+    }
+    
+    .tab {
+        padding: 11px;
+        font-size: 13px;
+        border-radius: 14px;
+    }
+    
+    .bottom-nav {
+        padding: 9px 0;
+    }
+    
+    .nav-item i {
+        font-size: 21px;
+    }
+    
+    .nav-item span {
+        font-size: 10px;
+    }
+    
+    /* 空状态 */
+    .empty-state {
+        padding: 70px 18px;
+    }
+    
+    .empty-state i {
+        font-size: 60px;
+    }
+    
+    /* 加载状态 */
+    .loading {
+        padding: 35px 18px;
+    }
+}
+
+/* 小屏桌面 (最小宽度 769px, 最大宽度 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .header {
+        padding: 16px 20px;
+    }
+    
+    .header .title {
+        font-size: 19px;
+        letter-spacing: 1.5px;
+    }
+    
+    .glass-card {
+        padding: 18px;
+        border-radius: 18px;
+    }
+    
+    .btn-neon {
+        padding: 12px 28px;
+        font-size: 14px;
+        border-radius: 28px;
+    }
+    
+    .input-neon {
+        padding: 14px 19px;
+        font-size: 14px;
+        border-radius: 19px;
+    }
+}
+
+/* 大屏桌面 (最小宽度 1025px) */
+@media (min-width: 1025px) {
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+}

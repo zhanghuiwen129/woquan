@@ -1,0 +1,264 @@
+{extend name="index/main-layout" /}
+
+{block name="content"}
+<style>
+    .chat-item {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+    }
+
+    .chat-item:hover {
+        box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .chat-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .chat-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .chat-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .chat-message {
+        font-size: 14px;
+        color: var(--text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .chat-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+    }
+
+    .chat-time {
+        font-size: 12px;
+        color: var(--text-tertiary);
+    }
+
+    .unread-badge {
+        background: var(--primary);
+        color: white;
+        border-radius: 50%;
+        min-width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 0 6px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-secondary);
+    }
+
+    .empty-state i {
+        font-size: 64px;
+        color: var(--text-tertiary);
+        margin-bottom: 16px;
+    }
+
+    .loading-spinner {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-secondary);
+    }
+
+    .loading-spinner i {
+        font-size: 32px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+
+<!-- 主内容区 -->
+<main class="container mx-auto px-4 py-6 max-w-4xl">
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+        <h1 class="text-xl font-bold text-gray-800">消息</h1>
+    </div>
+
+    <div id="chat-list">
+        <div class="loading-spinner">
+            <i class="fa fa-spinner fa-spin"></i>
+            <p>加载中...</p>
+        </div>
+    </div>
+</main>
+
+<script>
+    const CURRENT_USER_ID = window.currentUserInfo ? window.currentUserInfo.id : null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadChatList();
+    });
+
+    async function loadChatList() {
+        const container = document.getElementById('chat-list');
+
+        try {
+            const response = await fetch('/api/v1/messages/getMessageList');
+            const result = await response.json();
+
+            if (result.code === 200) {
+                const chatList = result.data.list || [];
+
+                if (chatList.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa fa-comments-o"></i>
+                            <h3 class="text-lg font-semibold mb-2">暂无消息</h3>
+                            <p>开始与朋友聊天吧</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = chatList.map(chat => {
+                    const lastMessage = chat.last_message || {};
+                    const messageText = getMessageText(lastMessage);
+                    const timeText = formatTime(lastMessage.create_time);
+                    const unreadBadge = chat.unread_count > 0 
+                        ? `<div class="unread-badge">${chat.unread_count > 99 ? '99+' : chat.unread_count}</div>` 
+                        : '';
+
+                    // 判断是否已读
+                    const isUnread = chat.unread_count > 0;
+                    const readStatusText = isUnread
+                        ? '<span class="inline-flex items-center text-xs font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full ml-2"><i class="fa fa-circle text-[6px] mr-1"></i>未读</span>'
+                        : '<span class="inline-flex items-center text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full ml-2"><i class="fa fa-check text-[10px] mr-1"></i>已读</span>';
+
+                    return `
+                        <div class="chat-item" onclick="openChat(${chat.user_id})">
+                            <img src="${chat.avatar || '/static/images/default-avatar.png'}"
+                                 alt="${chat.nickname}"
+                                 class="chat-avatar">
+                            <div class="chat-info">
+                                <div class="flex items-center justify-between">
+                                    <div class="chat-name ${isUnread ? 'text-primary font-bold' : ''}">${chat.nickname || '用户'}</div>
+                                </div>
+                                <div class="chat-message ${isUnread ? 'font-medium text-gray-800' : ''}">${messageText}</div>
+                            </div>
+                            <div class="chat-meta">
+                                <div class="chat-time">${timeText}</div>
+                                <div class="flex items-center gap-2">
+                                    ${readStatusText}
+                                    ${unreadBadge}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                throw new Error(result.msg || '获取消息列表失败');
+            }
+        } catch (error) {
+            console.error('加载消息列表失败:', error);
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fa fa-exclamation-circle"></i>
+                    <h3 class="text-lg font-semibold mb-2">加载失败</h3>
+                    <p>${error.message || '请稍后重试'}</p>
+                    <button onclick="loadChatList()" class="mt-4 px-6 py-2 bg-primary text-white rounded-full hover:bg-secondary">
+                        重试
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    function getMessageText(message) {
+        if (!message) return '';
+
+        const messageType = parseInt(message.message_type);
+        switch (messageType) {
+            case 2:
+                return '[图片]';
+            case 3:
+                return '[视频]';
+            case 5:
+                return '[语音]';
+            case 6:
+                return '[位置]';
+            default:
+                return message.content || '';
+        }
+    }
+
+    function formatTime(timestamp) {
+        if (!timestamp) return '';
+
+        const now = Math.floor(Date.now() / 1000);
+        const diff = now - timestamp;
+
+        if (diff < 60) {
+            return '刚刚';
+        } else if (diff < 3600) {
+            return Math.floor(diff / 60) + '分钟前';
+        } else if (diff < 86400) {
+            return Math.floor(diff / 3600) + '小时前';
+        } else if (diff < 604800) {
+            return Math.floor(diff / 86400) + '天前';
+        } else {
+            const date = new Date(timestamp * 1000);
+            return `${date.getMonth() + 1}/${date.getDate()}`;
+        }
+    }
+
+    function openChat(userId) {
+        // 标记该用户的聊天记录为已读
+        markMessagesAsRead(userId);
+        // 跳转到聊天页面
+        window.location.href = `/chat?user_id=${userId}`;
+    }
+
+    // 标记与某用户的消息为已读
+    async function markMessagesAsRead(userId) {
+        try {
+            const response = await fetch('/api/v1/messages/markAsRead', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId })
+            });
+
+            if (response.ok) {
+                // 重新加载消息列表以更新显示
+                loadChatList();
+            }
+        } catch (error) {
+            console.error('标记已读失败:', error);
+        }
+    }
+</script>
+{/block}

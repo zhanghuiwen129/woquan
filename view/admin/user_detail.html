@@ -1,0 +1,1157 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户详情 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+  <!-- 引入统一弹窗组件 -->
+  <script src="/static/js/modal.js"></script>
+  <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+    </style>
+  <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        modern: {
+                            dark: '#1F2937',
+                            light: '#F9FAFB',
+                            primary: '#3B82F6',
+                            secondary: '#6366F1',
+                            gray: '#4B5563',
+                            lightGray: '#E5E7EB',
+                            darkGray: '#374151',
+                            white: '#FFFFFF',
+                            success: '#10B981',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'user';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <h1 class="text-xl font-semibold text-gray-800">用户详情</h1>
+            <div class="flex items-center space-x-4">
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-8">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-semibold text-modern-dark">用户详情</h2>
+                        <p class="text-modern-gray mt-2">查看和管理用户的详细信息</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <a href="/admin/user/edit?id={$user.id}" class="px-5 py-2.5 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors">
+                            <i class="fa-solid fa-pen-to-square mr-2"></i>编辑资料
+                        </a>
+                        <a href="/admin/user" class="px-5 py-2.5 bg-modern-gray text-white rounded-md hover:bg-modern-darkGray transition-colors">
+                            <i class="fa-solid fa-arrow-left mr-2"></i>返回列表
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户基本信息 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <!-- 用户头像和基本信息卡片 -->
+                <div class="md:col-span-1 bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex flex-col items-center">
+                        <img src="{$user.avatar ? $user.avatar : '/static/images/default-avatar.png'}" 
+                             alt="用户头像" 
+                             class="w-24 h-24 rounded-full object-cover mb-4 border-4 border-modern-light">
+                        <h3 class="text-xl font-semibold text-modern-dark mb-1">{$user.username}</h3>
+                        <p class="text-sm text-modern-gray mb-4">用户ID: {$user.id}</p>
+                        
+                        <!-- 用户状态标签 -->
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-3 py-1 text-xs rounded-full {$user.status == 1 ? 'bg-modern-success/10 text-modern-success' : 'bg-red-100 text-red-600'}">
+                                {$user.status == 1 ? '正常' : '禁用'}
+                            </span>
+                            <span class="px-3 py-1 text-xs rounded-full {$user.can_speak == 1 ? 'bg-modern-success/10 text-modern-success' : 'bg-orange-100 text-orange-600'}">
+                                {$user.can_speak == 1 ? '允许发言' : '禁止发言'}
+                            </span>
+                        </div>
+                        
+                        <!-- 操作按钮 -->
+                        <div class="flex gap-2">
+                            <button onclick="changePassword({$user.id})" 
+                                    class="px-3 py-1.5 bg-modern-secondary text-white rounded-md hover:bg-modern-secondary/90 transition-colors text-sm">
+                                <i class="fa-solid fa-key mr-1"></i>修改密码
+                            </button>
+                            <button onclick="forceLogout({$user.id})" 
+                                    class="px-3 py-1.5 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors text-sm">
+                                <i class="fa-solid fa-user-xmark mr-1"></i>强制下线
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 注册信息卡片 -->
+                <div class="md:col-span-2 bg-modern-white rounded-lg shadow-modern p-6">
+                    <h4 class="text-lg font-semibold text-modern-dark mb-4">注册信息</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-modern-gray mb-1">注册时间</label>
+                            <p class="text-modern-dark">{$user.regtime ? date('Y-m-d H:i:s', $user.regtime) : '未知'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-modern-gray mb-1">注册IP</label>
+                            <p class="text-modern-dark">{$user.regip ? $user.regip : '未知'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-modern-gray mb-1">注册渠道</label>
+                            <p class="text-modern-dark">{$user.reg_channel ? $user.reg_channel : '网页'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-modern-gray mb-1">最后登录时间</label>
+                            <p class="text-modern-dark">{$user.logtime ? date('Y-m-d H:i:s', $user.logtime) : '从未登录'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-modern-gray mb-1">最后登录IP</label>
+                            <p class="text-modern-dark">{$user.logip ? $user.logip : '未知'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-modern-gray mb-1">账号等级</label>
+                            <p class="text-modern-dark">Lv{$user.level ? $user.level : 1}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 联系信息和个人资料 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- 联系信息卡片 -->
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <h4 class="text-lg font-semibold text-modern-dark mb-4">联系信息</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-modern-gray mb-1">邮箱</label>
+                            <p class="text-modern-dark">{$user.email ? $user.email : '未设置'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-modern-gray mb-1">手机号</label>
+                            <p class="text-modern-dark">{$user.phone ? $user.phone : '未设置'}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 个人资料卡片 -->
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <h4 class="text-lg font-semibold text-modern-dark mb-4">个人资料</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-modern-gray mb-1">性别</label>
+                            <p class="text-modern-dark">{$user.gender == 1 ? '男' : ($user.gender == 2 ? '女' : '未知')}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-modern-gray mb-1">生日</label>
+                            <p class="text-modern-dark">{$user.birthday ? date('Y-m-d', $user.birthday) : '未设置'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-modern-gray mb-1">签名</label>
+                            <p class="text-modern-dark">{$user.signature ? $user.signature : '未设置'}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户行为数据 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- 互动数据卡片 -->
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <h4 class="text-lg font-semibold text-modern-dark mb-4">互动数据</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-modern-light rounded-lg p-4 text-center">
+                            <p class="text-3xl font-bold text-modern-primary mb-1">{$user_statistics.post_count ? $user_statistics.post_count : 0}</p>
+                            <p class="text-sm text-modern-gray">发布动态</p>
+                        </div>
+                        <div class="bg-modern-light rounded-lg p-4 text-center">
+                            <p class="text-3xl font-bold text-modern-primary mb-1">{$user_statistics.comment_count ? $user_statistics.comment_count : 0}</p>
+                            <p class="text-sm text-modern-gray">发布评论</p>
+                        </div>
+                        <div class="bg-modern-light rounded-lg p-4 text-center">
+                            <p class="text-3xl font-bold text-modern-primary mb-1">{$user_statistics.like_count ? $user_statistics.like_count : 0}</p>
+                            <p class="text-sm text-modern-gray">获得点赞</p>
+                        </div>
+                        <div class="bg-modern-light rounded-lg p-4 text-center">
+                            <p class="text-3xl font-bold text-modern-primary mb-1">{$user_statistics.follow_count ? $user_statistics.follow_count : 0}</p>
+                            <p class="text-sm text-modern-gray">关注数</p>
+                        </div>
+                        <div class="bg-modern-light rounded-lg p-4 text-center">
+                            <p class="text-3xl font-bold text-modern-primary mb-1">{$user_statistics.follower_count ? $user_statistics.follower_count : 0}</p>
+                            <p class="text-sm text-modern-gray">粉丝数</p>
+                        </div>
+                        <div class="bg-modern-light rounded-lg p-4 text-center">
+                            <p class="text-3xl font-bold text-modern-primary mb-1">{$user_statistics.favorite_count ? $user_statistics.favorite_count : 0}</p>
+                            <p class="text-sm text-modern-gray">收藏数</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 账户数据卡片 -->
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <h4 class="text-lg font-semibold text-modern-dark mb-4">账户数据</h4>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <label class="block text-sm text-modern-gray mb-1">积分</label>
+                                <p class="text-modern-dark">{$user.credit ? $user.credit : 0}</p>
+                            </div>
+                            <button class="px-3 py-1 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors text-sm">
+                                <i class="fa-solid fa-plus mr-1"></i>增加
+                            </button>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <label class="block text-sm text-modern-gray mb-1">经验值</label>
+                                <p class="text-modern-dark">{$user.exp ? $user.exp : 0}</p>
+                            </div>
+                            <button class="px-3 py-1 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors text-sm">
+                                <i class="fa-solid fa-plus mr-1"></i>增加
+                            </button>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-modern-gray mb-1">账户创建时间</label>
+                            <p class="text-modern-dark">{$user.regtime ? date('Y-m-d H:i:s', $user.regtime) : '未知'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-modern-gray mb-1">最后更新时间</label>
+                            <p class="text-modern-dark">{$user.update_time ? date('Y-m-d H:i:s', $user.update_time) : '未知'}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户最近动态 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-lg font-semibold text-modern-dark">最近动态</h4>
+                    <a href="/admin/content?user_id={$user.id}" class="text-modern-primary hover:text-modern-secondary transition-colors text-sm">
+                        <i class="fa-solid fa-arrow-right mr-1"></i>查看全部
+                    </a>
+                </div>
+                
+                <!-- 动态列表 -->
+                <div class="space-y-4">
+                    <?php if (empty($user_posts)): ?>
+                        <p class="text-center text-modern-gray py-8">暂无动态</p>
+                    <?php else: ?>
+                        <?php foreach ($user_posts as $post): ?>
+                            <div class="border-b border-modern-lightGray pb-4 last:border-b-0">
+                                <div class="flex items-start gap-3">
+                                    <img src="{$post.avatar ? $post.avatar : '/static/images/default-avatar.png'}" 
+                                         alt="用户头像" 
+                                         class="w-8 h-8 rounded-full object-cover">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="text-sm font-medium text-modern-dark">{$user.username}</span>
+                                            <span class="text-xs text-modern-gray">发布于 {$post.create_time ? date('Y-m-d H:i', $post.create_time) : '未知时间'}</span>
+                                        </div>
+                                        <p class="text-sm text-modern-dark mb-2">{$post.content ? $post.content : '无内容'}</p>
+                                        <div class="flex items-center gap-4 text-xs text-modern-gray">
+                                            <span><i class="fa-solid fa-heart mr-1"></i>{$post.like_count ? $post.like_count : 0}</span>
+                                            <span><i class="fa-solid fa-comment mr-1"></i>{$post.comment_count ? $post.comment_count : 0}</span>
+                                            <span><i class="fa-solid fa-eye mr-1"></i>{$post.view_count ? $post.view_count : 0}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- 用户分组管理 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-lg font-semibold text-modern-dark">用户分组</h4>
+                    <button id="assignGroupBtn" class="px-3 py-1.5 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors text-sm">
+                        <i class="fa-solid fa-plus mr-1"></i>分配分组
+                    </button>
+                </div>
+                
+                <!-- 分组列表 -->
+                <div class="space-y-2">
+                    <?php if (empty($user_groups)): ?>
+                        <p class="text-center text-modern-gray py-4">暂无分组</p>
+                    <?php else: ?>
+                        <?php foreach ($user_groups as $group): ?>
+                            <div class="flex items-center justify-between p-3 bg-modern-light rounded-md">
+                                <div>
+                                    <span class="font-medium text-modern-dark">{$group.name}</span>
+                                    <span class="ml-2 text-xs text-modern-gray">{$group.description ? $group.description : '无描述'}</span>
+                                </div>
+                                <div>
+                                    <span class="text-xs px-2 py-1 rounded-full {$group.is_system ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}">
+                                        {$group.is_system ? '系统分组' : '自定义分组'}
+                                    </span>
+                                    <button onclick="removeUserGroup({$user.id}, {$group.id})" 
+                                            class="ml-3 text-red-500 hover:text-red-600 text-sm">
+                                        <i class="fa-solid fa-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- 用户标签管理 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-lg font-semibold text-modern-dark">用户标签</h4>
+                    <button id="assignTagBtn" class="px-3 py-1.5 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors text-sm">
+                        <i class="fa-solid fa-plus mr-1"></i>分配标签
+                    </button>
+                </div>
+                
+                <!-- 标签列表 -->
+                <div class="space-y-2">
+                    <?php if (empty($user_tags)): ?>
+                        <p class="text-center text-modern-gray py-4">暂无标签</p>
+                    <?php else: ?>
+                        <?php foreach ($user_tags as $tag): ?>
+                            <div class="flex items-center justify-between p-3 bg-modern-light rounded-md">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-3 h-3 rounded-full" style="background-color: {$tag.color};"></span>
+                                    <span class="font-medium text-modern-dark">{$tag.name}</span>
+                                    <span class="text-xs text-modern-gray">{$tag.description ? $tag.description : '无描述'}</span>
+                                </div>
+                                <button onclick="removeUserTag({$user.id}, {$tag.id})" 
+                                        class="text-red-500 hover:text-red-600 text-sm">
+                                    <i class="fa-solid fa-x"></i>
+                                </button>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- 违规行为处理 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-lg font-semibold text-modern-dark">违规行为处理</h4>
+                    <button id="addViolationBtn" class="px-3 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-sm">
+                        <i class="fa-solid fa-exclamation-triangle mr-1"></i>记录违规
+                    </button>
+                </div>
+                
+                <!-- 违规记录列表 -->
+                <div class="mb-6">
+                    <h5 class="text-md font-medium text-modern-dark mb-3">违规记录</h5>
+                    <div class="space-y-2">
+                        <div id="violationsList">
+                            <p class="text-center text-modern-gray py-4">加载中...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 惩罚记录列表 -->
+                <div>
+                    <h5 class="text-md font-medium text-modern-dark mb-3">惩罚记录</h5>
+                    <div class="space-y-2">
+                        <div id="punishmentsList">
+                            <p class="text-center text-modern-gray py-4">加载中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 修改用户密码
+        async function changePassword(id) {
+            // 创建密码输入表单
+            const passwordForm = `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-modern-gray mb-2">新密码</label>
+                        <input type="password" id="newPassword" placeholder="请输入新密码" 
+                               class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-modern-gray mb-2">确认密码</label>
+                        <input type="password" id="confirmPassword" placeholder="请再次输入新密码" 
+                               class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary">
+                    </div>
+                </div>
+            `;
+            
+            modal.show({
+                title: '修改密码',
+                content: passwordForm,
+                type: 'custom',
+                onConfirm: async function() {
+                    const newPassword = document.getElementById('newPassword').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+                    
+                    if (!newPassword || !confirmPassword) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '请输入密码',
+                            type: 'error',
+                            showCancel: false
+                        });
+                        return;
+                    }
+                    
+                    if (newPassword !== confirmPassword) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '两次输入的密码不一致',
+                            type: 'error',
+                            showCancel: false
+                        });
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch(`/admin/user/change-password`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id, new_password: newPassword })
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            modal.show({
+                                title: '成功提示',
+                                content: '密码修改成功',
+                                type: 'success',
+                                showCancel: false
+                            });
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '操作失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                },
+                onCancel: function() {
+                    console.log('操作已取消');
+                }
+            });
+        }
+
+        // 强制下线
+        async function forceLogout(id) {
+            modal.show({
+                title: '确认操作',
+                content: '确定要强制该用户下线吗？',
+                type: 'confirm',
+                onConfirm: async function() {
+                    try {
+                        const response = await fetch(`/admin/user/force-logout?id=${id}`, {
+                            method: 'POST'
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            modal.show({
+                                title: '成功提示',
+                                content: '用户已被强制下线',
+                                type: 'success',
+                                showCancel: false
+                            });
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '操作失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                },
+                onCancel: function() {
+                    console.log('操作已取消');
+                }
+            });
+        }
+
+        // 分配用户分组
+        document.getElementById('assignGroupBtn').addEventListener('click', function() {
+            const userGroups = {$user_groups|json_encode};
+            const allGroups = {$allGroups|json_encode};
+            const userId = {$user.id};
+            
+            // 创建未分配的分组列表
+            const unassignedGroups = allGroups.filter(group => {
+                return !userGroups.some(userGroup => userGroup.id === group.id);
+            });
+            
+            if (unassignedGroups.length === 0) {
+                modal.show({
+                    title: '提示',
+                    content: '该用户已分配所有分组',
+                    type: 'info',
+                    showCancel: false
+                });
+                return;
+            }
+            
+            // 创建分组选择表单
+            let groupOptions = '';
+            unassignedGroups.forEach(group => {
+                groupOptions += `<option value="${group.id}">${group.name} (${group.is_system ? '系统' : '自定义'})</option>`;
+            });
+            
+            const formContent = `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-modern-gray mb-2">选择分组</label>
+                        <select id="groupId" class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary">
+                            ${groupOptions}
+                        </select>
+                    </div>
+                </div>
+            `;
+            
+            modal.show({
+                title: '分配分组',
+                content: formContent,
+                type: 'custom',
+                onConfirm: async function() {
+                    const groupId = document.getElementById('groupId').value;
+                    
+                    try {
+                        const response = await fetch('/admin/user/assign-group', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: userId, group_id: groupId })
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            modal.show({
+                                title: '成功提示',
+                                content: '分组分配成功',
+                                type: 'success',
+                                showCancel: false,
+                                onClose: function() {
+                                    location.reload();
+                                }
+                            });
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '操作失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                }
+            });
+        });
+
+        // 移除用户分组
+        async function removeUserGroup(userId, groupId) {
+            modal.show({
+                title: '确认操作',
+                content: '确定要移除该用户的分组吗？',
+                type: 'confirm',
+                onConfirm: async function() {
+                    try {
+                        const response = await fetch('/admin/user/remove-group', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: userId, group_id: groupId })
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            modal.show({
+                                title: '成功提示',
+                                content: '分组移除成功',
+                                type: 'success',
+                                showCancel: false,
+                                onClose: function() {
+                                    location.reload();
+                                }
+                            });
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '操作失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                }
+            });
+        }
+
+        // 分配用户标签
+        document.getElementById('assignTagBtn').addEventListener('click', function() {
+            const userTags = {$user_tags|json_encode};
+            const allTags = {$allTags|json_encode};
+            const userId = {$user.id};
+            
+            // 创建未分配的标签列表
+            const unassignedTags = allTags.filter(tag => {
+                return !userTags.some(userTag => userTag.id === tag.id);
+            });
+            
+            if (unassignedTags.length === 0) {
+                modal.show({
+                    title: '提示',
+                    content: '该用户已分配所有标签',
+                    type: 'info',
+                    showCancel: false
+                });
+                return;
+            }
+            
+            // 创建标签选择表单
+            let tagOptions = '';
+            unassignedTags.forEach(tag => {
+                tagOptions += `<option value="${tag.id}" style="color: ${tag.color};">${tag.name}</option>`;
+            });
+            
+            const formContent = `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-modern-gray mb-2">选择标签</label>
+                        <select id="tagId" class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary">
+                            ${tagOptions}
+                        </select>
+                    </div>
+                </div>
+            `;
+            
+            modal.show({
+                title: '分配标签',
+                content: formContent,
+                type: 'custom',
+                onConfirm: async function() {
+                    const tagId = document.getElementById('tagId').value;
+                    
+                    try {
+                        const response = await fetch('/admin/user/assign-tag', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: userId, tag_id: tagId })
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            modal.show({
+                                title: '成功提示',
+                                content: '标签分配成功',
+                                type: 'success',
+                                showCancel: false,
+                                onClose: function() {
+                                    location.reload();
+                                }
+                            });
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '操作失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                }
+            });
+        });
+
+        // 移除用户标签
+        async function removeUserTag(userId, tagId) {
+            modal.show({
+                title: '确认操作',
+                content: '确定要移除该用户的标签吗？',
+                type: 'confirm',
+                onConfirm: async function() {
+                    try {
+                        const response = await fetch('/admin/user/remove-tag', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: userId, tag_id: tagId })
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            modal.show({
+                                title: '成功提示',
+                                content: '标签移除成功',
+                                type: 'success',
+                                showCancel: false,
+                                onClose: function() {
+                                    location.reload();
+                                }
+                            });
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '操作失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                }
+            });
+        }
+
+        // 违规行为处理相关函数
+        // 加载违规记录
+        async function loadViolations() {
+            const userId = {$user.id};
+            try {
+                const response = await fetch(`/admin/user/violations?user_id=${userId}`);
+                const result = await response.json();
+                if (result.code === 200) {
+                    renderViolations(result.data.violations);
+                } else {
+                    document.getElementById('violationsList').innerHTML = '<p class="text-center text-modern-gray py-4">加载失败</p>';
+                }
+            } catch (error) {
+                document.getElementById('violationsList').innerHTML = '<p class="text-center text-modern-gray py-4">加载失败</p>';
+            }
+        }
+
+        // 渲染违规记录
+        function renderViolations(violations) {
+            const violationsList = document.getElementById('violationsList');
+            
+            if (violations.length === 0) {
+                violationsList.innerHTML = '<p class="text-center text-modern-gray py-4">暂无违规记录</p>';
+                return;
+            }
+            
+            let html = '';
+            violations.forEach(violation => {
+                const statusClass = violation.status === 1 ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600';
+                const statusText = violation.status === 1 ? '已处理' : '待处理';
+                
+                html += `
+                    <div class="p-3 bg-modern-light rounded-md">
+                        <div class="flex items-center justify-between mb-1">
+                            <div>
+                                <span class="font-medium text-modern-dark">${violation.violation_type}</span>
+                                <span class="ml-2 text-xs px-2 py-1 rounded-full ${statusClass}">${statusText}</span>
+                            </div>
+                            <span class="text-xs text-modern-gray">${violation.violation_time ? new Date(violation.violation_time * 1000).toLocaleString() : '未知时间'}</span>
+                        </div>
+                        <div class="text-sm text-modern-dark mb-1">${violation.violation_reason}</div>
+                        <div class="text-xs text-modern-gray">IP: ${violation.violation_ip}</div>
+                        ${violation.violation_content ? `<div class="text-xs text-modern-gray mt-1">内容: ${violation.violation_content}</div>` : ''}
+                        ${violation.status === 0 ? `<button onclick="handleViolation(${violation.id}, ${user.id})" class="mt-2 text-xs px-2 py-1 bg-modern-primary text-white rounded-full hover:bg-modern-secondary">处理</button>` : ''}
+                    </div>
+                `;
+            });
+            
+            violationsList.innerHTML = html;
+        }
+
+        // 加载惩罚记录
+        async function loadPunishments() {
+            const userId = {$user.id};
+            try {
+                const response = await fetch(`/admin/user/punishments?user_id=${userId}`);
+                const result = await response.json();
+                if (result.code === 200) {
+                    renderPunishments(result.data.punishments);
+                } else {
+                    document.getElementById('punishmentsList').innerHTML = '<p class="text-center text-modern-gray py-4">加载失败</p>';
+                }
+            } catch (error) {
+                document.getElementById('punishmentsList').innerHTML = '<p class="text-center text-modern-gray py-4">加载失败</p>';
+            }
+        }
+
+        // 渲染惩罚记录
+        function renderPunishments(punishments) {
+            const punishmentsList = document.getElementById('punishmentsList');
+            
+            if (punishments.length === 0) {
+                punishmentsList.innerHTML = '<p class="text-center text-modern-gray py-4">暂无惩罚记录</p>';
+                return;
+            }
+            
+            let html = '';
+            punishments.forEach(punishment => {
+                const statusClass = punishment.status === 1 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600';
+                const statusText = punishment.status === 1 ? '生效中' : '已解除';
+                const durationText = punishment.end_time ? `至 ${new Date(punishment.end_time * 1000).toLocaleString()}` : '永久';
+                
+                html += `
+                    <div class="p-3 bg-modern-light rounded-md">
+                        <div class="flex items-center justify-between mb-1">
+                            <div>
+                                <span class="font-medium text-modern-dark">${punishment.punishment_type}</span>
+                                <span class="ml-2 text-xs px-2 py-1 rounded-full ${statusClass}">${statusText}</span>
+                            </div>
+                            <span class="text-xs text-modern-gray">${punishment.start_time ? new Date(punishment.start_time * 1000).toLocaleString() : '未知时间'}</span>
+                        </div>
+                        <div class="text-sm text-modern-dark mb-1">${punishment.punishment_reason}</div>
+                        <div class="text-xs text-modern-gray">期限: ${durationText}</div>
+                        ${punishment.status === 1 ? `<button onclick="removePunishment(${punishment.id})" class="mt-2 text-xs px-2 py-1 bg-green-500 text-white rounded-full hover:bg-green-600">解除</button>` : ''}
+                    </div>
+                `;
+            });
+            
+            punishmentsList.innerHTML = html;
+        }
+
+        // 记录违规
+        document.getElementById('addViolationBtn').addEventListener('click', function() {
+            const userId = {$user.id};
+            
+            const formContent = `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-modern-gray mb-2">违规类型</label>
+                        <input type="text" id="violationType" placeholder="例如：spam, abuse, fraud" class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-modern-gray mb-2">违规原因</label>
+                        <textarea id="violationReason" placeholder="请输入违规原因" rows="3" class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-modern-gray mb-2">违规内容</label>
+                        <textarea id="violationContent" placeholder="可选：输入违规的具体内容" rows="3" class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary"></textarea>
+                    </div>
+                </div>
+            `;
+            
+            modal.show({
+                title: '记录违规',
+                content: formContent,
+                type: 'custom',
+                onConfirm: async function() {
+                    const violationType = document.getElementById('violationType').value;
+                    const violationReason = document.getElementById('violationReason').value;
+                    const violationContent = document.getElementById('violationContent').value;
+                    
+                    if (!violationType || !violationReason) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '违规类型和违规原因不能为空',
+                            type: 'error',
+                            showCancel: false
+                        });
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch('/admin/user/add-violation', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                user_id: userId, 
+                                violation_type: violationType, 
+                                violation_reason: violationReason,
+                                violation_content: violationContent 
+                            })
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            modal.show({
+                                title: '成功提示',
+                                content: '违规记录添加成功',
+                                type: 'success',
+                                showCancel: false,
+                                onClose: function() {
+                                    loadViolations(); // 重新加载违规记录
+                                }
+                            });
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '操作失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                }
+            });
+        });
+
+        // 处理违规（添加惩罚）
+        function handleViolation(violationId, userId) {
+            const formContent = `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-modern-gray mb-2">惩罚类型</label>
+                        <select id="punishmentType" class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary">
+                            <option value="warning">警告</option>
+                            <option value="ban_speak">禁止发言</option>
+                            <option value="ban_login">禁止登录</option>
+                            <option value="ban_forever">永久封禁</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-modern-gray mb-2">惩罚原因</label>
+                        <textarea id="punishmentReason" placeholder="请输入惩罚原因" rows="3" class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary"></textarea>
+                    </div>
+                    <div id="durationField">
+                        <label class="block text-sm text-modern-gray mb-2">惩罚时长（小时）</label>
+                        <input type="number" id="punishmentDuration" min="1" placeholder="请输入惩罚时长" class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary">
+                    </div>
+                </div>
+            `;
+            
+            modal.show({
+                title: '处理违规',
+                content: formContent,
+                type: 'custom',
+                onConfirm: async function() {
+                    const punishmentType = document.getElementById('punishmentType').value;
+                    const punishmentReason = document.getElementById('punishmentReason').value;
+                    const punishmentDuration = document.getElementById('punishmentDuration').value;
+                    
+                    if (!punishmentReason) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '惩罚原因不能为空',
+                            type: 'error',
+                            showCancel: false
+                        });
+                        return;
+                    }
+                    
+                    // 永久封禁不需要时长
+                    const duration = punishmentType === 'ban_forever' ? 0 : (punishmentDuration || 1);
+                    
+                    try {
+                        const response = await fetch('/admin/user/add-punishment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                user_id: userId, 
+                                violation_id: violationId,
+                                punishment_type: punishmentType,
+                                punishment_reason: punishmentReason,
+                                duration: duration
+                            })
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            modal.show({
+                                title: '成功提示',
+                                content: '惩罚已应用',
+                                type: 'success',
+                                showCancel: false,
+                                onClose: function() {
+                                    loadViolations(); // 重新加载违规记录
+                                    loadPunishments(); // 重新加载惩罚记录
+                                }
+                            });
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '操作失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                }
+            });
+        }
+
+        // 解除惩罚
+        function removePunishment(punishmentId) {
+            modal.show({
+                title: '确认操作',
+                content: '确定要解除该惩罚吗？',
+                type: 'confirm',
+                onConfirm: async function() {
+                    try {
+                        const response = await fetch('/admin/user/remove-punishment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ punishment_id: punishmentId })
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            modal.show({
+                                title: '成功提示',
+                                content: '惩罚已解除',
+                                type: 'success',
+                                showCancel: false,
+                                onClose: function() {
+                                    loadPunishments(); // 重新加载惩罚记录
+                                }
+                            });
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '操作失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                }
+            });
+        }
+
+        // 监听惩罚类型变化
+        document.addEventListener('DOMContentLoaded', function() {
+            const punishmentTypeSelect = document.getElementById('punishmentType');
+            const durationField = document.getElementById('durationField');
+            
+            if (punishmentTypeSelect && durationField) {
+                punishmentTypeSelect.addEventListener('change', function() {
+                    if (this.value === 'ban_forever') {
+                        durationField.style.display = 'none';
+                    } else {
+                        durationField.style.display = 'block';
+                    }
+                });
+            }
+        });
+
+        // 页面加载时加载违规记录和惩罚记录
+        window.addEventListener('DOMContentLoaded', function() {
+            loadViolations();
+            loadPunishments();
+        });
+    </script>
+</body>
+</html>

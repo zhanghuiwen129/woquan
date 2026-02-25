@@ -1,0 +1,190 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>角色分配 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">角色权限分配</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        管理系统角色和权限分配
+    </p>
+</div>
+
+<!-- 操作按钮区域 -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="flex items-center gap-4">
+        <button onclick="openModal('addRoleModal')" class="px-5 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern flex items-center gap-2">
+            <i class="fas fa-plus"></i>
+            <span>添加角色</span>
+        </button>
+    </div>
+    <div class="flex items-center gap-4">
+        <input type="text" id="searchInput" placeholder="搜索角色..." class="px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+        <button onclick="searchRoles()" class="px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md hover:border-modern-primary transition-colors">
+            <i class="fas fa-search"></i>
+        </button>
+    </div>
+</div>
+
+<!-- 角色列表卡片 -->
+<div class="card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                    </th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">ID</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">角色名称</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">权限数</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">成员数</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">状态</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">操作</th>
+                </tr>
+            </thead>
+            <tbody id="roleTableBody" class="divide-y divide-modern-lightGray">
+                <!-- 示例数据 -->
+                <tr class="hover:bg-modern-light/50 transition-colors">
+                    <td class="py-4 px-6">
+                        <input type="checkbox" class="role-checkbox" value="1">
+                    </td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">1</td>
+                    <td class="py-4 px-6">
+                        <div class="text-sm font-medium text-modern-dark">超级管理员</div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="px-2 py-1 text-xs rounded-full bg-modern-primary/10 text-modern-primary">全部权限</span>
+                    </td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">2</td>
+                    <td class="py-4 px-6">
+                        <span class="text-xs px-2 py-1 bg-modern-success/10 text-modern-success rounded-full">启用</span>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-2">
+                            <button onclick="editRole(1)" class="text-modern-gray hover:text-modern-primary transition-colors" title="编辑">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="assignPermissions(1)" class="text-modern-gray hover:text-modern-primary transition-colors" title="分配权限">
+                                <i class="fas fa-key"></i>
+                            </button>
+                            <button onclick="deleteRole(1)" class="text-modern-gray hover:text-modern-danger transition-colors" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="hover:bg-modern-light/50 transition-colors">
+                    <td class="py-4 px-6">
+                        <input type="checkbox" class="role-checkbox" value="2">
+                    </td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">2</td>
+                    <td class="py-4 px-6">
+                        <div class="text-sm font-medium text-modern-dark">管理员</div>
+                    </td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">15</td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">5</td>
+                    <td class="py-4 px-6">
+                        <span class="text-xs px-2 py-1 bg-modern-success/10 text-modern-success rounded-full">启用</span>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-2">
+                            <button onclick="editRole(2)" class="text-modern-gray hover:text-modern-primary transition-colors" title="编辑">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="assignPermissions(2)" class="text-modern-gray hover:text-modern-primary transition-colors" title="分配权限">
+                                <i class="fas fa-key"></i>
+                            </button>
+                            <button onclick="deleteRole(2)" class="text-modern-gray hover:text-modern-danger transition-colors" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="hover:bg-modern-light/50 transition-colors">
+                    <td class="py-4 px-6">
+                        <input type="checkbox" class="role-checkbox" value="3">
+                    </td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">3</td>
+                    <td class="py-4 px-6">
+                        <div class="text-sm font-medium text-modern-dark">操作员</div>
+                    </td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">5</td>
+                    <td class="py-4 px-6 text-sm text-modern-gray">12</td>
+                    <td class="py-4 px-6">
+                        <span class="text-xs px-2 py-1 bg-modern-success/10 text-modern-success rounded-full">启用</span>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-2">
+                            <button onclick="editRole(3)" class="text-modern-gray hover:text-modern-primary transition-colors" title="编辑">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="assignPermissions(3)" class="text-modern-gray hover:text-modern-primary transition-colors" title="分配权限">
+                                <i class="fas fa-key"></i>
+                            </button>
+                            <button onclick="deleteRole(3)" class="text-modern-gray hover:text-modern-danger transition-colors" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页 -->
+    <div class="bg-modern-light px-6 py-4 flex items-center justify-between border-t border-modern-lightGray">
+        <div class="text-sm text-modern-gray">
+            显示 <span class="font-medium">1</span> 到 <span class="font-medium">3</span> 条,共 <span class="font-medium">3</span> 条记录
+        </div>
+        <div class="flex items-center gap-2">
+            <button class="px-3 py-1 border border-modern-lightGray rounded-md hover:bg-modern-white disabled:opacity-50" disabled>
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="px-3 py-1 bg-modern-primary text-white rounded-md">1</button>
+            <button class="px-3 py-1 border border-modern-lightGray rounded-md hover:bg-modern-white disabled:opacity-50" disabled>
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+// 全选/取消全选
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.role-checkbox');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+}
+
+// 打开添加角色模态框
+function openModal(modalId) {
+    alert('添加角色功能待实现');
+}
+
+// 编辑角色
+function editRole(id) {
+    alert('编辑角色 ' + id + ' 功能待实现');
+}
+
+// 分配权限
+function assignPermissions(id) {
+    alert('为角色 ' + id + ' 分配权限功能待实现');
+}
+
+// 删除角色
+function deleteRole(id) {
+    if (confirm('确定要删除该角色吗?')) {
+        alert('删除角色 ' + id + ' 功能待实现');
+    }
+}
+
+// 搜索角色
+function searchRoles() {
+    const keyword = document.getElementById('searchInput').value;
+    alert('搜索功能待实现: ' + keyword);
+}
+</script>
+{/block}

@@ -1,0 +1,220 @@
+﻿<!-- 上传设置 -->
+<div class="tab-content" id="upload">
+    <h3 class="text-lg font-medium text-gray-800">文件上传配置</h3>
+    <form id="uploadForm" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">允许上传的文件格式</label>
+                <input type="text" name="allowed_types" value="{$config.allowed_types ?? 'jpg,jpeg,png,gif,mp4,mp3,zip,doc,docx,pdf'}"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                       placeholder="多个格式用逗号分隔">
+                <p class="text-xs text-gray-500 mt-2">多个格式用英文逗号分隔</p>
+            </div>
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">存储方式</label>
+                <select name="storage_type" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500" onchange="toggleStorageSettings()">
+                    <option value="local" {if isset($config['storage_type']) && $config['storage_type'] == 'local'}selected{/if}>本地存储</option>
+                    <option value="oss" {if isset($config['storage_type']) && $config['storage_type'] == 'oss'}selected{/if}>阿里云OSS</option>
+                    <option value="cos" {if isset($config['storage_type']) && $config['storage_type'] == 'cos'}selected{/if}>腾讯云COS</option>
+                    <option value="qiniu" {if isset($config['storage_type']) && $config['storage_type'] == 'qiniu'}selected{/if}>七牛云</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 图片压缩配置 -->
+        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+            <h4 class="text-md font-medium text-gray-700 mb-4">图片压缩配置</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">启用图片压缩</label>
+                    <select name="image_compress_enabled" class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                        <option value="0" {if isset($config['image_compress_enabled']) && $config['image_compress_enabled'] == '0'}selected{/if}>关闭</option>
+                        <option value="1" {if isset($config['image_compress_enabled']) && $config['image_compress_enabled'] == '1'}selected{/if}>开启</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">压缩质量 (1-100)</label>
+                    <input type="number" name="image_compress_quality" value="{$config.image_compress_quality ?? '75'}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                           min="1" max="100">
+                    <p class="text-xs text-gray-500 mt-2">值越小压缩率越高，建议值：70-80</p>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">最大宽度 (像素)</label>
+                    <input type="number" name="image_max_width" value="{$config.image_max_width ?? '1920'}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                           min="0" placeholder="0表示不限制">
+                    <p class="text-xs text-gray-500 mt-2">0表示不限制宽度</p>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">最大高度 (像素)</label>
+                    <input type="number" name="image_max_height" value="{$config.image_max_height ?? '1080'}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                           min="0" placeholder="0表示不限制">
+                    <p class="text-xs text-gray-500 mt-2">0表示不限制高度</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 阿里云OSS配置 -->
+        <div id="oss-settings" class="space-y-4 mt-6 {if !isset($config['storage_type']) || $config['storage_type'] != 'oss'}hidden{/if}">
+            <h4 class="text-md font-medium text-gray-700 border-b pb-2">阿里云OSS配置</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">AccessKey ID</label>
+                    <input type="text" name="oss_access_key_id" value="{$config.oss_access_key_id ?? ''}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">AccessKey Secret</label>
+                    <input type="password" name="oss_access_key_secret" value="{$config.oss_access_key_secret ?? ''}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">Bucket</label>
+                    <input type="text" name="oss_bucket" value="{$config.oss_bucket ?? ''}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">Endpoint</label>
+                    <input type="text" name="oss_endpoint" value="{$config.oss_endpoint ?? ''}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">Bucket域名</label>
+                    <input type="text" name="oss_domain" value="{$config.oss_domain ?? ''}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                           placeholder="例如: https://your-bucket.oss-cn-hangzhou.aliyuncs.com">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">存储目录</label>
+                    <input type="text" name="oss_directory" value="{$config.oss_directory ?? 'uploads'}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                           placeholder="例如: uploads">
+                </div>
+            </div>
+        </div>
+
+        <!-- 腾讯云COS配置 -->
+        <div id="cos-settings" class="space-y-4 mt-6 {if !isset($config['storage_type']) || $config['storage_type'] != 'cos'}hidden{/if}">
+            <h4 class="text-md font-medium text-gray-700 border-b pb-2">腾讯云COS配置</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">SecretId</label>
+                    <input type="text" name="cos_secret_id" value="{$config.cos_secret_id ?? ''}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">SecretKey</label>
+                    <input type="password" name="cos_secret_key" value="{$config.cos_secret_key ?? ''}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">Bucket</label>
+                    <input type="text" name="cos_bucket" value="{$config.cos_bucket ?? ''}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">Region</label>
+                    <input type="text" name="cos_region" value="{$config.cos_region ?? ''}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                           placeholder="例如: ap-guangzhou">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">Bucket域名</label>
+                    <input type="text" name="cos_domain" value="{$config.cos_domain ?? ''}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                           placeholder="例如: https://your-bucket.cos.ap-guangzhou.myqcloud.com">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">存储目录</label>
+                    <input type="text" name="cos_directory" value="{$config.cos_directory ?? 'uploads'}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                           placeholder="例如: uploads">
+                </div>
+            </div>
+        </div>
+
+        <!-- 七牛云配置 -->
+        <div id="qiniu-settings" class="space-y-4 mt-6 {if !isset($config['storage_type']) || $config['storage_type'] != 'qiniu'}hidden{/if}">
+            <h4 class="text-md font-medium text-gray-700 border-b pb-2">七牛云配置</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">AccessKey</label>
+                    <input type="text" name="qiniu_access_key" value="{$config.qiniu_access_key ?? ''}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">SecretKey</label>
+                    <input type="password" name="qiniu_secret_key" value="{$config.qiniu_secret_key ?? ''}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">Bucket</label>
+                    <input type="text" name="qiniu_bucket" value="{$config.qiniu_bucket ?? ''}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">Domain</label>
+                    <input type="text" name="qiniu_domain" value="{$config.qiniu_domain ?? ''}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                           placeholder="例如: https://your-bucket.qiniudn.com">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">存储目录</label>
+                    <input type="text" name="qiniu_directory" value="{$config.qiniu_directory ?? 'uploads'}"
+                           class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                           placeholder="例如: uploads">
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 mt-8">
+            <button type="button" onclick="saveUpload()"
+                    class="px-5 py-2.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                保存配置
+            </button>
+        </div>
+    </form>
+
+    <script>
+    function toggleStorageSettings() {
+        const storageType = document.querySelector('select[name="storage_type"]').value;
+        
+        document.getElementById('oss-settings').classList.add('hidden');
+        document.getElementById('cos-settings').classList.add('hidden');
+        document.getElementById('qiniu-settings').classList.add('hidden');
+        
+        if (storageType === 'oss') {
+            document.getElementById('oss-settings').classList.remove('hidden');
+        } else if (storageType === 'cos') {
+            document.getElementById('cos-settings').classList.remove('hidden');
+        } else if (storageType === 'qiniu') {
+            document.getElementById('qiniu-settings').classList.remove('hidden');
+        }
+    }
+
+    function saveUpload() {
+        const formData = new FormData(document.getElementById('uploadForm'));
+        
+        fetch('/admin/setting/saveUpload', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.code === 200) {
+                alert('保存成功');
+            } else {
+                alert('保存失败: ' + data.msg);
+            }
+        })
+        .catch(error => {
+            alert('请求失败: ' + error.message);
+        });
+    }
+    </script>
+</div>

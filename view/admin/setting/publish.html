@@ -1,0 +1,182 @@
+﻿<!-- 发布设置 -->
+<div class="tab-content" id="publish">
+    <h3 class="text-lg font-medium text-gray-800">内容发布配置</h3>
+    <form id="publishForm" class="space-y-6">
+        <!-- 动态发布规则 -->
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+            <h4 class="text-md font-semibold text-gray-700 mb-4">动态发布规则</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">单条动态最大文字数</label>
+                    <input type="number" name="post_max_words" value="{$config.post_max_words ?? 500}"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">最多上传图片数</label>
+                    <input type="number" name="post_max_images" value="{$config.post_max_images ?? 9}"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">视频文件大小限制(MB)</label>
+                    <input type="number" name="post_max_video_size" value="{$config.post_max_video_size ?? 50}"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">允许发布纯文字</label>
+                    <select name="allow_text_only" class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                        <option value="0" {if $config.allow_text_only ?? 1 == 0}selected{/if}>禁止</option>
+                        <option value="1" {if $config.allow_text_only ?? 1 == 1}selected{/if}>允许</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">允许发布纯图片</label>
+                    <select name="allow_image_only" class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                        <option value="0" {if $config.allow_image_only ?? 1 == 0}selected{/if}>禁止</option>
+                        <option value="1" {if $config.allow_image_only ?? 1 == 1}selected{/if}>允许</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">允许发布视频</label>
+                    <select name="allow_video" class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                        <option value="0" {if $config.allow_video ?? 1 == 0}selected{/if}>禁止</option>
+                        <option value="1" {if $config.allow_video ?? 1 == 1}selected{/if}>允许</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">单用户单日最大发布数</label>
+                    <input type="number" name="daily_post_limit" value="{$config.daily_post_limit ?? 50}"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">同内容重复发布间隔(分钟)</label>
+                    <input type="number" name="repeat_post_interval" value="{$config.repeat_post_interval ?? 10}"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- 评论/互动规则 -->
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+            <h4 class="text-md font-semibold text-gray-700 mb-4">评论/互动规则</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">评论文字数限制</label>
+                    <input type="number" name="comment_max_words" value="{$config.comment_max_words ?? 200}"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">允许带图片评论</label>
+                    <select name="allow_image_comments" class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                        <option value="0" {if $config.allow_image_comments ?? 1 == 0}selected{/if}>禁止</option>
+                        <option value="1" {if $config.allow_image_comments ?? 1 == 1}selected{/if}>允许</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">允许评论楼中楼</label>
+                    <select name="allow_nested_comments" class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                        <option value="0" {if $config.allow_nested_comments ?? 1 == 0}selected{/if}>禁止</option>
+                        <option value="1" {if $config.allow_nested_comments ?? 1 == 1}selected{/if}>允许</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">开启点赞功能</label>
+                    <select name="allow_likes" class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                        <option value="0" {if $config.allow_likes ?? 1 == 0}selected{/if}>关闭</option>
+                        <option value="1" {if $config.allow_likes ?? 1 == 1}selected{/if}>开启</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">允许匿名评论</label>
+                    <select name="allow_anonymous_comments" class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                        <option value="0" {if $config.allow_anonymous_comments ?? 0 == 0}selected{/if}>禁止</option>
+                        <option value="1" {if $config.allow_anonymous_comments ?? 0 == 1}selected{/if}>允许</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">单用户单日最大评论数</label>
+                    <input type="number" name="daily_comment_limit" value="{$config.daily_comment_limit ?? 200}"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- 内容审核规则 -->
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+            <h4 class="text-md font-semibold text-gray-700 mb-4">内容审核规则</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">动态审核</label>
+                    <select name="post_moderation" class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                        <option value="0" {if $config.post_moderation ?? 0 == 0}selected{/if}>无需审核</option>
+                        <option value="1" {if $config.post_moderation ?? 0 == 1}selected{/if}>全部审核</option>
+                        <option value="2" {if $config.post_moderation ?? 0 == 2}selected{/if}>仅新用户审核</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">评论审核</label>
+                    <select name="comment_moderation" class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                        <option value="0" {if $config.comment_moderation ?? 0 == 0}selected{/if}>无需审核</option>
+                        <option value="1" {if $config.comment_moderation ?? 0 == 1}selected{/if}>全部审核</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-6">
+                <label class="block text-sm text-gray-500 mb-2">敏感词触发规则</label>
+                <select name="sensitive_word_action" class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                    <option value="replace" {if $config.sensitive_word_action ?? 'replace' == 'replace'}selected{/if}>替换为*</option>
+                    <option value="refuse" {if $config.sensitive_word_action ?? 'replace' == 'refuse'}selected{/if}>拒绝发布</option>
+                    <option value="moderate" {if $config.sensitive_word_action ?? 'replace' == 'moderate'}selected{/if}>标记待审核</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 内容展示规则 -->
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+            <h4 class="text-md font-semibold text-gray-700 mb-4">内容展示规则</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">动态流默认排序</label>
+                    <select name="post_default_sort" class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                        <option value="latest" {if $config.post_default_sort ?? 'latest' == 'latest'}selected{/if}>最新发布</option>
+                        <option value="popular" {if $config.post_default_sort ?? 'latest' == 'popular'}selected{/if}>热度排序</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">默认动态可见范围</label>
+                    <select name="post_default_visibility" class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                        <option value="public" {if $config.post_default_visibility ?? 'public' == 'public'}selected{/if}>全部用户</option>
+                        <option value="followers" {if $config.post_default_visibility ?? 'public' == 'followers'}selected{/if}>仅粉丝</option>
+                        <option value="private" {if $config.post_default_visibility ?? 'public' == 'private'}selected{/if}>仅自己</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">用户可编辑动态时限(小时)</label>
+                    <input type="number" name="post_edit_limit" value="{$config.post_edit_limit ?? 24}"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                    <p class="text-xs text-gray-500 mt-2">0表示无限制</p>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-500 mb-2">用户可删除动态时限(小时)</label>
+                    <input type="number" name="post_delete_limit" value="{$config.post_delete_limit ?? 24}"
+                           class="w-full bg-white border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+                    <p class="text-xs text-gray-500 mt-2">0表示无限制</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 mt-8">
+            <button type="button" onclick="savePublish()"
+                    class="px-5 py-2.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                保存配置
+            </button>
+        </div>
+    </form>
+</div>

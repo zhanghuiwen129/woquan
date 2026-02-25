@@ -1,0 +1,279 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加API密钥 - 后台管理</title>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .form-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+        }
+        .form-group {
+            margin-bottom: 24px;
+        }
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 10px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .form-textarea {
+            width: 100%;
+            padding: 10px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 100px;
+            transition: all 0.2s;
+        }
+        .form-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+        .alert-success {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .alert-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        .access-key-display {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #4b5563;
+            background-color: #f3f4f6;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 8px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'api';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">添加API密钥</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="max-w-3xl mx-auto">
+                <!-- 提示信息 -->
+                <div id="alertContainer"></div>
+
+                <!-- 表单容器 -->
+                <div class="form-container">
+                    <form id="addKeyForm">
+                        <!-- 密钥名称 -->
+                        <div class="form-group">
+                            <label class="form-label" for="name">密钥名称 <span class="text-red-500">*</span></label>
+                            <input type="text" id="name" name="name" class="form-input" placeholder="请输入密钥名称" required>
+                            <small class="text-gray-500 text-xs mt-2 block">请输入一个描述性的名称，便于识别此密钥的用途</small>
+                        </div>
+
+                        <!-- 权限设置 -->
+                        <div class="form-group">
+                            <label class="form-label" for="permissions">权限设置</label>
+                            <textarea id="permissions" name="permissions" class="form-textarea" placeholder="请输入权限设置，默认为 *（所有权限）">*</textarea>
+                            <small class="text-gray-500 text-xs mt-2 block">使用逗号分隔多个权限，例如：users:read,posts:write</small>
+                        </div>
+
+                        <!-- 操作按钮 -->
+                        <div class="flex gap-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save mr-2"></i>保存
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="window.location.href='/admin/api/keys'">
+                                <i class="fas fa-arrow-left mr-2"></i>返回列表
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // 表单提交
+            $('#addKeyForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                const name = $('#name').val();
+                const permissions = $('#permissions').val();
+                
+                if (!name) {
+                    showAlert('error', '请输入密钥名称');
+                    return;
+                }
+                
+                // 提交表单
+                $.ajax({
+                    url: '/admin/api/saveKey',
+                    type: 'POST',
+                    data: {
+                        name: name,
+                        permissions: permissions
+                    },
+                    dataType: 'json',
+                    success: function(res) {
+                        if (res.code === 200) {
+                            showAlert('success', `添加成功！<br>Access Key: <div class="access-key-display">${res.data.access_key}</div><br>请妥善保存此密钥，刷新页面后将无法再次查看`);
+                            // 清空表单
+                            $('#name').val('');
+                            $('#permissions').val('*');
+                        } else {
+                            showAlert('error', '添加失败：' + res.msg);
+                        }
+                    },
+                    error: function() {
+                        showAlert('error', '网络错误，请重试！');
+                    }
+                });
+            });
+        });
+        
+        // 显示提示信息
+        function showAlert(type, message) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+            const iconClass = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+            
+            const alertHtml = `
+                <div class="alert ${alertClass}">
+                    <div class="flex items-start">
+                        <i class="${iconClass} mr-3 mt-1"></i>
+                        <div>
+                            ${message}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            $('#alertContainer').html(alertHtml);
+        }
+    </script>
+</body>
+</html>

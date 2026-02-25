@@ -1,0 +1,89 @@
+<!-- 网站设置 -->
+<div class="tab-content" id="website">
+    <h3 class="text-lg font-medium text-gray-800">网站基础配置</h3>
+    <form id="websiteForm" class="space-y-6" enctype="multipart/form-data">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">网站名称</label>
+                <input type="text" name="site_name" value="{$config.site_name|default=''}"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">网站副标题</label>
+                <input type="text" name="site_subtitle" value="{$config.site_subtitle|default=''}"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+            </div>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-500 mb-2">网站地址</label>
+            <input type="text" name="site_url" value="{$config.site_url|default=''}"
+                   class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                   placeholder="http://localhost 或 https://yourdomain.com">
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">Logo图片</label>
+                <input type="file" name="logo_file" accept="image/*"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                       onchange="previewLogo(this)">
+                {if isset($config.site_logo) && $config.site_logo}
+                <img src="{$config.site_logo}" id="logoPreview" class="mt-2 h-16 object-contain rounded border border-gray-200 bg-white" alt="Logo预览">
+                {else /}
+                <img src="" id="logoPreview" class="mt-2 h-16 object-contain rounded border border-gray-200 bg-white hidden" alt="Logo预览">
+                {/if}
+                <input type="hidden" name="site_logo" value="{$config.site_logo|default=''}">
+                <p class="text-xs text-gray-400 mt-1">建议尺寸：200x50px，支持PNG、JPG、GIF格式</p>
+            </div>
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">网站图标</label>
+                <input type="file" name="icon_file" accept="image/x-icon,image/vnd.microsoft.icon,image/png"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                       onchange="previewIcon(this)">
+                {if isset($config.site_favicon) && $config.site_favicon}
+                <img src="{$config.site_favicon}" id="iconPreview" class="mt-2 w-12 h-12 object-contain rounded border border-gray-200 bg-white" alt="图标预览">
+                {else /}
+                <img src="" id="iconPreview" class="mt-2 w-12 h-12 object-contain rounded border border-gray-200 bg-white hidden" alt="图标预览">
+                {/if}
+                <input type="hidden" name="site_favicon" value="{$config.site_favicon|default=''}">
+                <p class="text-xs text-gray-400 mt-1">建议尺寸：32x32px 或 16x16px，格式：ICO、PNG</p>
+            </div>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-500 mb-2">顶部背景图片URL</label>
+            <input type="text" name="site_homimg" value="{$config.site_homimg|default=''}"
+                   class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                   placeholder="输入图片URL地址" onchange="previewHomimg(this)">
+            {if isset($config.site_homimg) && $config.site_homimg}
+            <img src="{$config.site_homimg}" id="homimgPreview" class="mt-2 h-32 w-full object-cover rounded border border-gray-200" alt="顶部背景预览">
+            {else /}
+            <img src="" id="homimgPreview" class="mt-2 h-32 w-full object-cover rounded border border-gray-200 hidden" alt="顶部背景预览">
+            {/if}
+        </div>
+        <div>
+            <label class="block text-sm text-gray-500 mb-2">网站签名/标语</label>
+            <input type="text" name="site_sign" value="{$config.site_sign|default=''}"
+                   class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                   placeholder="显示在网站底部的签名或标语">
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">版权信息</label>
+                <input type="text" name="site_copyright" value="{$config.site_copyright|default=''}"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                       placeholder="例如：© 2025 我圈社交平台 版权所有">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">备案号</label>
+                <input type="text" name="site_icp" value="{$config.site_icp|default=''}"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                       placeholder="例如：京ICP备12345678号">
+            </div>
+        </div>
+        <div class="flex items-center gap-4 mt-8">
+            <button type="button" onclick="saveWebsite()"
+                    class="px-5 py-2.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                保存配置
+            </button>
+        </div>
+    </form>
+</div>

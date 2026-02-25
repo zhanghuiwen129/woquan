@@ -1,0 +1,321 @@
+﻿{extend name="admin/layout" /}
+
+{block name="title"}<title>通话管理 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">通话管理</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        管理用户的语音和视频通话记录
+    </p>
+</div>
+
+<!-- 统计卡片 -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="card p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-modern-gray">总通话次数</p>
+                <p class="text-2xl font-bold text-modern-dark mt-1" id="totalCalls">0</p>
+            </div>
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-phone text-blue-500 text-xl"></i>
+            </div>
+        </div>
+    </div>
+    <div class="card p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-modern-gray">今日通话</p>
+                <p class="text-2xl font-bold text-modern-dark mt-1" id="todayCalls">0</p>
+            </div>
+            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-calendar-day text-green-500 text-xl"></i>
+            </div>
+        </div>
+    </div>
+    <div class="card p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-modern-gray">平均时长</p>
+                <p class="text-2xl font-bold text-modern-dark mt-1" id="avgDuration">0秒</p>
+            </div>
+            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-clock text-purple-500 text-xl"></i>
+            </div>
+        </div>
+    </div>
+    <div class="card p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-modern-gray">本月通话</p>
+                <p class="text-2xl font-bold text-modern-dark mt-1" id="monthCalls">0</p>
+            </div>
+            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-calendar-alt text-orange-500 text-xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 筛选区域 -->
+<div class="card rounded-lg p-4 mb-4">
+    <div class="flex flex-wrap items-center gap-4">
+        <div class="flex items-center gap-2">
+            <label class="text-sm text-modern-gray">关键词：</label>
+            <input type="text" id="searchKeyword" placeholder="搜索用户昵称" class="px-3 py-2 border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary">
+        </div>
+        <div class="flex items-center gap-2">
+            <label class="text-sm text-modern-gray">通话类型：</label>
+            <select id="callType" class="px-3 py-2 border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary">
+                <option value="-1">全部</option>
+                <option value="1">语音通话</option>
+                <option value="2">视频通话</option>
+            </select>
+        </div>
+        <div class="flex items-center gap-2">
+            <label class="text-sm text-modern-gray">状态：</label>
+            <select id="callStatus" class="px-3 py-2 border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary">
+                <option value="-1">全部</option>
+                <option value="0">未接通</option>
+                <option value="1">已接通</option>
+                <option value="2">已挂断</option>
+            </select>
+        </div>
+        <button onclick="searchCalls()" class="px-4 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors">
+            <i class="fas fa-search mr-1"></i>搜索
+        </button>
+    </div>
+</div>
+
+<!-- 通话列表卡片 -->
+<div class="card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">ID</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">发起人</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">接收人</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">通话类型</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">时长</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">状态</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">通话时间</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-modern-lightGray">
+                <tr>
+                    <td colspan="8" class="px-6 py-12 text-center text-modern-gray">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>数据加载中...</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页 -->
+    <div class="px-6 py-4 flex items-center justify-between border-t">
+        <div class="text-sm text-modern-gray">
+            共 <span id="total">0</span> 条记录
+        </div>
+        <div class="flex gap-2" id="pagination">
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPage = 1;
+let pageSize = 20;
+
+// 加载统计数据
+function loadStatistics() {
+    fetch('/admin/call/statistics')
+        .then(response => response.json())
+        .then(result => {
+            if (result.code === 200 && result.data) {
+                const stats = result.data;
+                document.getElementById('totalCalls').textContent = stats.total_calls || 0;
+                document.getElementById('todayCalls').textContent = stats.today_calls || 0;
+                document.getElementById('avgDuration').textContent = (stats.avg_duration || 0).toFixed(0) + '秒';
+                document.getElementById('monthCalls').textContent = stats.month_calls || 0;
+            }
+        })
+        .catch(error => {
+            console.error('加载统计失败:', error);
+        });
+}
+
+// 加载通话记录
+function loadCalls(page = 1) {
+    currentPage = page;
+    const keyword = document.getElementById('searchKeyword').value;
+    const callType = document.getElementById('callType').value;
+    const status = document.getElementById('callStatus').value;
+
+    let url = `/admin/call/list?page=${page}&limit=${pageSize}`;
+    if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+    if (callType !== '-1') url += `&call_type=${callType}`;
+    if (status !== '-1') url += `&status=${status}`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(result => {
+            if (result.code === 200) {
+                renderTable(result.data || []);
+                renderPagination(result.total || 0, page);
+            } else {
+                alert('加载失败: ' + result.msg);
+            }
+        })
+        .catch(error => {
+            console.error('加载失败:', error);
+            alert('网络错误，请稍后重试');
+        });
+}
+
+// 渲染表格
+function renderTable(data) {
+    const tbody = document.getElementById('tableBody');
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-12 text-center text-modern-gray">暂无数据</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = data.map(item => {
+        const callTypeIcon = item.call_type === 2 ? 'fa-video' : 'fa-phone';
+        const callTypeText = item.call_type === 2 ? '视频通话' : '语音通话';
+        const duration = item.duration ? Math.floor(item.duration) + '秒' : '-';
+        
+        let statusClass, statusText;
+        switch(parseInt(item.status)) {
+            case 0:
+                statusClass = 'bg-gray-100 text-gray-700';
+                statusText = '未接通';
+                break;
+            case 1:
+                statusClass = 'bg-green-100 text-green-700';
+                statusText = '已接通';
+                break;
+            case 2:
+                statusClass = 'bg-blue-100 text-blue-700';
+                statusText = '已挂断';
+                break;
+            default:
+                statusClass = 'bg-gray-100 text-gray-700';
+                statusText = '未知';
+        }
+
+        return `
+            <tr class="hover:bg-modern-light/50 transition-colors">
+                <td class="py-4 px-6">${item.id}</td>
+                <td class="py-4 px-6">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 bg-modern-light rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-modern-gray text-sm"></i>
+                        </div>
+                        <span class="text-sm font-medium">${item.caller_name || '-'}</span>
+                    </div>
+                </td>
+                <td class="py-4 px-6">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 bg-modern-light rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-modern-gray text-sm"></i>
+                        </div>
+                        <span class="text-sm font-medium">${item.callee_name || '-'}</span>
+                    </div>
+                </td>
+                <td class="py-4 px-6">
+                    <span class="inline-flex items-center gap-1 text-modern-primary">
+                        <i class="fas ${callTypeIcon}"></i>
+                        <span>${callTypeText}</span>
+                    </span>
+                </td>
+                <td class="py-4 px-6 text-modern-gray">${duration}</td>
+                <td class="py-4 px-6">
+                    <span class="text-xs px-2 py-1 rounded ${statusClass}">${statusText}</span>
+                </td>
+                <td class="py-4 px-6 text-sm text-modern-gray">${item.create_time || '-'}</td>
+                <td class="py-4 px-6">
+                    <button onclick="deleteCall(${item.id})" class="text-modern-gray hover:text-modern-danger transition-colors" title="删除">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// 渲染分页
+function renderPagination(total, page) {
+    document.getElementById('total').textContent = total;
+    const totalPages = Math.ceil(total / pageSize);
+    const pagination = document.getElementById('pagination');
+
+    if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+    
+    // 上一页
+    html += `<button onclick="loadCalls(${page - 1})" ${page === 1 ? 'disabled' : ''} class="px-3 py-1 border rounded hover:bg-modern-light ${page === 1 ? 'opacity-50 cursor-not-allowed' : ''}">上一页</button>`;
+    
+    // 页码
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
+            html += `<button onclick="loadCalls(${i})" class="px-3 py-1 border rounded ${i === page ? 'bg-modern-primary text-white' : 'hover:bg-modern-light'}">${i}</button>`;
+        } else if (i === page - 2 || i === page + 2) {
+            html += `<span class="px-2">...</span>`;
+        }
+    }
+    
+    // 下一页
+    html += `<button onclick="loadCalls(${page + 1})" ${page === totalPages ? 'disabled' : ''} class="px-3 py-1 border rounded hover:bg-modern-light ${page === totalPages ? 'opacity-50 cursor-not-allowed' : ''}">下一页</button>`;
+    
+    pagination.innerHTML = html;
+}
+
+// 搜索
+function searchCalls() {
+    loadCalls(1);
+}
+
+// 删除通话记录
+function deleteCall(id) {
+    if (confirm('确定要删除该通话记录吗？')) {
+        fetch('/admin/call/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: id })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.code === 200) {
+                alert(result.msg || '删除成功');
+                loadCalls(currentPage);
+                loadStatistics();
+            } else {
+                alert('删除失败: ' + result.msg);
+            }
+        })
+        .catch(error => {
+            console.error('删除失败:', error);
+            alert('网络错误，请稍后重试');
+        });
+    }
+}
+
+// 页面加载时初始化
+document.addEventListener('DOMContentLoaded', function() {
+    loadStatistics();
+    loadCalls(1);
+});
+</script>
+{/block}

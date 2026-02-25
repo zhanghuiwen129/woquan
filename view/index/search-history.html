@@ -1,0 +1,281 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="content"}
+<div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-bold">最近搜索</h2>
+    <button onclick="clearHistory()" class="text-sm text-gray-500 hover:text-danger transition-colors">
+        <i class="fa fa-trash mr-1"></i>清空
+    </button>
+</div>
+
+<div class="flex flex-wrap gap-2 mb-8" id="search-history-container">
+    <div class="text-center py-12 text-gray-500 w-full">
+        <i class="fa fa-spinner fa-spin text-xl mb-2"></i>
+        <p>加载中...</p>
+    </div>
+</div>
+
+<h2 class="text-lg font-bold mb-4">热门搜索</h2>
+<div class="flex flex-wrap gap-2" id="hot-keywords-container">
+    <div class="text-center py-12 text-gray-500 w-full">
+        <i class="fa fa-spinner fa-spin text-xl mb-2"></i>
+        <p>加载中...</p>
+    </div>
+</div>
+{/block}
+
+<script>
+    // 获取当前用户ID（实际应用中应该从登录状态获取）
+    const USER_ID = 1;
+
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+        // 加载搜索历史
+        loadSearchHistory();
+        // 加载热门搜索词
+        loadHotKeywords();
+    });
+
+    // 加载搜索历史
+    async function loadSearchHistory() {
+        const container = document.getElementById('search-history-container');
+
+        try {
+            const response = await fetch('/search/history', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: USER_ID, limit: 20 })
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                const history = result.data;
+
+                if (history.length > 0) {
+                    container.innerHTML = '';
+                    history.forEach(item => {
+                        const historyElement = createHistoryElement(item);
+                        container.appendChild(historyElement);
+                    });
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-gray-500 w-full">
+                            <i class="fa fa-history text-4xl mb-3"></i>
+                            <p>暂无搜索历史</p>
+                        </div>
+                    `;
+                }
+            } else {
+                throw new Error(result.msg || '获取搜索历史失败');
+            }
+        } catch (error) {
+            console.error('加载搜索历史失败:', error);
+            container.innerHTML = `
+                <div class="text-center py-12 text-gray-500 w-full">
+                    <i class="fa fa-exclamation-circle text-xl mb-2"></i>
+                    <p>加载失败，请稍后重试</p>
+                </div>
+            `;
+        }
+    }
+
+    // 创建搜索历史元素
+    function createHistoryElement(item) {
+        const span = document.createElement('span');
+        span.className = 'bg-white px-4 py-2 rounded-full text-sm shadow-sm cursor-pointer hover:bg-lightBlue transition-colors flex items-center gap-1';
+
+        const time = new Date(item.create_time);
+        const now = new Date();
+        const diff = now - time;
+        let timeText;
+
+        if (diff < 60000) { // 1分钟内
+            timeText = '刚刚';
+        } else if (diff < 3600000) { // 1小时内
+            timeText = Math.floor(diff / 60000) + '分钟前';
+        } else if (diff < 86400000) { // 1天内
+            timeText = Math.floor(diff / 3600000) + '小时前';
+        } else {
+            timeText = time.toLocaleDateString('zh-CN');
+        }
+
+        span.innerHTML = `
+            <i class="fa fa-clock-o text-gray-400" style="width: 16px;"></i>
+            ${item.keyword}
+            <span class="text-xs text-gray-400">(${item.result_count}条结果)</span>
+            <button onclick="deleteHistory(${item.id})" class="ml-2 text-gray-400 hover:text-danger transition-colors text-xs">
+                <i class="fa fa-times"></i>
+            </button>
+        `;
+
+        // 点击关键词执行搜索
+        span.addEventListener('click', function(e) {
+            if (!e.target.closest('button')) {
+                performSearch(item.keyword);
+            }
+        });
+
+        return span;
+    }
+
+    // 加载热门搜索词
+    async function loadHotKeywords() {
+        const container = document.getElementById('hot-keywords-container');
+
+        try {
+            const response = await fetch('/search/hotKeywords', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ limit: 20 })
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                const keywords = result.data;
+
+                if (keywords.length > 0) {
+                    container.innerHTML = '';
+                    keywords.forEach((item, index) => {
+                        const keywordElement = createKeywordElement(item, index);
+                        container.appendChild(keywordElement);
+                    });
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-gray-500 w-full">
+                            <i class="fa fa-fire text-4xl mb-3"></i>
+                            <p>暂无热门搜索</p>
+                        </div>
+                    `;
+                }
+            } else {
+                throw new Error(result.msg || '获取热门搜索失败');
+            }
+        } catch (error) {
+            console.error('加载热门搜索失败:', error);
+            container.innerHTML = `
+                <div class="text-center py-12 text-gray-500 w-full">
+                    <i class="fa fa-exclamation-circle text-xl mb-2"></i>
+                    <p>加载失败，请稍后重试</p>
+                </div>
+            `;
+        }
+    }
+
+    // 创建热门关键词元素
+    function createKeywordElement(item, index) {
+        const span = document.createElement('span');
+
+        // 根据排名设置不同的样式
+        let className = 'px-4 py-2 rounded-full text-sm shadow-sm cursor-pointer hover:opacity-90 transition-opacity flex items-center gap-1';
+        let icon = '<i class="fa fa-camera text-pink-500" style="width: 16px;"></i>';
+
+        if (index === 0) {
+            className = 'bg-gradient-to-r from-blue-500 to-purple-500 text-white ' + className;
+            icon = '<i class="fa fa-fire" style="width: 16px;"></i>';
+        } else {
+            className = 'bg-white hover:bg-lightBlue transition-colors ' + className;
+
+            // 根据关键词内容设置不同图标
+            const keyword = item.keyword.toLowerCase();
+            if (keyword.includes('美食') || keyword.includes('吃')) {
+                icon = '<i class="fa fa-utensils text-orange-500" style="width: 16px;"></i>';
+            } else if (keyword.includes('旅行') || keyword.includes('玩')) {
+                icon = '<i class="fa fa-plane text-cyan-500" style="width: 16px;"></i>';
+            } else if (keyword.includes('读书') || keyword.includes('学习')) {
+                icon = '<i class="fa fa-book text-green-500" style="width: 16px;"></i>';
+            } else if (keyword.includes('健身') || keyword.includes('运动')) {
+                icon = '<i class="fa fa-bicycle text-red-500" style="width: 16px;"></i>';
+            }
+        }
+
+        span.className = className;
+        span.innerHTML = `
+            ${icon}
+            ${item.keyword}
+            ${index === 0 ? '<span class="text-xs bg-white text-purple-500 px-1 rounded">热门</span>' : ''}
+        `;
+
+        // 点击关键词执行搜索
+        span.addEventListener('click', function() {
+            performSearch(item.keyword);
+        });
+
+        return span;
+    }
+
+    // 清空搜索历史
+    async function clearHistory() {
+        if (confirm('确定要清空搜索历史吗？')) {
+            try {
+                const response = await fetch('/search/clearHistory', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: USER_ID })
+                });
+
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    alert('搜索历史已清空');
+                    // 重新加载搜索历史
+                    loadSearchHistory();
+                } else {
+                    throw new Error(result.msg || '清空失败');
+                }
+            } catch (error) {
+                console.error('清空搜索历史失败:', error);
+                alert('清空失败，请稍后重试');
+            }
+        }
+    }
+
+    // 删除单条搜索历史
+    async function deleteHistory(id) {
+        try {
+            const response = await fetch('/search/deleteHistory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, user_id: USER_ID })
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                // 重新加载搜索历史
+                loadSearchHistory();
+            } else {
+                throw new Error(result.msg || '删除失败');
+            }
+        } catch (error) {
+            console.error('删除搜索历史失败:', error);
+            alert('删除失败，请稍后重试');
+        }
+    }
+
+    // 执行搜索
+    function performSearch(keyword) {
+        // 实际应用中，这里应该跳转到搜索结果页面
+        alert(`搜索: ${keyword}`);
+        // 添加到搜索历史
+        addToSearchHistory(keyword);
+    }
+
+    // 添加到搜索历史
+    async function addToSearchHistory(keyword) {
+        try {
+            await fetch('/search/addHistory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: USER_ID,
+                    keyword: keyword,
+                    result_count: Math.floor(Math.random() * 100) + 1 // 模拟搜索结果数量
+                })
+            });
+        } catch (error) {
+            console.error('添加搜索历史失败:', error);
+        }
+    }
+</script>

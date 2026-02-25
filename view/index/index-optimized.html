@@ -1,0 +1,408 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{$name} - {$subtitle}</title>
+    
+    <!-- 使用本地 FontAwesome 图标库 -->
+    <link rel="stylesheet" href="/fontawesome/css/font-awesome.min.css">
+    
+    <!-- 优化后的样式文件 -->
+    <link rel="stylesheet" href="/static/css/optimized-style.css">
+    
+    <!-- Tailwind CSS (生产环境替换为 dist.css) -->
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        // 日间模式配色 - 雾霾蓝系
+                        primary: '#4A90E2',
+                        secondary: '#6AA9F2',
+                        darkPrimary: '#3A7BC8',
+                        lightBlue: '#E8F3FF',
+                        danger: '#F04848',
+                        success: '#52C480',
+                        warning: '#F5A623',
+                        'bg-main': '#FFFFFF',
+                        'bg-card': '#F7F8FA',
+                        'text-primary': '#333647',
+                        'text-secondary': '#6B6E7F',
+                        'text-tertiary': '#9EA0AF',
+                        'border-color': '#E5E6EB',
+                        // 暗黑模式
+                        'dark-bg-main': '#18191C',
+                        'dark-bg-card': '#25262B',
+                        'dark-text-primary': '#F5F6F7',
+                        'dark-text-secondary': '#C9CDD4',
+                        'dark-text-tertiary': '#868B94',
+                        'dark-border-color': '#323338'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .circle-avatar {
+                @apply rounded-full object-cover border-2 border-white shadow-sm;
+            }
+            .dynamic-card {
+                @apply w-full bg-bg-card rounded-xl shadow-soft overflow-hidden transition-all duration-200 hover:shadow-hover;
+            }
+            .nav-active {
+                @apply text-primary font-medium;
+            }
+            .grid-images-2 {
+                @apply grid grid-cols-2 gap-1;
+            }
+            .grid-images-3 {
+                @apply grid grid-cols-3 gap-1;
+            }
+        }
+    </style>
+    
+    <!-- 网站配置 -->
+    <script src="/static/js/site-config.js"></script>
+    
+    <!-- 统一弹窗 -->
+    <script src="/static/js/modal.js"></script>
+    
+    <!-- 应用初始化 -->
+    <script type="module">
+        import { initApp } from '/static/js/app-init.js';
+        
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initApp({
+                useConfig: true,
+                useErrorHandler: true,
+                useHttpClient: true,
+                autoInitTheme: true
+            });
+        });
+    </script>
+</head>
+<body class="bg-bg-main text-text-primary">
+    <!-- 桌面端顶部导航 -->
+    <header class="hidden md:flex items-center justify-between px-6 py-4 bg-bg-card border-b border-border-color sticky top-0 z-40">
+        <div class="flex items-center gap-4">
+            <a href="/" class="text-xl font-bold text-primary">{$name}</a>
+        </div>
+        
+        <div class="flex-1 max-w-md mx-8">
+            <input type="text" placeholder="搜索动态、用户、话题..." 
+                   class="w-full px-4 py-2 bg-bg-hover rounded-lg border-none focus:outline-none focus:ring-2 focus:ring-primary">
+        </div>
+        
+        <nav class="flex items-center gap-6">
+            <a href="/" class="nav-active">首页</a>
+            <a href="/discover" class="text-text-secondary hover:text-text-primary">发现</a>
+            <a href="/message" class="text-text-secondary hover:text-text-primary relative">
+                消息
+                {if $unread_message_count > 0}
+                <span class="badge absolute -top-1 -right-2">{$unread_message_count}</span>
+                {/if}
+            </a>
+            <a href="/profile" class="flex items-center gap-2">
+                <img src="{$currentUser.avatar ?: '/static/images/default-avatar.png'}" 
+                     alt="头像" class="w-8 h-8 rounded-full object-cover">
+            </a>
+        </nav>
+    </header>
+
+    <!-- 移动端顶部导航 -->
+    <header class="md:hidden sticky top-0 z-40 bg-bg-card border-b border-border-color">
+        <div class="flex items-center justify-between px-4 py-3">
+            <a href="/" class="text-lg font-bold text-primary">{$name}</a>
+            <div class="flex items-center gap-4">
+                <a href="/message" class="relative">
+                    <i class="fa fa-envelope text-text-secondary"></i>
+                    {if $unread_message_count > 0}
+                    <span class="badge absolute -top-1 -right-1">{$unread_message_count}</span>
+                    {/if}
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区域 -->
+    <div class="container mx-auto mt-6 pb-24">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            
+            <!-- 左侧导航栏 -->
+            <aside class="hidden lg:block">
+                <div class="card p-4">
+                    <nav class="space-y-2">
+                        <a href="/" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary/10 text-primary font-medium">
+                            <i class="fa fa-home"></i>
+                            <span>首页</span>
+                        </a>
+                        <a href="/discover" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-bg-hover text-text-secondary">
+                            <i class="fa fa-compass"></i>
+                            <span>发现</span>
+                        </a>
+                        <a href="/message" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-bg-hover text-text-secondary">
+                            <i class="fa fa-envelope"></i>
+                            <span>消息</span>
+                        </a>
+                        <a href="/profile" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-bg-hover text-text-secondary">
+                            <i class="fa fa-user"></i>
+                            <span>个人中心</span>
+                        </a>
+                        <a href="/favorites" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-bg-hover text-text-secondary">
+                            <i class="fa fa-star"></i>
+                            <span>收藏</span>
+                        </a>
+                        <a href="/settings" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-bg-hover text-text-secondary">
+                            <i class="fa fa-cog"></i>
+                            <span>设置</span>
+                        </a>
+                    </nav>
+                </div>
+            </aside>
+
+            <!-- 中间内容区 -->
+            <main class="lg:col-span-2 space-y-6">
+                <!-- 发布框 -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="flex items-start gap-3">
+                            <img src="{$currentUser.avatar ?: '/static/images/default-avatar.png'}" 
+                                 alt="头像" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                            <div class="flex-1">
+                                <textarea id="publish-input" 
+                                          placeholder="分享你的新鲜事..." 
+                                          class="w-full h-20 p-2 bg-bg-hover rounded-lg border-none resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                                          maxlength="5000"></textarea>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between mt-4 pt-4 border-t border-border-color">
+                            <div class="flex items-center gap-4">
+                                <button class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-bg-hover text-text-secondary">
+                                    <i class="fa fa-image"></i>
+                                    <span>图片</span>
+                                </button>
+                                <button class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-bg-hover text-text-secondary">
+                                    <i class="fa fa-video"></i>
+                                    <span>视频</span>
+                                </button>
+                                <button class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-bg-hover text-text-secondary">
+                                    <i class="fa fa-smile"></i>
+                                    <span>表情</span>
+                                </button>
+                                <button class="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-bg-hover text-text-secondary">
+                                    <i class="fa fa-hashtag"></i>
+                                    <span>话题</span>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <select id="privacy-select" class="px-3 py-1.5 bg-bg-hover rounded border-none text-sm">
+                                    <option value="0">公开</option>
+                                    <option value="1">仅好友</option>
+                                    <option value="2">仅自己</option>
+                                </select>
+                                <button id="publish-btn" class="btn btn-primary">
+                                    发布
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 动态列表 -->
+                <div id="moments-list" class="space-y-6">
+                    <!-- 动态卡片会动态加载 -->
+                </div>
+
+                <!-- 加载更多 -->
+                <div id="load-more" class="text-center py-4">
+                    <button class="btn btn-secondary" onclick="loadMoreMoments()">
+                        加载更多
+                    </button>
+                </div>
+            </main>
+
+            <!-- 右侧推荐区 -->
+            <aside class="hidden lg:block space-y-6">
+                <!-- 推荐用户 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="font-semibold">推荐用户</h3>
+                    </div>
+                    <div class="card-body space-y-4" id="recommended-users">
+                        <!-- 推荐用户列表动态加载 -->
+                    </div>
+                </div>
+
+                <!-- 热门话题 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="font-semibold">热门话题</h3>
+                    </div>
+                    <div class="card-body space-y-3" id="hot-topics">
+                        <!-- 热门话题列表动态加载 -->
+                    </div>
+                </div>
+
+                <!-- 版权信息 -->
+                <div class="text-center text-sm text-text-secondary">
+                    <p>{$copyright}</p>
+                    <p class="mt-1">{$beian}</p>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- 移动端底部导航 -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-bg-card border-t border-border-color z-40">
+        <div class="flex justify-around items-center py-2">
+            <a href="/" class="flex flex-col items-center gap-1 p-2 text-primary">
+                <i class="fa fa-home text-xl"></i>
+                <span class="text-xs">首页</span>
+            </a>
+            <a href="/discover" class="flex flex-col items-center gap-1 p-2 text-text-secondary">
+                <i class="fa fa-compass text-xl"></i>
+                <span class="text-xs">发现</span>
+            </a>
+            <button class="flex flex-col items-center gap-1 p-2 -mt-4">
+                <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center shadow-lg">
+                    <i class="fa fa-plus text-white text-xl"></i>
+                </div>
+            </button>
+            <a href="/message" class="flex flex-col items-center gap-1 p-2 text-text-secondary">
+                <i class="fa fa-envelope text-xl"></i>
+                <span class="text-xs">消息</span>
+            </a>
+            <a href="/profile" class="flex flex-col items-center gap-1 p-2 text-text-secondary">
+                <i class="fa fa-user text-xl"></i>
+                <span class="text-xs">我的</span>
+            </a>
+        </div>
+    </nav>
+
+    <script type="module">
+        // 示例：使用优化后的 API 和工具
+        import { getHTTP } from '/static/js/app-init.js';
+        import { success, error, withLoading } from '/static/js/app-init.js';
+
+        // 等待应用初始化完成
+        document.addEventListener('appready', async () => {
+            const http = getHTTP();
+            
+            // 加载动态列表
+            await loadMoments(http);
+            
+            // 加载推荐用户
+            await loadRecommendedUsers(http);
+            
+            // 加载热门话题
+            await loadHotTopics(http);
+        });
+
+        // 加载动态列表
+        async function loadMoments(http) {
+            try {
+                const result = await http.get('/moments/list', { page: 1, pageSize: 10 });
+                if (result.code === 200) {
+                    renderMoments(result.data.list);
+                }
+            } catch (err) {
+                error('加载动态失败');
+            }
+        }
+
+        // 加载推荐用户
+        async function loadRecommendedUsers(http) {
+            try {
+                const result = await http.get('/moments/recommended', { limit: 5 });
+                if (result.code === 200) {
+                    renderRecommendedUsers(result.data.list);
+                }
+            } catch (err) {
+                console.error('加载推荐用户失败:', err);
+            }
+        }
+
+        // 加载热门话题
+        async function loadHotTopics(http) {
+            try {
+                const result = await http.get('/topic/hot', { limit: 5 });
+                if (result.code === 200) {
+                    renderHotTopics(result.data.list);
+                }
+            } catch (err) {
+                console.error('加载热门话题失败:', err);
+            }
+        }
+
+        // 渲染动态
+        function renderMoments(moments) {
+            const container = document.getElementById('moments-list');
+            container.innerHTML = moments.map(moment => `
+                <div class="dynamic-card" data-id="${moment.id}">
+                    <div class="p-4">
+                        <div class="flex items-start gap-3">
+                            <img src="${moment.avatar || '/static/images/default-avatar.png'}" 
+                                 alt="${moment.nickname}" class="w-10 h-10 rounded-full object-cover">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-medium">${moment.nickname}</span>
+                                    <span class="text-text-secondary text-sm">@${moment.username}</span>
+                                    <span class="text-text-tertiary text-xs">${moment.create_time}</span>
+                                </div>
+                                <p class="mt-2">${moment.content}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 渲染推荐用户
+        function renderRecommendedUsers(users) {
+            const container = document.getElementById('recommended-users');
+            container.innerHTML = users.map(user => `
+                <div class="flex items-center gap-3">
+                    <img src="${user.avatar || '/static/images/default-avatar.png'}" 
+                         alt="${user.nickname}" class="w-10 h-10 rounded-full object-cover">
+                    <div class="flex-1">
+                        <p class="font-medium text-sm">${user.nickname}</p>
+                        <p class="text-text-secondary text-xs">@${user.username}</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="followUser(${user.id})">
+                        关注
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // 渲染热门话题
+        function renderHotTopics(topics) {
+            const container = document.getElementById('hot-topics');
+            container.innerHTML = topics.map((topic, index) => `
+                <div class="flex items-center gap-3 cursor-pointer hover:bg-bg-hover p-2 rounded">
+                    <span class="text-text-tertiary font-medium">${index + 1}</span>
+                    <span class="flex-1 topic-tag">#${topic.name}</span>
+                    <span class="text-text-secondary text-xs">${topic.moment_count}条动态</span>
+                </div>
+            `).join('');
+        }
+
+        // 关注用户
+        async function followUser(userId) {
+            await withLoading(async () => {
+                const http = getHTTP();
+                const result = await http.post('/follow/follow', { target_id: userId });
+                if (result.code === 200) {
+                    success('关注成功');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

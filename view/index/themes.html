@@ -1,0 +1,219 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="content"}
+<style>
+    .theme-card {
+        transition: all 0.3s ease;
+    }
+    .theme-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    .theme-preview {
+        height: 100px;
+        border-radius: 8px;
+        position: relative;
+        overflow: hidden;
+    }
+</style>
+
+<!-- 主内容区 -->
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-4xl mx-auto">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-text-primary mb-2">主题中心</h2>
+            <p class="text-text-secondary">选择您喜欢的主题风格</p>
+        </div>
+
+        <!-- 当前主题卡片 -->
+        <div class="bg-bg-card rounded-xl p-4 mb-6 shadow-soft">
+            <h3 class="text-sm font-semibold text-text-primary mb-3">
+                <i class="fa fa-paint-brush text-primary mr-2"></i>当前主题
+            </h3>
+            <div id="current-theme" class="flex items-center gap-4">
+                <!-- 当前主题由JS加载 -->
+            </div>
+        </div>
+
+        <!-- 主题列表 -->
+        <div class="bg-bg-card rounded-xl p-4 mb-6">
+            <h3 class="text-sm font-semibold text-text-primary mb-3">
+                <i class="fa fa-th-large text-primary mr-2"></i>主题列表
+            </h3>
+            <div id="theme-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- 主题列表由JS加载 -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 当前用户信息
+    let currentUser = null;
+    let themes = [];
+
+    // 主题配置
+    const themeConfig = [
+        {
+            id: 'light',
+            name: '简约白',
+            description: '清新简约的日间主题',
+            bgMain: '#FFFFFF',
+            bgCard: '#F7F8FA',
+            textPrimary: '#333647',
+            preview: 'linear-gradient(135deg, #FFFFFF 0%, #F7F8FA 100%)'
+        },
+        {
+            id: 'dark',
+            name: '暗夜黑',
+            description: '护眼的深色主题',
+            bgMain: '#18191C',
+            bgCard: '#25262B',
+            textPrimary: '#F5F6F7',
+            preview: 'linear-gradient(135deg, #18191C 0%, #25262B 100%)'
+        },
+        {
+            id: 'blue',
+            name: '天空蓝',
+            description: '清新的蓝色主题',
+            bgMain: '#E8F3FF',
+            bgCard: '#FFFFFF',
+            textPrimary: '#333647',
+            preview: 'linear-gradient(135deg, #E8F3FF 0%, #FFFFFF 100%)'
+        },
+        {
+            id: 'warm',
+            name: '暖阳橙',
+            description: '温暖的橙色主题',
+            bgMain: '#FFF5E6',
+            bgCard: '#FFFFFF',
+            textPrimary: '#333647',
+            preview: 'linear-gradient(135deg, #FFF5E6 0%, #FFFFFF 100%)'
+        },
+        {
+            id: 'purple',
+            name: '紫罗兰',
+            description: '优雅的紫色主题',
+            bgMain: '#F5F0FF',
+            bgCard: '#FFFFFF',
+            textPrimary: '#333647',
+            preview: 'linear-gradient(135deg, #F5F0FF 0%, #FFFFFF 100%)'
+        },
+        {
+            id: 'green',
+            name: '自然绿',
+            description: '清新的绿色主题',
+            bgMain: '#F0FFF4',
+            bgCard: '#FFFFFF',
+            textPrimary: '#333647',
+            preview: 'linear-gradient(135deg, #F0FFF4 0%, #FFFFFF 100%)'
+        }
+    ];
+
+    // 页面加载时初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        loadUserInfo();
+        renderThemes();
+    });
+
+    // 加载用户信息
+    async function loadUserInfo() {
+        try {
+            const response = await fetch('/api/user/info');
+            const data = await response.json();
+
+            if (data.code === 200) {
+                currentUser = data.data;
+                renderCurrentTheme();
+            }
+        } catch (error) {
+            console.error('加载用户信息失败:', error);
+        }
+    }
+
+    // 渲染当前主题
+    function renderCurrentTheme() {
+        const container = document.getElementById('current-theme');
+        const themeId = currentUser?.theme || 'light';
+        const theme = themeConfig.find(t => t.id === themeId) || themeConfig[0];
+
+        container.innerHTML = `
+            <div class="theme-preview" style="background: ${theme.preview}; width: 100px;"></div>
+            <div>
+                <div class="text-lg font-semibold text-text-primary">${theme.name}</div>
+                <div class="text-sm text-text-secondary">${theme.description}</div>
+            </div>
+        `;
+    }
+
+    // 渲染主题列表
+    function renderThemes() {
+        const container = document.getElementById('theme-list');
+
+        container.innerHTML = themeConfig.map(theme => {
+            const isActive = currentUser?.theme === theme.id;
+            return `
+                <div class="theme-card bg-white rounded-lg p-4 cursor-pointer border-2 ${isActive ? 'border-primary' : 'border-gray-200'}" onclick="selectTheme('${theme.id}')">
+                    <div class="theme-preview mb-3" style="background: ${theme.preview};"></div>
+                    <div class="font-medium text-text-primary">${theme.name}</div>
+                    <div class="text-xs text-text-secondary mt-1">${theme.description}</div>
+                    ${isActive ? '<div class="mt-2 text-xs text-primary font-medium"><i class="fa fa-check-circle mr-1"></i>当前主题</div>' : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    // 选择主题
+    async function selectTheme(themeId) {
+        try {
+            const response = await fetch('/api/user/theme', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ theme: themeId })
+            });
+            const data = await response.json();
+
+            if (data.code === 200) {
+                showToast('主题切换成功！');
+                currentUser.theme = themeId;
+                renderCurrentTheme();
+                renderThemes();
+                applyTheme(themeId);
+            } else {
+                showToast(data.msg || '切换失败', 'error');
+            }
+        } catch (error) {
+            showToast('切换失败，请重试', 'error');
+        }
+    }
+
+    // 应用主题
+    function applyTheme(themeId) {
+        const theme = themeConfig.find(t => t.id === themeId);
+        if (!theme) return;
+
+        document.documentElement.style.setProperty('--bg-main', theme.bgMain);
+        document.documentElement.style.setProperty('--bg-card', theme.bgCard);
+        document.documentElement.style.setProperty('--text-primary', theme.textPrimary);
+
+        if (themeId === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }
+
+    // 显示提示
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        if (toast) {
+            toast.textContent = message;
+            toast.style.display = 'block';
+
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+    }
+</script>
+{/block}

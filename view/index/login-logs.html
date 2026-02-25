@@ -1,0 +1,114 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="content"}
+<div id="loading" class="text-center py-16">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+    <p class="text-gray-500 mt-4">加载中...</p>
+</div>
+
+<div id="login-logs-list" class="bg-white rounded-xl shadow-sm overflow-hidden" style="display: none;"></div>
+
+<div id="empty" class="text-center py-16" style="display: none;">
+    <div class="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fa fa-history text-4xl text-gray-400"></i>
+    </div>
+    <h2 class="text-xl font-bold text-gray-800 mb-2">暂无登录记录</h2>
+    <p class="text-gray-500 mb-4">这是您首次登录</p>
+</div>
+{/block}
+
+<script>
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg z-50';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+
+    // 获取设备图标和颜色
+    function getDeviceInfo(deviceType) {
+        const info = {
+            'Windows PC': { icon: 'fa-desktop', gradient: 'from-green-400 to-teal-400' },
+            'iPhone': { icon: 'fa-mobile', gradient: 'from-blue-400 to-cyan-400' },
+            'Android': { icon: 'fa-mobile', gradient: 'from-purple-400 to-pink-400' },
+            'iPad': { icon: 'fa-tablet', gradient: 'from-orange-400 to-red-400' },
+            'Mac': { icon: 'fa-desktop', gradient: 'from-gray-400 to-gray-500' },
+            'Linux': { icon: 'fa-desktop', gradient: 'from-indigo-400 to-purple-400' },
+        };
+        return info[deviceType] || { icon: 'fa-mobile', gradient: 'from-gray-400 to-gray-500' };
+    }
+
+    // 格式化时间
+    function formatTime(timestamp) {
+        const now = Math.floor(Date.now() / 1000);
+        const diff = now - timestamp;
+
+        if (diff < 60) return '刚刚';
+        if (diff < 3600) return Math.floor(diff / 60) + '分钟前';
+        if (diff < 86400) return Math.floor(diff / 3600) + '小时前';
+        if (diff < 2592000) return Math.floor(diff / 86400) + '天前';
+
+        const date = new Date(timestamp * 1000);
+        return date.toLocaleDateString();
+    }
+
+    // 检查登录状态
+    const userId = getCookie('user_id');
+    if (!userId) {
+        window.location.href = '/login';
+    }
+
+    // 加载登录日志
+    async function loadLoginLogs(page = 1) {
+        try {
+            const response = await fetch(`/user/login-logs?page=${page}`);
+            const result = await response.json();
+
+            const loading = document.getElementById('loading');
+            const loginLogsList = document.getElementById('login-logs-list');
+            const empty = document.getElementById('empty');
+
+            if (result.code === 200 && result.data.list && result.data.list.length > 0) {
+                loading.style.display = 'none';
+                loginLogsList.style.display = 'block';
+                empty.style.display = 'none';
+
+                loginLogsList.innerHTML = result.data.list.map(log => {
+                    const deviceInfo = getDeviceInfo(log.device_type || 'Unknown');
+                    return `
+                        <div class="p-4 border-b border-gray-100 flex items-center hover:bg-lightBlue cursor-pointer">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${deviceInfo.gradient} flex items-center justify-center text-white mr-3">
+                                <i class="fa ${deviceInfo.icon} text-xl"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium mb-1">${log.device_type || '未知设备'}</div>
+                                <div class="text-xs text-gray-500">${log.ip_address || '未知IP'}</div>
+                            </div>
+                            <div class="text-xs text-gray-400">${formatTime(log.login_time)}</div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                loading.style.display = 'none';
+                loginLogsList.style.display = 'none';
+                empty.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('加载登录日志失败:', error);
+            showToast('加载失败，请重试');
+        }
+    }
+
+    // 页面加载时获取登录日志
+    document.addEventListener('DOMContentLoaded', () => {
+        loadLoginLogs();
+    });
+</script>

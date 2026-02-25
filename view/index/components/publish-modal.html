@@ -1,0 +1,94 @@
+﻿<!-- 移动端发布弹窗 -->
+<div id="mobile-modal-mask" class="fixed inset-0 bg-black/50 z-[1000] hidden"></div>
+<div id="mobile-publish-modal" class="fixed bottom-0 left-0 right-0 bg-bg-card rounded-t-2xl p-4 z-[1001] hidden transform transition-transform border-t border-border-color">
+    <div class="flex justify-between items-center mb-3">
+        <h3 class="text-lg font-semibold text-text-primary">发布动态</h3>
+        <button id="close-modal-btn" class="w-8 h-8 rounded-full bg-bg-card border border-border-color flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors">
+            <i class="fa fa-times"></i>
+        </button>
+    </div>
+    <div id="mobile-publish-input" contenteditable="true" placeholder="分享新鲜事..." class="w-full border border-border-color bg-bg-card rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-text-primary placeholder-text-tertiary min-h-[80px] max-h-[150px] overflow-y-auto outline-none" style="min-height: 80px;"></div>
+
+    <!-- 移动端图片预览区域 -->
+    <div id="mobile-image-preview-container" class="mt-3 hidden">
+        <div class="flex justify-between items-center mb-3">
+            <span class="text-xs font-medium text-gray-700">图片预览</span>
+            <button id="mobile-close-image-preview" class="text-gray-400 hover:text-gray-600 text-xs">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+        <div id="mobile-image-preview-grid" class="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto"></div>
+    </div>
+
+    <!-- 移动端视频预览区域 -->
+    <div id="mobile-video-preview-container" class="mt-3 hidden">
+        <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-medium text-gray-700">视频预览</span>
+            <button id="mobile-close-video-preview" class="text-gray-400 hover:text-gray-600 text-xs">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+        <div class="bg-gray-100 rounded-lg overflow-hidden">
+            <video id="mobile-video-preview" class="w-full max-h-48 object-contain" controls></video>
+        </div>
+    </div>
+
+    <!-- 移动端隐私设置 -->
+    <div class="flex items-center gap-2 mt-3">
+        <i class="fa fa-lock text-text-tertiary text-sm"></i>
+        <select id="mobile-privacy-select" class="bg-bg-card border border-border-color rounded-lg px-3 py-1 text-sm text-text-primary focus:outline-none focus:border-primary">
+            <option value="0">公开</option>
+            <option value="1">仅好友可见</option>
+            <option value="2">仅自己可见</option>
+        </select>
+    </div>
+
+    <div class="flex justify-between items-center mt-3">
+        <div class="flex gap-2">
+            <input type="file" id="mobile-image-upload" multiple accept="image/*" class="hidden">
+            <button id="mobile-image-btn" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-primary hover:text-white transition-colors">
+                <i class="fa fa-picture-o"></i>
+            </button>
+            <input type="file" id="mobile-video-upload" accept="video/*" class="hidden">
+            <button id="mobile-video-btn" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-primary hover:text-white transition-colors">
+                <i class="fa fa-video-camera"></i>
+            </button>
+            <button id="mobile-emoji-btn" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-primary hover:text-white transition-colors">
+                <i class="fa fa-smile-o"></i>
+            </button>
+            <button id="mobile-topic-btn" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-primary hover:text-white transition-colors">
+                <i class="fa fa-hashtag"></i>
+            </button>
+        </div>
+        <button id="mobile-publish-btn" class="bg-primary text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-secondary transition-colors">
+            发布
+        </button>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:2000;display:none;"></div>
+
+<!-- 自定义确认对话框 -->
+<div id="confirmDialog" class="hidden fixed inset-0 z-[3000]">
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeConfirmDialog()"></div>
+    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-80 md:w-96 animate-fadeIn">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fa fa-question-circle text-orange-500 text-2xl"></i>
+            </div>
+            <div>
+                <h3 id="confirmTitle" class="text-lg font-semibold text-gray-800">确认操作</h3>
+            </div>
+        </div>
+        <p id="confirmMessage" class="text-gray-600 mb-6 pl-15"></p>
+        <div class="flex gap-3">
+            <button onclick="closeConfirmDialog()" class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-all">
+                取消
+            </button>
+            <button id="confirmOkBtn" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-md hover:shadow-lg">
+                确定
+            </button>
+        </div>
+    </div>
+</div>

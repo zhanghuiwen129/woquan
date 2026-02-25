@@ -1,0 +1,224 @@
+{extend name="index/main-layout" /}
+
+{block name="content"}
+<style>
+    .mention-item {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s;
+    }
+
+    .mention-item:hover {
+        box-shadow: 0 4px 12px rgba(74, 144, 226, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .mention-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .mention-time {
+        font-size: 12px;
+        color: var(--text-tertiary);
+    }
+
+    .mention-content {
+        color: var(--text-secondary);
+        margin-top: 8px;
+        padding: 8px 12px;
+        background: var(--bg-light);
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .mention-link {
+        color: var(--primary);
+        text-decoration: none;
+    }
+
+    .mention-link:hover {
+        text-decoration: underline;
+    }
+
+    .unread-badge {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #ff4757;
+        border-radius: 50%;
+        margin-left: 8px;
+    }
+</style>
+
+<div id="loading" class="text-center py-16">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+    <p class="text-gray-500 mt-4">加载中...</p>
+</div>
+
+<div id="mentions-list" class="space-y-4" style="display: none;"></div>
+
+<div id="empty" class="text-center py-16" style="display: none;">
+    <div class="w-24 h-24 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fa fa-at text-4xl text-blue-500"></i>
+    </div>
+    <h2 class="text-xl font-bold text-gray-800 mb-2">暂无@提及</h2>
+    <p class="text-gray-500 mb-4">还没有人@你哦</p>
+    <a href="/moments" class="inline-block bg-primary text-white px-6 py-2 rounded-full hover:bg-secondary transition-colors">
+        浏览动态
+    </a>
+</div>
+{/block}
+
+{block name="script"}
+<script>
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg z-50';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+
+    function formatTime(timestamp) {
+        const date = new Date(timestamp * 1000);
+        const now = new Date();
+        const diff = now - date;
+
+        if (diff < 60000) {
+            return '刚刚';
+        } else if (diff < 3600000) {
+            return Math.floor(diff / 60000) + '分钟前';
+        } else if (diff < 86400000) {
+            return Math.floor(diff / 3600000) + '小时前';
+        } else if (diff < 604800000) {
+            return Math.floor(diff / 86400000) + '天前';
+        } else {
+            return date.toLocaleDateString('zh-CN');
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function truncateText(text, maxLength = 100) {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    }
+
+    async function markAsRead(mentionId) {
+        try {
+            await fetch(`/user/markMentionRead`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ mention_id: mentionId })
+            });
+        } catch (error) {
+        }
+    }
+
+    async function loadMentions(page = 1, append = false) {
+        try {
+            const response = await fetch(`/user/mentions?page=${page}&limit=20`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+
+            const loading = document.getElementById('loading');
+            const mentionsList = document.getElementById('mentions-list');
+            const empty = document.getElementById('empty');
+
+            loading.style.display = 'none';
+
+            if (result.code === 200) {
+                if (result.data.list && result.data.list.length > 0) {
+                    mentionsList.style.display = 'block';
+                    empty.style.display = 'none';
+
+                    const html = result.data.list.map(mention => {
+                        const unreadBadge = mention.read_status === 0 ? '<span class="unread-badge"></span>' : '';
+                        const contentHtml = mention.content ? `<div class="mention-content">${escapeHtml(truncateText(mention.content))}</div>` : '';
+
+                        return `
+                            <div class="mention-item" data-mention-id="${mention.id}">
+                                <div class="flex items-start gap-3">
+                                    <img src="${mention.avatar || '/static/images/default-avatar.png'}" alt="头像" class="mention-avatar" onclick="location.href='/card/${mention.user_id}'">
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <span class="font-semibold text-gray-800">${escapeHtml(mention.nickname || mention.username)}</span>
+                                                ${unreadBadge}
+                                            </div>
+                                            <span class="mention-time">${formatTime(mention.create_time)}</span>
+                                        </div>
+                                        <div class="text-sm text-gray-500 mt-1">
+                                            在动态中@了你
+                                        </div>
+                                        ${contentHtml}
+                                        <div class="mt-2">
+                                            <a href="/moments/${mention.moment_id}" class="mention-link text-sm">
+                                                查看动态 <i class="fa fa-arrow-right"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    if (append) {
+                        mentionsList.innerHTML += html;
+                    } else {
+                        mentionsList.innerHTML = html;
+                    }
+
+                    if (result.data.list.length > 0 && result.data.list[0].read_status === 0) {
+                        markAsRead(result.data.list[0].id);
+                    }
+                } else {
+                    mentionsList.style.display = 'none';
+                    empty.style.display = 'block';
+                }
+            } else {
+                mentionsList.style.display = 'none';
+                empty.style.display = 'block';
+                showToast(result.msg || '加载失败');
+            }
+        } catch (error) {
+            const loading = document.getElementById('loading');
+            const mentionsList = document.getElementById('mentions-list');
+            const empty = document.getElementById('empty');
+
+            loading.style.display = 'none';
+            mentionsList.style.display = 'none';
+            empty.style.display = 'block';
+
+            showToast('加载失败: ' + error.message);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadMentions();
+    });
+</script>
+{/block}

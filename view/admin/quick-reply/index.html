@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快捷回复管理 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'quick_reply';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">快捷回复管理</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name|default='管理员'}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">快捷回复列表</h2>
+                <p class="text-gray-500 text-sm mt-1">管理快捷回复模板</p>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="bg-white rounded-lg shadow-sm p-5 mb-6">
+                <div class="flex gap-3">
+                    <button onclick="openAddModal()" class="px-5 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors shadow-sm">
+                        <i class="fas fa-plus mr-1"></i>添加快捷回复
+                    </button>
+                </div>
+            </div>
+
+            <!-- 数据表格 -->
+            <div class="card overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">关键词</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">回复内容</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">状态</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">创建时间</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                <p>数据加载中...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- 添加/编辑模态框 -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg w-full max-w-md">
+                <div class="p-4 border-b flex justify-between items-center">
+                    <h2 class="text-xl font-semibold" id="modalTitle">添加快捷回复</h2>
+                    <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="quickReplyForm" onsubmit="saveQuickReply(event)">
+                        <input type="hidden" id="replyId" name="id">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">关键词</label>
+                                <input type="text" id="keyword" name="keyword" required class="w-full border rounded px-4 py-2" placeholder="输入触发关键词">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">回复内容</label>
+                                <textarea id="content" name="content" required rows="4" class="w-full border rounded px-4 py-2" placeholder="输入回复内容"></textarea>
+                            </div>
+                            <div>
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="status" name="status" value="1" checked class="mr-2">
+                                    <span class="text-sm text-gray-700">启用</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-end gap-4">
+                            <button type="button" onclick="closeModal()" class="px-6 py-2 border rounded hover:bg-gray-50">取消</button>
+                            <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let quickReplies = [];
+
+    // 加载数据
+    async function loadData() {
+        try {
+            const response = await fetch('/admin/quick-reply/list');
+            const result = await response.json();
+            if (result.code === 200) {
+                quickReplies = result.data || [];
+                renderTable(quickReplies);
+            }
+        } catch (error) {
+            console.error('加载数据失败:', error);
+            renderTable([]);
+        }
+    }
+
+    // 渲染表格
+    function renderTable(data) {
+        const tbody = document.getElementById('tableBody');
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-12 text-center text-gray-500"><i class="fas fa-inbox text-4xl mb-4 text-gray-300"></i><p>暂无数据</p></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = data.map(item => `
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.id}</td>
+                <td class="px-6 py-4 text-sm text-gray-600">${item.keyword}</td>
+                <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">${item.content}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs rounded-full ${item.status === 1 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                        ${item.status === 1 ? '启用' : '禁用'}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.create_time || '-'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <div class="flex gap-2">
+                        <button onclick="openEditModal(${item.id})" class="text-blue-600 hover:text-blue-800" title="编辑"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteQuickReply(${item.id})" class="text-red-600 hover:text-red-800" title="删除"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // 打开添加模态框
+    function openAddModal() {
+        document.getElementById('editModal').classList.remove('hidden');
+        document.getElementById('modalTitle').textContent = '添加快捷回复';
+        document.getElementById('replyId').value = '';
+        document.getElementById('keyword').value = '';
+        document.getElementById('content').value = '';
+        document.getElementById('status').checked = true;
+    }
+
+    // 打开编辑模态框
+    function openEditModal(id) {
+        const item = quickReplies.find(r => r.id === id);
+        if (!item) return;
+
+        document.getElementById('editModal').classList.remove('hidden');
+        document.getElementById('modalTitle').textContent = '编辑快捷回复';
+        document.getElementById('replyId').value = item.id;
+        document.getElementById('keyword').value = item.keyword;
+        document.getElementById('content').value = item.content;
+        document.getElementById('status').checked = item.status === 1;
+    }
+
+    // 关闭模态框
+    function closeModal() {
+        document.getElementById('editModal').classList.add('hidden');
+    }
+
+    // 保存快捷回复
+    async function saveQuickReply(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        const data = {};
+        formData.forEach((value, key) => { data[key] = value; });
+        data.status = document.getElementById('status').checked ? 1 : 0;
+
+        try {
+            const response = await fetch('/admin/quick-reply/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (result.code === 200) {
+                alert(result.msg || '保存成功');
+                closeModal();
+                loadData();
+            } else {
+                alert(result.msg || '保存失败');
+            }
+        } catch (error) {
+            console.error('保存失败:', error);
+            alert('网络错误，请稍后重试');
+        }
+    }
+
+    // 删除快捷回复
+    async function deleteQuickReply(id) {
+        if (!confirm('确定要删除该快捷回复吗？')) return;
+
+        try {
+            const response = await fetch(`/admin/quick-reply/delete?id=${id}`, {
+                method: 'POST'
+            });
+            const result = await response.json();
+            if (result.code === 200) {
+                alert(result.msg || '删除成功');
+                loadData();
+            } else {
+                alert(result.msg || '删除失败');
+            }
+        } catch (error) {
+            console.error('删除失败:', error);
+            alert('网络错误，请稍后重试');
+        }
+    }
+
+    // 页面加载时初始化
+    loadData();
+    </script>
+</body>
+</html>

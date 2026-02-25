@@ -1,0 +1,283 @@
+﻿{extend name="admin/layout" /}
+
+{block name="title"}<title>文章分类管理 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="bg-white rounded-lg shadow">
+    <!-- 操作栏 -->
+    <div class="p-4 border-b flex justify-between items-center">
+        <h2 class="text-lg font-semibold">文章分类管理</h2>
+        <button onclick="openEditModal()" class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600">
+            <i class="fas fa-plus mr-2"></i>新建分类
+        </button>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">分类名称</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">父分类</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">图标</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">排序</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">状态</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>数据加载中...</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 编辑模态框 -->
+<div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg w-full max-w-md">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h2 class="text-xl font-semibold" id="modalTitle">新建分类</h2>
+                <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="categoryForm" onsubmit="saveCategory(event)">
+                    <input type="hidden" id="categoryId" name="id">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">分类名称</label>
+                            <input type="text" id="name" name="name" required class="w-full border rounded px-4 py-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">父分类</label>
+                            <select id="parentId" name="parent_id" class="w-full border rounded px-4 py-2">
+                                <option value="0">无（顶级分类）</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">图标</label>
+                            <input type="text" id="icon" name="icon" class="w-full border rounded px-4 py-2" placeholder="fas fa-folder">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">排序</label>
+                            <input type="number" id="sort" name="sort" value="0" class="w-full border rounded px-4 py-2">
+                        </div>
+                        <div>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="status" name="status" value="1" checked class="mr-2">
+                                <span class="text-sm text-gray-700">启用</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-4">
+                        <button type="button" onclick="closeEditModal()" class="px-6 py-2 border rounded hover:bg-gray-50">取消</button>
+                        <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let allCategories = [];
+
+// 加载数据
+async function loadData() {
+    try {
+        const response = await fetch('/admin/article/categoryList');
+        const result = await response.json();
+        if (result.code === 200) {
+            allCategories = result.data || [];
+            renderTable(allCategories);
+            updateParentSelect();
+        }
+    } catch (error) {
+        console.error('加载数据失败:', error);
+    }
+}
+
+// 渲染表格
+function renderTable(data) {
+    const tbody = document.getElementById('tableBody');
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-12 text-center text-gray-500"><i class="fas fa-inbox text-4xl mb-4 text-gray-300"></i><p>暂无数据</p></td></tr>`;
+        return;
+    }
+
+    // 扁平化树形结构用于显示
+    const flatList = flattenCategories(data);
+
+    tbody.innerHTML = flatList.map(item => `
+        <tr class="hover:bg-gray-50">
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">${item.id}</td>
+            <td class="px-4 py-4">
+                <span style="padding-left: ${item.level * 20}px">${item.name}</span>
+            </td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">${item.parent_id > 0 ? getParentName(item.parent_id) : '-'}</td>
+            <td class="px-4 py-4 whitespace-nowrap">
+                ${item.icon ? `<i class="${item.icon}"></i>` : '-'}
+            </td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">${item.sort}</td>
+            <td class="px-4 py-4 whitespace-nowrap">
+                <span class="px-2 py-1 text-xs rounded-full ${item.status === 1 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                    ${item.status === 1 ? '启用' : '禁用'}
+                </span>
+            </td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm">
+                <div class="flex gap-2">
+                    <button onclick="openEditModal(${item.id})" class="text-blue-600 hover:text-blue-800" title="编辑"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteCategory(${item.id})" class="text-red-600 hover:text-red-800" title="删除"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// 扁平化分类树
+function flattenCategories(categories, level = 0) {
+    const result = [];
+    categories.forEach(cat => {
+        result.push({ ...cat, level });
+        if (cat.children && cat.children.length > 0) {
+            result.push(...flattenCategories(cat.children, level + 1));
+        }
+    });
+    return result;
+}
+
+// 获取父分类名称
+function getParentName(parentId) {
+    const findParent = (cats) => {
+        for (let cat of cats) {
+            if (cat.id === parentId) return cat.name;
+            if (cat.children) {
+                const found = findParent(cat.children);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+    return findParent(allCategories) || '-';
+}
+
+// 更新父分类下拉框
+function updateParentSelect(excludeId = 0) {
+    const select = document.getElementById('parentId');
+    select.innerHTML = '<option value="0">无（顶级分类）</option>';
+
+    const flatList = flattenCategories(allCategories);
+    flatList.forEach(item => {
+        if (item.id !== excludeId) {
+            const indent = '　'.repeat(item.level);
+            select.innerHTML += `<option value="${item.id}">${indent}${item.name}</option>`;
+        }
+    });
+}
+
+// 打开编辑模态框
+async function openEditModal(id = 0) {
+    document.getElementById('editModal').classList.remove('hidden');
+    document.getElementById('modalTitle').textContent = id > 0 ? '编辑分类' : '新建分类';
+    document.getElementById('categoryId').value = id;
+
+    if (id > 0) {
+        const item = findCategoryById(allCategories, id);
+        if (item) {
+            document.getElementById('name').value = item.name;
+            document.getElementById('parentId').value = item.parent_id || 0;
+            document.getElementById('icon').value = item.icon || '';
+            document.getElementById('sort').value = item.sort || 0;
+            document.getElementById('status').checked = item.status === 1;
+        }
+    } else {
+        document.getElementById('name').value = '';
+        document.getElementById('parentId').value = 0;
+        document.getElementById('icon').value = '';
+        document.getElementById('sort').value = 0;
+        document.getElementById('status').checked = true;
+    }
+    updateParentSelect(id);
+}
+
+// 关闭编辑模态框
+function closeEditModal() {
+    document.getElementById('editModal').classList.add('hidden');
+}
+
+// 根据ID查找分类
+function findCategoryById(categories, id) {
+    for (let cat of categories) {
+        if (cat.id === id) return cat;
+        if (cat.children) {
+            const found = findCategoryById(cat.children, id);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
+// 保存分类
+async function saveCategory(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const data = {};
+    formData.forEach((value, key) => { data[key] = value; });
+
+    data.status = document.getElementById('status').checked ? 1 : 0;
+
+    try {
+        const response = await fetch('/admin/article/saveCategory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (result.code === 200) {
+            alert(result.msg || '保存成功');
+            closeEditModal();
+            loadData();
+        } else {
+            alert(result.msg || '保存失败');
+        }
+    } catch (error) {
+        console.error('保存失败:', error);
+        alert('网络错误，请稍后重试');
+    }
+}
+
+// 删除分类
+async function deleteCategory(id) {
+    if (!confirm('确定要删除该分类吗？')) return;
+
+    try {
+        const response = await fetch(`/admin/article/deleteCategory?id=${id}`, {
+            method: 'POST'
+        });
+        const result = await response.json();
+        if (result.code === 200) {
+            alert(result.msg || '删除成功');
+            loadData();
+        } else {
+            alert(result.msg || '删除失败');
+        }
+    } catch (error) {
+        console.error('删除失败:', error);
+        alert('网络错误，请稍后重试');
+    }
+}
+
+// 页面加载时初始化
+loadData();
+</script>
+{/block}

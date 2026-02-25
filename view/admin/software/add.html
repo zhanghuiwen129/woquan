@@ -1,0 +1,123 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>添加软件 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">添加软件</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        上传并安装新的软件
+    </p>
+</div>
+
+<div class="card rounded-lg p-6">
+    <form id="softwareForm" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-modern-gray mb-2">
+                    软件名称 <span class="text-modern-danger">*</span>
+                </label>
+                <input type="text" name="name" required placeholder="请输入软件名称" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-modern-gray mb-2">
+                    软件版本 <span class="text-modern-danger">*</span>
+                </label>
+                <input type="text" name="version" required placeholder="如: 1.0.0" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-modern-gray mb-2">
+                软件描述
+            </label>
+            <textarea name="description" rows="4" placeholder="请输入软件描述" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-modern-gray mb-2">
+                    软件图标
+                </label>
+                <input type="file" name="icon" accept="image/*" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-modern-gray mb-2">
+                    安装包 <span class="text-modern-danger">*</span>
+                </label>
+                <input type="file" name="package" required class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-modern-gray mb-2">
+                    平台
+                </label>
+                <select name="platform" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+                    <option value="windows">Windows</option>
+                    <option value="mac">macOS</option>
+                    <option value="linux">Linux</option>
+                    <option value="android">Android</option>
+                    <option value="ios">iOS</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-modern-gray mb-2">
+                    状态
+                </label>
+                <select name="status" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+                    <option value="1">启用</option>
+                    <option value="0">禁用</option>
+                </select>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-modern-gray mb-2">
+                下载地址
+            </label>
+            <input type="text" name="download_url" placeholder="如不填写则使用上传的文件" class="w-full px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+        </div>
+
+        <div class="flex items-center gap-4 pt-4 border-t border-modern-lightGray">
+            <button type="submit" class="px-6 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern flex items-center gap-2">
+                <i class="fas fa-upload"></i>
+                <span>上传软件</span>
+            </button>
+            <button type="button" onclick="window.history.back()" class="px-6 py-2 bg-modern-light border border-modern-lightGray rounded-md hover:border-modern-primary transition-colors flex items-center gap-2">
+                <i class="fas fa-arrow-left"></i>
+                <span>返回</span>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- JavaScript -->
+<script>
+document.getElementById('softwareForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch('/admin/software/save', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.code === 200) {
+            alert('软件上传成功！');
+            window.location.href = '/admin/software';
+        } else {
+            alert('上传失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('上传失败，请稍后重试');
+    });
+});
+</script>
+{/block}

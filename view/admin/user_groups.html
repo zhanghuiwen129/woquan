@@ -1,0 +1,440 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户分组管理 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        modern: {
+                            dark: '#1F2937',
+                            light: '#F9FAFB',
+                            primary: '#3B82F6',
+                            secondary: '#6366F1',
+                            gray: '#4B5563',
+                            lightGray: '#E5E7EB',
+                            darkGray: '#374151',
+                            white: '#FFFFFF',
+                            success: '#10B981',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <!-- 引入统一弹窗组件 -->
+    <script src="/static/js/modal.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        .bg-modern-primary {
+            background-color: #3b82f6;
+        }
+        .bg-modern-secondary {
+            background-color: #2563eb;
+        }
+        .bg-modern-light {
+            background-color: #f1f5f9;
+        }
+        .bg-modern-white {
+            background-color: #ffffff;
+        }
+        .border-modern-lightGray {
+            border-color: #e2e8f0;
+        }
+        .shadow-modern {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .text-modern-dark {
+            color: #1e293b;
+        }
+        .text-modern-gray {
+            color: #64748b;
+        }
+        .text-modern-primary {
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'user_groups';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">用户分组管理</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-8">
+                <h2 class="text-2xl font-semibold text-modern-dark">用户分组列表</h2>
+                <p class="text-modern-gray mt-2">管理系统用户分组</p>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-6 mb-6">
+                <div class="flex justify-between items-center">
+                    <div class="flex gap-2">
+                        <button id="addGroupBtn" class="px-5 py-2.5 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors">
+                            <i class="fa-solid fa-plus mr-2"></i>新增分组
+                        </button>
+                        <button id="batchDeleteBtn" class="px-5 py-2.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">
+                            <i class="fa-solid fa-trash mr-2"></i>批量删除
+                        </button>
+                    </div>
+                    <div class="w-64">
+                        <input type="text" id="searchKeyword" placeholder="搜索分组名称" 
+                               class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户分组列表 -->
+            <div class="bg-modern-white rounded-lg shadow-modern overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-modern-light border-b border-modern-lightGray">
+                        <tr>
+                            <th class="py-4 px-2 w-[40px]">
+                                <input type="checkbox" id="selectAll" class="rounded text-modern-primary focus:ring-modern-primary">
+                            </th>
+                            <th class="py-4 px-6 text-left text-modern-gray font-medium">ID</th>
+                            <th class="py-4 px-6 text-left text-modern-gray font-medium">分组名称</th>
+                            <th class="py-4 px-6 text-left text-modern-gray font-medium">分组描述</th>
+                            <th class="py-4 px-6 text-left text-modern-gray font-medium">创建时间</th>
+                            <th class="py-4 px-6 text-left text-modern-gray font-medium">状态</th>
+                            <th class="py-4 px-6 text-left text-modern-gray font-medium">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="groupList">
+                        <?php if (empty($groups)): ?>
+                        <tr class="border-b border-modern-lightGray">
+                            <td colspan="7" class="py-8 text-center text-modern-gray">暂无分组数据</td>
+                        </tr>
+                        <?php else: foreach ($groups as $group): ?>
+                        <tr class="border-b border-modern-lightGray hover:bg-modern-light transition-colors">
+                            <td class="py-4 px-2">
+                                <input type="checkbox" class="groupCheckbox rounded text-modern-primary focus:ring-modern-primary" value="<?php echo $group['id']; ?>">
+                            </td>
+                            <td class="py-4 px-6 text-modern-dark"><?php echo $group['id']; ?></td>
+                            <td class="py-4 px-6">
+                                <div class="font-medium text-modern-dark"><?php echo $group['name']; ?></div>
+                            </td>
+                            <td class="py-4 px-6 text-modern-gray"><?php echo $group['description'] ?: '无描述'; ?></td>
+                            <td class="py-4 px-6 text-modern-dark"><?php echo date('Y-m-d H:i', $group['create_time']); ?></td>
+                            <td class="py-4 px-6">
+                                <span class="px-2 py-1 text-xs rounded-full <?php echo $group['is_system'] == 1 ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'; ?>">
+                                    <?php echo $group['is_system'] == 1 ? '系统分组' : '自定义分组'; ?>
+                                </span>
+                            </td>
+                            <td class="py-4 px-6">
+                                <div class="flex items-center gap-2">
+                                    <button onclick="editGroup(<?php echo $group['id']; ?>)" 
+                                            class="p-2 text-modern-primary hover:bg-modern-light rounded transition-colors" 
+                                            title="编辑分组">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <?php if ($group['is_system'] != 1): ?>
+                                    <button onclick="deleteGroup(<?php echo $group['id']; ?>)" 
+                                            class="p-2 text-modern-gray hover:text-red-500 hover:bg-red-50 rounded transition-colors" 
+                                            title="删除分组">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 新增分组
+        function addGroup() {
+            const form = `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-modern-gray mb-2">分组名称</label>
+                        <input type="text" id="groupName" placeholder="请输入分组名称" 
+                               class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-modern-gray mb-2">分组描述</label>
+                        <textarea id="groupDescription" placeholder="请输入分组描述" rows="3" 
+                                  class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary"></textarea>
+                    </div>
+                </div>
+            `;
+
+            modal.show({
+                title: '新增用户分组',
+                content: form,
+                type: 'custom',
+                onConfirm: async function() {
+                    const name = document.getElementById('groupName').value;
+                    const description = document.getElementById('groupDescription').value;
+
+                    if (!name) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '分组名称不能为空',
+                            type: 'error',
+                            showCancel: false
+                        });
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch('/api/addUserGroup', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name, description })
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            modal.show({
+                                title: '成功提示',
+                                content: '分组创建成功',
+                                type: 'success',
+                                showCancel: false,
+                                onConfirm: function() {
+                                    location.reload();
+                                }
+                            });
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '操作失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                },
+                onCancel: function() {
+                    console.log('操作已取消');
+                }
+            });
+        }
+
+        // 编辑分组
+        function editGroup(id) {
+            // 这里应该先获取分组信息，然后填充到表单中
+            modal.show({
+                title: '编辑用户分组',
+                content: '编辑功能开发中...',
+                type: 'info',
+                showCancel: false
+            });
+        }
+
+        // 删除分组
+        function deleteGroup(id) {
+            modal.show({
+                title: '确认删除',
+                content: '确定要删除该用户分组吗？此操作将移除该分组下的所有用户',
+                type: 'error',
+                onConfirm: async function() {
+                    try {
+                        const response = await fetch(`/api/deleteUserGroup?id=${id}`, {
+                            method: 'POST'
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            location.reload();
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '删除失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                },
+                onCancel: function() {
+                    console.log('删除已取消');
+                }
+            });
+        }
+
+        // 批量删除
+        function batchDelete() {
+            const selectedIds = [];
+            document.querySelectorAll('.groupCheckbox:checked').forEach(checkbox => {
+                selectedIds.push(checkbox.value);
+            });
+
+            if (selectedIds.length === 0) {
+                modal.show({
+                    title: '提示',
+                    content: '请选择要删除的分组',
+                    type: 'info',
+                    showCancel: false
+                });
+                return;
+            }
+
+            modal.show({
+                title: '确认批量删除',
+                content: `确定要删除选中的 ${selectedIds.length} 个分组吗？此操作将移除这些分组下的所有用户`,
+                type: 'error',
+                onConfirm: async function() {
+                    try {
+                        const response = await fetch('/api/batchDeleteUserGroups', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ids: selectedIds })
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            location.reload();
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '批量删除失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                },
+                onCancel: function() {
+                    console.log('删除已取消');
+                }
+            });
+        }
+
+        // 搜索功能
+        document.getElementById('searchKeyword').addEventListener('input', function() {
+            const keyword = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#groupList tr');
+
+            rows.forEach(row => {
+                const groupName = row.querySelector('td:nth-child(3) .font-medium');
+                if (groupName) {
+                    const name = groupName.textContent.toLowerCase();
+                    if (name.includes(keyword)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
+
+        // 全选功能
+        document.getElementById('selectAll').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.groupCheckbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+
+        // 事件监听
+        document.getElementById('addGroupBtn').addEventListener('click', addGroup);
+        document.getElementById('batchDeleteBtn').addEventListener('click', batchDelete);
+    </script>
+</body>
+</html>

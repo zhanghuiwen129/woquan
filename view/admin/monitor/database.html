@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据库监控 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'monitor_database';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">数据库监控</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name|default='管理员'}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">数据库监控</h2>
+                <p class="text-gray-500 text-sm mt-1">实时监控数据库性能指标</p>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="bg-white rounded-lg shadow-sm p-5 mb-6">
+                <div class="flex gap-3">
+                    <a href="/admin/monitor" class="px-5 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
+                        <i class="fas fa-arrow-left mr-1"></i>返回监控
+                    </a>
+                    <a href="/admin/monitor/performance" class="px-5 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
+                        <i class="fas fa-tachometer-alt mr-1"></i>性能监控
+                    </a>
+                    <a href="/admin/monitor/server" class="px-5 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
+                        <i class="fas fa-server mr-1"></i>服务器监控
+                    </a>
+                    <a href="/admin/monitor/alerts" class="px-5 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors shadow-sm">
+                        <i class="fas fa-bell mr-1"></i>告警管理
+                    </a>
+                </div>
+            </div>
+
+            <!-- 数据库指标卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <!-- 数据库大小 -->
+                <div class="card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-database text-blue-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">数据库大小</p>
+                                <p class="text-2xl font-bold text-gray-800">{$database.table_size|default='0MB'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 连接数 -->
+                <div class="card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-link text-green-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">连接数</p>
+                                <p class="text-2xl font-bold text-gray-800">{$database.connections|default=0}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill bg-green-500" style="width: {$database.connections_percent|default=0}%"></div>
+                    </div>
+                </div>
+
+                <!-- 慢查询 -->
+                <div class="card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">慢查询</p>
+                                <p class="text-2xl font-bold text-gray-800">{$database.slow_queries|default=0}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 每秒查询数 -->
+                <div class="card p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                                <i class="fas fa-tachometer-alt text-purple-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">QPS</p>
+                                <p class="text-2xl font-bold text-gray-800">{$database.queries_per_second|default=0}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill bg-purple-500" style="width: {$database.queries_percent|default=0}%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据库详情 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- 连接详情 -->
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">连接详情</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">活跃连接</span>
+                            <span class="text-gray-800 font-semibold">{$database.active_connections|default=0}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">空闲连接</span>
+                            <span class="text-gray-800 font-semibold">{$database.idle_connections|default=0}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">最大连接数</span>
+                            <span class="text-gray-800 font-semibold">{$database.max_connections|default=100}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">连接使用率</span>
+                            <span class="text-gray-800 font-semibold">{$database.connections_percent|default=0}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 查询详情 -->
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">查询详情</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">总查询数</span>
+                            <span class="text-gray-800 font-semibold">{$database.total_queries|default=0}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">每秒查询数</span>
+                            <span class="text-gray-800 font-semibold">{$database.queries_per_second|default=0}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">慢查询数</span>
+                            <span class="text-gray-800 font-semibold">{$database.slow_queries|default=0}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600 text-sm">平均查询时间</span>
+                            <span class="text-gray-800 font-semibold">{$database.avg_query_time|default=0}ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据库优化建议 -->
+            <div class="card p-6 mt-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">数据库优化建议</h3>
+                <div class="space-y-3">
+                    <div class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <div>
+                            <p class="text-gray-800 font-medium">添加索引</p>
+                            <p class="text-gray-500 text-sm mt-1">为常用查询字段添加索引，提高查询效率</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <div>
+                            <p class="text-gray-800 font-medium">优化查询语句</p>
+                            <p class="text-gray-500 text-sm mt-1">避免使用 SELECT *，只查询需要的字段</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <div>
+                            <p class="text-gray-800 font-medium">使用连接池</p>
+                            <p class="text-gray-500 text-sm mt-1">使用数据库连接池，减少连接创建开销</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <div>
+                            <p class="text-gray-800 font-medium">定期清理</p>
+                            <p class="text-gray-500 text-sm mt-1">定期清理过期数据和日志，减少数据库负担</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 模拟实时更新数据库数据
+        setInterval(function() {
+            // 这里可以添加 AJAX 请求获取实时数据
+            console.log('数据库数据已更新');
+        }, 5000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>活动管理 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">活动管理</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        管理系统活动和用户参与记录
+    </p>
+</div>
+
+<!-- 操作按钮区域 -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="flex items-center gap-4">
+        <a href="/admin/activity/add" class="px-5 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern flex items-center gap-2">
+            <i class="fas fa-plus"></i>
+            <span>添加活动</span>
+        </a>
+    </div>
+    <div class="flex items-center gap-4">
+        <input type="text" id="keyword" placeholder="搜索活动标题..." class="px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+        <select id="status" class="px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary focus:ring-1 focus:ring-modern-primary">
+            <option value="-1">全部状态</option>
+            <option value="1">进行中</option>
+            <option value="2">已结束</option>
+        </select>
+        <button onclick="search()" class="px-4 py-2 bg-modern-light border border-modern-lightGray rounded-md hover:border-modern-primary transition-colors">
+            <i class="fas fa-search"></i>
+        </button>
+    </div>
+</div>
+
+<!-- 活动列表卡片 -->
+<div class="card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">ID</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">活动标题</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">参与人数</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">开始时间</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">结束时间</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">状态</th>
+                    <th class="py-4 px-6 text-left text-modern-gray font-medium">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-modern-lightGray">
+                <!-- 数据将通过JS加载 -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页 -->
+    <div class="bg-modern-light px-6 py-4 flex items-center justify-between border-t border-modern-lightGray">
+        <div class="text-sm text-modern-gray">
+            共 <span id="totalCount">0</span> 条记录
+        </div>
+        <div class="flex items-center gap-2" id="pagination">
+            <!-- 分页按钮将通过JS生成 -->
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+let currentPage = 1;
+let pageSize = 20;
+
+// 加载数据
+function loadData(page = 1) {
+    currentPage = page;
+
+    const keyword = document.getElementById('keyword').value;
+    const status = document.getElementById('status').value;
+
+    fetch(`/admin/activity?page=${page}&limit=${pageSize}&keyword=${encodeURIComponent(keyword)}&status=${status}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+        .then(response => response.json())
+        .then(result => {
+            if (result.code === 200) {
+                renderTable(result.data.list);
+                renderPagination(result.data.total);
+            } else {
+                alert('加载失败: ' + result.msg);
+            }
+        })
+        .catch(error => {
+            console.error('加载失败:', error);
+            alert('网络错误，请稍后重试');
+        });
+}
+
+// 渲染表格
+function renderTable(data) {
+    const tbody = document.getElementById('tableBody');
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-12 text-center text-modern-gray">暂无数据</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = data.map(item => {
+        const statusMap = {
+            '1': '<span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">进行中</span>',
+            '2': '<span class="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded">已结束</span>'
+        };
+
+        return `
+            <tr class="hover:bg-modern-light/50 transition-colors">
+                <td class="py-4 px-6 text-sm text-modern-gray">${item.id}</td>
+                <td class="py-4 px-6">
+                    <div class="text-sm font-medium text-modern-dark">${item.title}</div>
+                    <div class="text-xs text-modern-gray mt-1">${item.description || ''}</div>
+                </td>
+                <td class="py-4 px-6 text-sm text-modern-primary font-medium">${item.participant_count || 0}</td>
+                <td class="py-4 px-6 text-sm text-modern-gray">${formatDate(item.start_time)}</td>
+                <td class="py-4 px-6 text-sm text-modern-gray">${formatDate(item.end_time)}</td>
+                <td class="py-4 px-6">${statusMap[item.status] || '-'}</td>
+                <td class="py-4 px-6">
+                    <div class="flex items-center gap-2">
+                        <a href="/admin/activity/edit/${item.id}" class="text-modern-gray hover:text-modern-primary transition-colors" title="编辑">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="/admin/activity/participants?activity_id=${item.id}" class="text-modern-gray hover:text-modern-primary transition-colors" title="参与者">
+                            <i class="fas fa-users"></i>
+                        </a>
+                        <button onclick="deleteActivity(${item.id})" class="text-modern-gray hover:text-modern-danger transition-colors" title="删除">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// 渲染分页
+function renderPagination(total) {
+    const totalPages = Math.ceil(total / pageSize);
+    const pagination = document.getElementById('pagination');
+    document.getElementById('totalCount').textContent = total;
+
+    let html = '';
+
+    html += `<button onclick="loadData(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-3 py-1 border rounded hover:bg-modern-white disabled:opacity-50 disabled:cursor-not-allowed">
+        <i class="fas fa-chevron-left"></i>
+    </button>`;
+
+    for (let i = 1; i <= totalPages && i <= 5; i++) {
+        html += `<button onclick="loadData(${i})" class="px-3 py-1 border rounded ${currentPage === i ? 'bg-modern-primary text-white' : 'hover:bg-modern-white'}">${i}</button>`;
+    }
+
+    html += `<button onclick="loadData(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''} class="px-3 py-1 border rounded hover:bg-modern-white disabled:opacity-50 disabled:cursor-not-allowed">
+        <i class="fas fa-chevron-right"></i>
+    </button>`;
+
+    pagination.innerHTML = html;
+}
+
+// 搜索
+function search() {
+    loadData(1);
+}
+
+// 格式化日期
+function formatDate(timestamp) {
+    if (!timestamp) return '-';
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleString('zh-CN');
+}
+
+// 删除活动
+function deleteActivity(id) {
+    if (confirm('确定要删除该活动吗?')) {
+        fetch(`/admin/activity/delete/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.code === 200) {
+                alert('删除成功');
+                loadData(currentPage);
+            } else {
+                alert('删除失败: ' + result.msg);
+            }
+        })
+        .catch(error => {
+            console.error('删除失败:', error);
+            alert('网络错误，请稍后重试');
+        });
+    }
+}
+
+// 页面加载时获取数据
+document.addEventListener('DOMContentLoaded', function() {
+    loadData(1);
+});
+</script>
+{/block}

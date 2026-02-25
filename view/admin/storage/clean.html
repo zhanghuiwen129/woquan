@@ -1,0 +1,477 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>缓存清理 - 存储管理</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        .clean-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .clean-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'storage';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">缓存清理</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name|default='管理员'}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <!-- 返回按钮 -->
+            <div class="mb-6">
+                <a href="/admin/storage" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>返回存储管理
+                </a>
+            </div>
+
+            <!-- 清理选项 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <!-- 缓存清理 -->
+                <div class="clean-card bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500" data-type="cache">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-broom text-blue-500 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 ml-4">缓存清理</h3>
+                    </div>
+                    <p class="text-sm text-gray-500">清理系统缓存文件，提高系统性能</p>
+                    <div class="mt-4">
+                        <button onclick="cleanCache('cache')" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors w-full">
+                            <i class="fas fa-trash-alt mr-2"></i>立即清理
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 临时文件清理 -->
+                <div class="clean-card bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500" data-type="temp">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-file-temp text-yellow-500 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 ml-4">临时文件清理</h3>
+                    </div>
+                    <p class="text-sm text-gray-500">清理系统临时文件，释放存储空间</p>
+                    <div class="mt-4">
+                        <button onclick="cleanCache('temp')" class="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors w-full">
+                            <i class="fas fa-trash-alt mr-2"></i>立即清理
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 日志文件清理 -->
+                <div class="clean-card bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500" data-type="logs">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-file-alt text-red-500 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 ml-4">日志文件清理</h3>
+                    </div>
+                    <p class="text-sm text-gray-500">清理系统日志文件，释放存储空间</p>
+                    <div class="mt-4">
+                        <button onclick="cleanCache('logs')" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors w-full">
+                            <i class="fas fa-trash-alt mr-2"></i>立即清理
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 全部清理 -->
+                <div class="clean-card bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500" data-type="all">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-eraser text-green-500 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 ml-4">全部清理</h3>
+                    </div>
+                    <p class="text-sm text-gray-500">清理所有缓存、临时文件和日志</p>
+                    <div class="mt-4">
+                        <button onclick="cleanCache('all')" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors w-full">
+                            <i class="fas fa-trash-alt mr-2"></i>立即清理
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 清理进度 -->
+            <div id="cleanProgress" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">清理进度</h3>
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-gray-700" id="progressTask"></span>
+                            <span class="text-sm text-gray-500" id="progressPercent">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-blue-600 h-2.5 rounded-full" id="progressBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-500" id="progressDetail"></div>
+                </div>
+            </div>
+
+            <!-- 清理结果 -->
+            <div id="cleanResult" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+                <div class="flex items-start">
+                    <div id="resultIcon" class="flex-shrink-0 mt-1">
+                        <!-- 图标将通过JS动态添加 -->
+                    </div>
+                    <div class="ml-4">
+                        <h3 id="resultTitle" class="text-lg font-medium text-gray-900 mb-2"></h3>
+                        <p id="resultMessage" class="text-sm text-gray-500"></p>
+                        <div class="mt-3 text-sm text-gray-600" id="resultDetails"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 清理历史 -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">清理历史</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">清理类型</th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">清理时间</th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">清理结果</th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">清理文件数</th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">释放空间</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="cleanHistory">
+                            <!-- 历史记录将通过JS动态添加 -->
+                            <tr>
+                                <td colspan="5" class="px-6 py-10 text-center text-gray-500">
+                                    <i class="fas fa-history text-2xl mb-2"></i>
+                                    <p>暂无清理历史记录</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 注意事项 -->
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-700">
+                            <strong>注意事项：</strong>
+                        </p>
+                        <ul class="text-sm text-yellow-700 mt-2 list-disc pl-5 space-y-1">
+                            <li>清理缓存可能会导致系统暂时变慢，因为需要重新生成缓存</li>
+                            <li>清理日志文件后，相关操作记录将无法恢复</li>
+                            <li>建议定期清理系统缓存和临时文件，保持系统性能</li>
+                            <li>清理操作可能需要一定时间，请耐心等待</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // 清理历史记录
+        let cleanHistory = JSON.parse(localStorage.getItem('cleanHistory') || '[]');
+
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCleanHistory();
+        });
+
+        function loadCleanHistory() {
+            const cleanHistoryElement = document.getElementById('cleanHistory');
+            if (cleanHistory.length === 0) {
+                cleanHistoryElement.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-10 text-center text-gray-500">
+                            <i class="fas fa-history text-2xl mb-2"></i>
+                            <p>暂无清理历史记录</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            cleanHistory.forEach(item => {
+                html += `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-${item.type === 'cache' ? 'blue' : item.type === 'temp' ? 'yellow' : item.type === 'logs' ? 'red' : 'green'}-100 text-${item.type === 'cache' ? 'blue' : item.type === 'temp' ? 'yellow' : item.type === 'logs' ? 'red' : 'green'}-800">
+                                ${item.type === 'cache' ? '缓存清理' : item.type === 'temp' ? '临时文件清理' : item.type === 'logs' ? '日志文件清理' : '全部清理'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${item.timestamp}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                成功
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${item.filesCount || 0}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${item.freedSpace || '0 KB'}
+                        </td>
+                    </tr>
+                `;
+            });
+            cleanHistoryElement.innerHTML = html;
+        }
+
+        function addCleanHistory(item) {
+            cleanHistory.unshift(item);
+            if (cleanHistory.length > 20) {
+                cleanHistory = cleanHistory.slice(0, 20);
+            }
+            localStorage.setItem('cleanHistory', JSON.stringify(cleanHistory));
+            loadCleanHistory();
+        }
+
+        function cleanCache(type) {
+            const typeText = type === 'cache' ? '缓存' : type === 'temp' ? '临时文件' : type === 'logs' ? '日志文件' : '所有缓存、临时文件和日志';
+            if (!confirm('确定要清理' + typeText + '吗？')) {
+                return Promise.reject('用户取消');
+            }
+
+            // 显示进度条
+            const cleanProgress = document.getElementById('cleanProgress');
+            const progressTask = document.getElementById('progressTask');
+            const progressPercent = document.getElementById('progressPercent');
+            const progressBar = document.getElementById('progressBar');
+            const progressDetail = document.getElementById('progressDetail');
+
+            cleanProgress.classList.remove('hidden');
+            progressTask.textContent = '准备清理...';
+            progressPercent.textContent = '0%';
+            progressBar.style.width = '0%';
+            progressDetail.textContent = '';
+
+            // 隐藏结果和历史
+            document.getElementById('cleanResult').classList.add('hidden');
+
+            // 模拟进度更新
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress > 90) progress = 90;
+                progressPercent.textContent = Math.round(progress) + '%';
+                progressBar.style.width = progress + '%';
+
+                if (type === 'all') {
+                    if (progress < 30) {
+                        progressTask.textContent = '清理缓存文件...';
+                        progressDetail.textContent = '正在删除缓存目录中的文件...';
+                    } else if (progress < 60) {
+                        progressTask.textContent = '清理临时文件...';
+                        progressDetail.textContent = '正在删除临时目录中的文件...';
+                    } else {
+                        progressTask.textContent = '清理日志文件...';
+                        progressDetail.textContent = '正在删除日志目录中的文件...';
+                    }
+                } else {
+                    progressTask.textContent = '清理' + typeText + '...';
+                    progressDetail.textContent = '正在删除相关目录中的文件...';
+                }
+            }, 200);
+
+            // 发送清理请求
+            return fetch('/admin/storage/doClean', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ type: type })
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(progressInterval);
+
+                // 更新进度为100%
+                progressPercent.textContent = '100%';
+                progressBar.style.width = '100%';
+                progressTask.textContent = '清理完成';
+                progressDetail.textContent = '所有文件已清理完毕';
+
+                // 显示结果
+                setTimeout(() => {
+                    cleanProgress.classList.add('hidden');
+                    showCleanResult(data, type);
+                }, 500);
+
+                return data;
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                cleanProgress.classList.add('hidden');
+
+                const cleanResult = document.getElementById('cleanResult');
+                const resultIcon = document.getElementById('resultIcon');
+                const resultTitle = document.getElementById('resultTitle');
+                const resultMessage = document.getElementById('resultMessage');
+                const resultDetails = document.getElementById('resultDetails');
+
+                cleanResult.classList.remove('hidden');
+                resultIcon.innerHTML = '<i class="fas fa-times-circle text-red-500 text-xl"></i>';
+                resultTitle.textContent = '清理失败';
+                resultMessage.textContent = '网络错误，请稍后重试';
+                resultDetails.textContent = '';
+
+                throw error;
+            });
+        }
+
+        function showCleanResult(data, type) {
+            const cleanResult = document.getElementById('cleanResult');
+            const resultIcon = document.getElementById('resultIcon');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultMessage = document.getElementById('resultMessage');
+            const resultDetails = document.getElementById('resultDetails');
+
+            cleanResult.classList.remove('hidden');
+
+            if (data.code === 200) {
+                resultIcon.innerHTML = '<i class="fas fa-check-circle text-green-500 text-xl"></i>';
+                resultTitle.textContent = '清理成功';
+                resultMessage.textContent = data.msg || '清理完成，系统性能已优化';
+                resultDetails.textContent = `清理类型：${type === 'cache' ? '缓存' : type === 'temp' ? '临时文件' : type === 'logs' ? '日志文件' : '全部'} | 清理时间：${new Date().toLocaleString()}`;
+
+                // 添加到历史记录
+                addCleanHistory({
+                    type: type,
+                    timestamp: new Date().toLocaleString(),
+                    filesCount: data.filesCount || 0,
+                    freedSpace: data.freedSpace || '0 KB'
+                });
+            } else {
+                resultIcon.innerHTML = '<i class="fas fa-times-circle text-red-500 text-xl"></i>';
+                resultTitle.textContent = '清理失败';
+                resultMessage.textContent = data.msg || '清理过程中发生错误';
+                resultDetails.textContent = '';
+            }
+        }
+
+        // 为清理卡片添加点击事件
+        document.querySelectorAll('.clean-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const type = this.getAttribute('data-type');
+
+                // 防止重复点击
+                if (this.classList.contains('cleaning')) {
+                    return;
+                }
+
+                // 添加清理中状态
+                this.classList.add('cleaning', 'opacity-50', 'cursor-not-allowed');
+                const button = this.querySelector('button');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>清理中...';
+                button.disabled = true;
+
+                cleanCache(type).then(() => {
+                    // 恢复按钮状态
+                    this.classList.remove('cleaning', 'opacity-50', 'cursor-not-allowed');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }).catch(() => {
+                    // 恢复按钮状态
+                    this.classList.remove('cleaning', 'opacity-50', 'cursor-not-allowed');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

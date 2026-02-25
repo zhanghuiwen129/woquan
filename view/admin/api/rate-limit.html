@@ -1,0 +1,389 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API限流配置 - 后台管理</title>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .table-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead {
+            background-color: #f1f5f9;
+        }
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+            color: #64748b;
+        }
+        tr:hover td {
+            background-color: #f9fafb;
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-active {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .status-inactive {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        .btn-danger {
+            background-color: #dc2626;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+        .btn-success {
+            background-color: #16a34a;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #15803d;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+        .method-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .method-get {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .method-post {
+            background-color: #fce7f3;
+            color: #9d174d;
+        }
+        .method-put {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .method-delete {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'api';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">API限流配置</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="max-w-7xl mx-auto">
+                <!-- 操作按钮 -->
+                <div class="mb-6 flex justify-between items-center">
+                    <div class="flex gap-4">
+                        <input type="text" id="searchInput" placeholder="搜索规则名称或接口..." 
+                               class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64">
+                        <button onclick="loadData()" class="btn btn-primary">
+                            <i class="fas fa-search mr-2"></i>搜索
+                        </button>
+                    </div>
+                    <button onclick="addRule()" class="btn btn-primary">
+                        <i class="fas fa-plus mr-2"></i>添加规则
+                    </button>
+                </div>
+
+                <!-- 表格容器 -->
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>规则名称</th>
+                                <th>接口地址</th>
+                                <th>方法</th>
+                                <th>最大请求数</th>
+                                <th>时间窗口</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- 数据将通过JS加载 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                <div class="pagination" id="pagination">
+                    <!-- 分页将通过JS生成 -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 当前页码
+        let currentPage = 1;
+        let pageSize = 10;
+
+        // 加载数据
+        function loadData(page = 1) {
+            currentPage = page;
+            const search = $('#searchInput').val();
+
+            $.ajax({
+                url: '/admin/api/getRateLimits',
+                type: 'GET',
+                data: {
+                    page: currentPage,
+                    pageSize: pageSize,
+                    search: search
+                },
+                success: function(response) {
+                    if (response.code === 0) {
+                        renderTable(response.data.list);
+                        renderPagination(response.data.total);
+                    } else {
+                        alert(response.message || '加载数据失败');
+                    }
+                },
+                error: function() {
+                    alert('请求失败，请稍后重试');
+                }
+            });
+        }
+
+        // 渲染表格
+        function renderTable(data) {
+            let html = '';
+            if (data && data.length > 0) {
+                data.forEach(function(item) {
+                    const statusBadge = item.status === 1 
+                        ? '<span class="status-badge status-active">启用</span>' 
+                        : '<span class="status-badge status-inactive">禁用</span>';
+                    
+                    const methodBadge = `<span class="method-badge method-${item.method.toLowerCase()}">${item.method}</span>`;
+
+                    html += `
+                        <tr>
+                            <td>${item.id}</td>
+                            <td>${item.name}</td>
+                            <td><code class="bg-gray-100 px-2 py-1 rounded text-sm">${item.path}</code></td>
+                            <td>${methodBadge}</td>
+                            <td>${item.max_requests}</td>
+                            <td>${item.time_window}秒</td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                <button onclick="editRule(${item.id})" class="btn btn-sm btn-success">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteRule(${item.id})" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                html = '<tr><td colspan="8" style="text-align:center; padding:40px;">暂无数据</td></tr>';
+            }
+            $('#tableBody').html(html);
+        }
+
+        // 渲染分页
+        function renderPagination(total) {
+            const totalPages = Math.ceil(total / pageSize);
+            let html = '';
+
+            if (totalPages <= 1) {
+                $('#pagination').hide();
+                return;
+            }
+
+            $('#pagination').show();
+
+            // 上一页
+            html += currentPage > 1 
+                ? `<a href="javascript:void(0)" onclick="loadData(${currentPage - 1})"><i class="fas fa-chevron-left"></i></a>`
+                : `<a href="javascript:void(0)" style="color:#9ca3af; cursor:not-allowed;"><i class="fas fa-chevron-left"></i></a>`;
+
+            // 页码
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `<a href="javascript:void(0)" onclick="loadData(${i})" class="${i === currentPage ? 'active' : ''}">${i}</a>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += `<span>...</span>`;
+                }
+            }
+
+            // 下一页
+            html += currentPage < totalPages
+                ? `<a href="javascript:void(0)" onclick="loadData(${currentPage + 1})"><i class="fas fa-chevron-right"></i></a>`
+                : `<a href="javascript:void(0)" style="color:#9ca3af; cursor:not-allowed;"><i class="fas fa-chevron-right"></i></a>`;
+
+            $('#pagination').html(html);
+        }
+
+        // 添加规则
+        function addRule() {
+            window.location.href = '/admin/api/rate-limit/add';
+        }
+
+        // 编辑规则
+        function editRule(id) {
+            window.location.href = '/admin/api/rate-limit/edit?id=' + id;
+        }
+
+        // 删除规则
+        function deleteRule(id) {
+            if (!confirm('确定要删除这条规则吗？')) {
+                return;
+            }
+
+            $.ajax({
+                url: '/admin/api/deleteRateLimit',
+                type: 'POST',
+                data: { id: id },
+                success: function(response) {
+                    if (response.code === 0) {
+                        alert('删除成功');
+                        loadData(currentPage);
+                    } else {
+                        alert(response.message || '删除失败');
+                    }
+                },
+                error: function() {
+                    alert('请求失败，请稍后重试');
+                }
+            });
+        }
+
+        // 搜索框回车事件
+        $('#searchInput').keypress(function(e) {
+            if (e.which === 13) {
+                loadData(1);
+            }
+        });
+
+        // 页面加载完成后加载数据
+        $(document).ready(function() {
+            loadData(1);
+        });
+    </script>
+</body>
+</html>

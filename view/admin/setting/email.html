@@ -1,0 +1,41 @@
+﻿<!-- 邮件设置 -->
+<div class="tab-content" id="email">
+    <h3 class="text-lg font-medium text-gray-800">邮件服务器配置</h3>
+    <form id="emailForm" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">SMTP 服务器</label>
+                <input type="text" name="emydz" value="{$config.emydz ?? ''}"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500"
+                       placeholder="例如：smtp.qq.com">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">SMTP 端口</label>
+                <input type="number" name="emduk" value="{$config.emduk ?? 465}"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">发件人邮箱</label>
+                <input type="email" name="emzh" value="{$config.emzh ?? ''}"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-500 mb-2">授权码</label>
+                <input type="password" name="emkey" value="{$config.emkey ?? ''}"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-md px-4 py-2.5 text-gray-800 focus:outline-none focus:border-blue-500">
+            </div>
+        </div>
+        <div class="flex items-center gap-4 mt-8">
+            <button type="button" onclick="saveEmail()"
+                    class="px-5 py-2.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+                保存配置
+            </button>
+            <button type="button" onclick="testEmail()"
+                    class="px-5 py-2.5 bg-gray-100 border border-gray-200 rounded-md text-gray-700 hover:border-blue-500 transition-colors">
+                发送测试邮件
+            </button>
+        </div>
+    </form>
+</div>

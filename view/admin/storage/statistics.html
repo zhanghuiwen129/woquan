@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>存储统计 - 存储管理</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        .bg-modern-white {
+            background-color: #ffffff;
+        }
+        .bg-modern-light {
+            background-color: #f8fafc;
+        }
+        .text-modern-dark {
+            color: #1e293b;
+        }
+        .text-modern-gray {
+            color: #64748b;
+        }
+        .bg-modern-primary {
+            background-color: #3b82f6;
+        }
+        .text-modern-primary {
+            color: #3b82f6;
+        }
+        .bg-modern-secondary {
+            background-color: #2563eb;
+        }
+        .bg-modern-success {
+            background-color: #10b981;
+        }
+        .text-modern-success {
+            color: #10b981;
+        }
+        .bg-modern-gray {
+            background-color: #64748b;
+        }
+        .bg-modern-darkGray {
+            background-color: #475569;
+        }
+        .bg-modern-lightGray {
+            background-color: #e2e8f0;
+        }
+        .border-modern-lightGray {
+            border-color: #e2e8f0;
+        }
+        .shadow-modern {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'storage';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">存储统计</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name|default='管理员'}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <!-- 返回按钮 -->
+            <div class="mb-6">
+                <a href="/admin/storage" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>返回存储管理
+                </a>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <!-- 总存储 -->
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-modern-gray text-sm">总存储</p>
+                            <h3 class="text-2xl font-semibold text-modern-dark mt-1">
+                                {$statistics.total_size|default='0 B'}
+                            </h3>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-database text-blue-500 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 文件数量 -->
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-modern-gray text-sm">文件数量</p>
+                            <h3 class="text-2xl font-semibold text-modern-dark mt-1">
+                                {$statistics.total_files|default=0}
+                            </h3>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-file-alt text-green-500 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 今日上传 -->
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-modern-gray text-sm">今日上传</p>
+                            <h3 class="text-2xl font-semibold text-modern-dark mt-1">
+                                {$statistics.today_size|default='0 B'}
+                            </h3>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-cloud-upload-alt text-purple-500 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 本月上传 -->
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-modern-gray text-sm">本月上传</p>
+                            <h3 class="text-2xl font-semibold text-modern-dark mt-1">
+                                {$statistics.month_size|default='0 B'}
+                            </h3>
+                        </div>
+                        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-calendar-alt text-yellow-500 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 存储趋势 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-6 mb-6">
+                <h3 class="text-lg font-semibold text-modern-dark mb-4">存储增长趋势</h3>
+                <div class="h-80">
+                    <canvas id="storageGrowthChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 文件类型分布 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <h3 class="text-lg font-semibold text-modern-dark mb-4">文件类型分布</h3>
+                    <div class="h-64">
+                        <canvas id="fileTypeDistributionChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                    <h3 class="text-lg font-semibold text-modern-dark mb-4">每日上传趋势</h3>
+                    <div class="h-64">
+                        <canvas id="dailyUploadChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 详细统计 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-6">
+                <h3 class="text-lg font-semibold text-modern-dark mb-4">详细统计</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- 图片文件 -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-image text-blue-500"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-500">图片文件</div>
+                            <div class="text-lg font-semibold text-gray-900">
+                                {$statistics.image_count|default=0}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 文档文件 -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-file-alt text-green-500"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-500">文档文件</div>
+                            <div class="text-lg font-semibold text-gray-900">
+                                {$statistics.doc_count|default=0}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 其他文件 -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mr-3">
+                            <i class="fas fa-file text-gray-500"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-500">其他文件</div>
+                            <div class="text-lg font-semibold text-gray-900">
+                                {$statistics.other_count|default=0}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 存储增长趋势图表
+            const ctx1 = document.getElementById('storageGrowthChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                    datasets: [{
+                        label: '存储使用量 (MB)',
+                        data: [120, 190, 300, 500, 650, 800],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '存储使用量 (MB)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '月份'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 文件类型分布图表
+            const ctx2 = document.getElementById('fileTypeDistributionChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['图片', '文档', '压缩包', '其他'],
+                    datasets: [{
+                        data: [45, 30, 15, 10],
+                        backgroundColor: [
+                            '#3b82f6',
+                            '#10b981',
+                            '#f59e0b',
+                            '#6b7280'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+
+            // 每日上传趋势图表
+            const ctx3 = document.getElementById('dailyUploadChart').getContext('2d');
+            new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                    datasets: [{
+                        label: '上传文件数',
+                        data: [12, 19, 15, 25, 22, 10, 8],
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '上传文件数'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '星期'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

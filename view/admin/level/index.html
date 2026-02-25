@@ -1,0 +1,434 @@
+{extend name="admin/layout" /}
+
+{block name="title"}<title>等级管理 - 后台管理系统</title>{/block}
+
+{block name="content"}
+<div class="mb-4">
+    <h2 class="text-lg font-semibold text-modern-dark">等级管理</h2>
+    <p class="text-modern-gray text-sm mt-1">
+        <i class="fas fa-info-circle mr-1"></i>
+        管理用户等级和等级特权
+    </p>
+</div>
+
+<!-- 操作按钮区域 -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="flex items-center gap-4">
+        <button onclick="showAddModal()" class="px-5 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors shadow-modern flex items-center gap-2">
+            <i class="fas fa-plus"></i>
+            <span>添加等级</span>
+        </button>
+    </div>
+</div>
+
+<!-- 等级列表卡片 -->
+<div class="card rounded-lg overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-modern-light">
+                <th class="py-4 px-6 text-left text-modern-gray font-medium">等级</th>
+                <th class="py-4 px-6 text-left text-modern-gray font-medium">等级名称</th>
+                <th class="py-4 px-6 text-left text-modern-gray font-medium">所需积分</th>
+                <th class="py-4 px-6 text-left text-modern-gray font-medium">徽章样式</th>
+                <th class="py-4 px-6 text-left text-modern-gray font-medium">状态</th>
+                <th class="py-4 px-6 text-left text-modern-gray font-medium">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-modern-lightGray">
+                <!-- 数据将通过JS加载 -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 添加/编辑等级弹窗 -->
+<div id="levelModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div class="flex items-center justify-between px-6 py-4 border-b">
+            <h3 class="text-lg font-semibold text-modern-dark" id="modalTitle">添加等级</h3>
+            <button onclick="closeModal()" class="text-modern-gray hover:text-modern-dark">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="levelForm" class="p-6">
+            <input type="hidden" name="id" id="levelId">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-modern-dark mb-2">等级名称</label>
+                <input type="text" name="name" id="levelName" required class="w-full px-4 py-2 border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-modern-dark mb-2">所需积分</label>
+                <input type="number" name="points" id="levelPoints" required class="w-full px-4 py-2 border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-modern-dark mb-2">等级徽章</label>
+                <!-- 徽章类型选择 -->
+                <div class="flex items-center gap-4 mb-3">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="badgeType" value="preset" checked class="w-4 h-4 text-modern-primary" onchange="toggleBadgeType()">
+                        <span class="text-sm">预设徽章</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="badgeType" value="custom" class="w-4 h-4 text-modern-primary" onchange="toggleBadgeType()">
+                        <span class="text-sm">自定义图片</span>
+                    </label>
+                </div>
+
+                <!-- 预设徽章选择 -->
+                <div id="presetBadges" class="grid grid-cols-5 gap-2">
+                </div>
+
+                <!-- 自定义徽章上传 -->
+                <div id="customBadge" class="hidden">
+                    <div class="border-2 border-dashed border-modern-lightGray rounded-lg p-4 text-center hover:border-modern-primary transition-colors">
+                        <input type="file" id="customBadgeFile" accept="image/*" class="hidden" onchange="handleCustomBadgeUpload(event)">
+                        <div id="badgePreview" class="hidden mb-3">
+                            <img id="badgePreviewImg" src="" alt="徽章预览" class="w-20 h-20 mx-auto object-contain rounded-lg">
+                            <p class="text-xs text-modern-gray mt-2">点击更换图片</p>
+                        </div>
+                        <button type="button" onclick="document.getElementById('customBadgeFile').click()" id="uploadBtn" class="px-4 py-2 bg-modern-primary text-white text-sm rounded-md hover:bg-modern-secondary transition-colors">
+                            <i class="fas fa-upload mr-1"></i>上传徽章图片
+                        </button>
+                        <p class="text-xs text-modern-gray mt-2">支持 JPG、PNG 格式，建议尺寸 64x64</p>
+                    </div>
+                    <input type="hidden" name="customIcon" id="customIcon" value="">
+                </div>
+
+                <input type="hidden" name="icon" id="levelIcon" value="1">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-modern-dark mb-2">状态</label>
+                <select name="status" id="levelStatus" class="w-full px-4 py-2 border border-modern-lightGray rounded-md focus:outline-none focus:border-modern-primary">
+                    <option value="1">启用</option>
+                    <option value="0">禁用</option>
+                </select>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 border border-modern-lightGray text-modern-gray rounded-md hover:border-modern-primary transition-colors">取消</button>
+                <button type="submit" class="px-4 py-2 bg-modern-primary text-white rounded-md hover:bg-modern-secondary transition-colors">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let selectedIcon = '1';
+let isCustomBadge = false;
+
+// 切换徽章类型
+function toggleBadgeType() {
+    const badgeType = document.querySelector('input[name="badgeType"]:checked').value;
+    isCustomBadge = badgeType === 'custom';
+
+    document.getElementById('presetBadges').classList.toggle('hidden', isCustomBadge);
+    document.getElementById('customBadge').classList.toggle('hidden', !isCustomBadge);
+}
+
+// 获取等级徽章样式
+function getLevelBadge(level, icon) {
+    // 判断是否为自定义徽章（以http开头或包含/）
+    const isCustom = icon && (icon.startsWith('http') || icon.includes('/'));
+
+    if (isCustom) {
+        return {
+            bgColor: 'bg-gray-100',
+            html: `
+                <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold shadow-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white border-2 border-purple-400">
+                    <img src="${icon}" alt="自定义徽章" class="w-5 h-5 rounded-full object-cover">
+                    <span>LV${level}</span>
+                </div>
+            `
+        };
+    }
+
+    const levelConfig = {
+        1: { bg: 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)', text: '#ffffff', border: '#64748b', name: 'LV1' },
+        2: { bg: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)', text: '#ffffff', border: '#22c55e', name: 'LV2' },
+        3: { bg: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)', text: '#ffffff', border: '#3b82f6', name: 'LV3' },
+        4: { bg: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)', text: '#ffffff', border: '#8b5cf6', name: 'LV4' },
+        5: { bg: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)', text: '#ffffff', border: '#f59e0b', name: 'LV5' },
+        6: { bg: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)', text: '#ffffff', border: '#f97316', name: 'LV6' },
+        7: { bg: 'linear-gradient(135deg, #f87171 0%, #ef4444 100%)', text: '#ffffff', border: '#ef4444', name: 'LV7' },
+        8: { bg: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)', text: '#ffffff', border: '#ec4899', name: 'LV8' },
+        9: { bg: 'linear-gradient(135deg, #818cf8 0%, #6366f1 100%)', text: '#ffffff', border: '#6366f1', name: 'LV9' },
+        10: { bg: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)', text: '#ffffff', border: '#06b6d4', name: 'LV10' }
+    };
+
+    const config = levelConfig[level] || levelConfig[1];
+
+    return {
+        bgColor: config.bg.split(',')[0].replace('linear-gradient(135deg, ', '').replace(' 0%', ''),
+        html: `
+            <div class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold shadow-sm"
+                 style="background: ${config.bg}; color: ${config.text}; border: 2px solid ${config.border}">
+                <i class="fas fa-crown text-xs"></i>
+                <span>${config.name}</span>
+            </div>
+        `
+    };
+}
+
+// 初始化徽章选择器
+function initBadgePicker() {
+    const picker = document.getElementById('presetBadges');
+    const badges = [
+        { level: 1, bg: 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)', border: '#64748b', name: 'LV1 - 新手' },
+        { level: 2, bg: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)', border: '#22c55e', name: 'LV2 - 初级' },
+        { level: 3, bg: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)', border: '#3b82f6', name: 'LV3 - 中级' },
+        { level: 4, bg: 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)', border: '#8b5cf6', name: 'LV4 - 高级' },
+        { level: 5, bg: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)', border: '#f59e0b', name: 'LV5 - 资深' },
+        { level: 6, bg: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)', border: '#f97316', name: 'LV6 - 专家' },
+        { level: 7, bg: 'linear-gradient(135deg, #f87171 0%, #ef4444 100%)', border: '#ef4444', name: 'LV7 - 大师' },
+        { level: 8, bg: 'linear-gradient(135deg, #f472b6 0%, #ec4899 100%)', border: '#ec4899', name: 'LV8 - 精英' },
+        { level: 9, bg: 'linear-gradient(135deg, #818cf8 0%, #6366f1 100%)', border: '#6366f1', name: 'LV9 - 传奇' },
+        { level: 10, bg: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)', border: '#06b6d4', name: 'LV10 - 巅峰' }
+    ];
+
+    picker.innerHTML = badges.map(badge => `
+        <div class="badge-option cursor-pointer p-2 border-2 rounded-lg hover:scale-105 transition-all text-center"
+             data-level="${badge.level}"
+             title="${badge.name}"
+             style="background: ${badge.bg}; border-color: ${badge.border}">
+            <div class="text-white font-bold text-sm">
+                <i class="fas fa-crown mr-1"></i>LV${badge.level}
+            </div>
+        </div>
+    `).join('');
+
+    updateBadgeSelection();
+}
+
+// 处理自定义徽章上传
+function handleCustomBadgeUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // 检查文件类型
+    if (!file.type.match('image.*')) {
+        alert('请上传图片文件');
+        return;
+    }
+
+    // 检查文件大小 (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        alert('图片大小不能超过2MB');
+        return;
+    }
+
+    // 读取文件并预览
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64 = e.target.result;
+        document.getElementById('badgePreviewImg').src = base64;
+        document.getElementById('badgePreview').classList.remove('hidden');
+        document.getElementById('uploadBtn').classList.add('hidden');
+        document.getElementById('customIcon').value = base64;
+    };
+    reader.readAsDataURL(file);
+}
+
+// 加载数据
+function loadData() {
+    fetch('/admin/level/list')
+        .then(response => response.json())
+        .then(result => {
+            if (result.code === 200) {
+                renderTable(result.data);
+            } else {
+                alert('加载失败: ' + result.msg);
+            }
+        })
+        .catch(error => {
+            console.error('加载失败:', error);
+            alert('网络错误，请稍后重试');
+        });
+}
+
+// 渲染表格
+function renderTable(data) {
+    const tbody = document.getElementById('tableBody');
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-modern-gray">暂无数据</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = data.map(item => {
+        const levelBadge = getLevelBadge(item.level, item.icon);
+        return `
+            <tr class="hover:bg-modern-light/50 transition-colors">
+                <td class="py-4 px-6">
+                    <span class="w-10 h-10 flex items-center justify-center rounded-full ${levelBadge.bgColor} font-bold text-lg">${item.level}</span>
+                </td>
+                <td class="py-4 px-6">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-modern-dark">${item.name}</span>
+                    </div>
+                </td>
+                <td class="py-4 px-6 text-sm text-modern-gray">${item.required_points}</td>
+                <td class="py-4 px-6">
+                    ${levelBadge.html}
+                </td>
+                <td class="py-4 px-6">
+                    ${item.status == 1
+                        ? '<span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">启用</span>'
+                        : '<span class="text-xs px-2 py-1 bg-red-100 text-red-800 rounded">禁用</span>'
+                    }
+                </td>
+                <td class="py-4 px-6">
+                    <div class="flex items-center gap-2">
+                        <a href="javascript:void(0)" onclick="editLevel(${item.id}, '${item.name.replace(/'/g, "\\'")}', ${item.required_points}, '${item.icon}', ${item.status})" class="text-modern-gray hover:text-modern-primary transition-colors" title="编辑">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="javascript:void(0)" onclick="deleteLevel(${item.id})" class="text-modern-gray hover:text-modern-danger transition-colors" title="删除">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// 显示添加弹窗
+function showAddModal() {
+    document.getElementById('modalTitle').textContent = '添加等级';
+    document.getElementById('levelId').value = '';
+    document.getElementById('levelName').value = '';
+    document.getElementById('levelPoints').value = '';
+    document.getElementById('levelIcon').value = '1';
+    document.getElementById('levelStatus').value = '1';
+    document.querySelector('input[name="badgeType"][value="preset"]').checked = true;
+    toggleBadgeType();
+    selectedIcon = '1';
+    document.getElementById('customIcon').value = '';
+    document.getElementById('badgePreview').classList.add('hidden');
+    document.getElementById('uploadBtn').classList.remove('hidden');
+    updateBadgeSelection();
+    document.getElementById('levelModal').classList.remove('hidden');
+}
+
+// 编辑等级
+function editLevel(id, name, points, icon, status) {
+    document.getElementById('modalTitle').textContent = '编辑等级';
+    document.getElementById('levelId').value = id;
+    document.getElementById('levelName').value = name;
+    document.getElementById('levelPoints').value = points;
+    document.getElementById('levelIcon').value = String(icon);
+    document.getElementById('levelStatus').value = status;
+
+    // 判断是否为自定义徽章
+    const isCustom = icon && (icon.startsWith('http') || icon.includes('/'));
+
+    if (isCustom) {
+        document.querySelector('input[name="badgeType"][value="custom"]').checked = true;
+        toggleBadgeType();
+        document.getElementById('customIcon').value = icon;
+        document.getElementById('badgePreviewImg').src = icon;
+        document.getElementById('badgePreview').classList.remove('hidden');
+        document.getElementById('uploadBtn').classList.add('hidden');
+    } else {
+        document.querySelector('input[name="badgeType"][value="preset"]').checked = true;
+        toggleBadgeType();
+        selectedIcon = String(icon);
+        document.getElementById('customIcon').value = '';
+        document.getElementById('badgePreview').classList.add('hidden');
+        document.getElementById('uploadBtn').classList.remove('hidden');
+        updateBadgeSelection();
+    }
+
+    document.getElementById('levelModal').classList.remove('hidden');
+}
+
+// 关闭弹窗
+function closeModal() {
+    document.getElementById('levelModal').classList.add('hidden');
+}
+
+// 徽章选择
+document.getElementById('presetBadges').addEventListener('click', function(e) {
+    const badgeOption = e.target.closest('.badge-option');
+    if (badgeOption) {
+        selectedIcon = badgeOption.dataset.level;
+        document.getElementById('levelIcon').value = selectedIcon;
+        updateBadgeSelection();
+    }
+});
+
+function updateBadgeSelection() {
+    document.querySelectorAll('.badge-option').forEach(el => {
+        if (el.dataset.level === selectedIcon) {
+            el.classList.add('ring-2', 'ring-modern-primary', 'ring-offset-2');
+        } else {
+            el.classList.remove('ring-2', 'ring-modern-primary', 'ring-offset-2');
+        }
+    });
+}
+
+// 保存等级
+document.getElementById('levelForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+
+    // 根据徽章类型设置icon值
+    const badgeType = document.querySelector('input[name="badgeType"]:checked').value;
+    if (badgeType === 'custom') {
+        data.icon = document.getElementById('customIcon').value || '';
+    } else {
+        data.icon = document.getElementById('levelIcon').value;
+    }
+
+    fetch('/admin/level/save', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.code === 200) {
+            alert(result.msg);
+            closeModal();
+            loadData();
+        } else {
+            alert('保存失败: ' + result.msg);
+        }
+    })
+    .catch(error => {
+        console.error('保存失败:', error);
+        alert('网络错误，请稍后重试');
+    });
+});
+
+// 删除等级
+function deleteLevel(id) {
+    if (confirm('确定要删除该等级吗？')) {
+        fetch('/admin/level/delete?id=' + id, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.code === 200) {
+                alert(result.msg);
+                loadData();
+            } else {
+                alert('删除失败: ' + result.msg);
+            }
+        })
+        .catch(error => {
+            console.error('删除失败:', error);
+            alert('网络错误，请稍后重试');
+        });
+    }
+}
+
+// 页面加载时获取数据
+document.addEventListener('DOMContentLoaded', function() {
+    initBadgePicker();
+    loadData();
+});
+</script>
+{/block}

@@ -1,0 +1,658 @@
+﻿{extend name="index/main-layout" /}
+
+{block name="page_title"}活动{/block}
+
+{block name="content"}
+<!-- 活动筛选 -->
+<section class="mb-6">
+    <div class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft p-4">
+        <h2 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary mb-4 flex items-center gap-2">
+            <i class="fa fa-filter text-primary"></i>
+            筛选活动
+        </h2>
+
+        <!-- 活动类型筛选 -->
+        <div class="mb-4">
+            <div class="flex flex-wrap gap-2">
+                <span class="filter-tag active bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-full text-sm cursor-pointer" data-type="0">全部类型</span>
+                <span class="filter-tag bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700" data-type="1">线上活动</span>
+                <span class="filter-tag bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700" data-type="2">线下活动</span>
+            </div>
+        </div>
+
+        <!-- 活动状态筛选 -->
+        <div class="mb-4">
+            <div class="flex flex-wrap gap-2">
+                <span class="filter-tag active bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-full text-sm cursor-pointer" data-status="1">进行中</span>
+                <span class="filter-tag bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700" data-status="0">未开始</span>
+                <span class="filter-tag bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700" data-status="2">已结束</span>
+            </div>
+        </div>
+
+        <!-- 热门筛选 -->
+        <div>
+            <div class="flex flex-wrap gap-2">
+                <span class="filter-tag active bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-full text-sm cursor-pointer" data-is-hot="-1">全部</span>
+                <span class="filter-tag bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700" data-is-hot="1">热门活动</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 活动列表 -->
+<section>
+    <h2 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary mb-4 flex items-center gap-2">
+        <i class="fa fa-calendar-check-o text-primary"></i>
+        活动列表
+    </h2>
+
+    <!-- 加载中状态 -->
+    <div id="loading-activities" class="text-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+        <p class="text-gray-500">加载活动中...</p>
+    </div>
+
+    <!-- 活动容器 -->
+    <div id="activities-container" class="space-y-4" style="display: none;"></div>
+
+    <!-- 加载更多按钮 -->
+    <div id="load-more-container" class="text-center py-4" style="display: none;">
+        <button id="load-more-btn" class="bg-white dark:bg-dark-bg-card border border-primary text-primary px-6 py-2 rounded-full hover:bg-primary hover:text-white transition-colors">
+            <i class="fa fa-refresh mr-2"></i>加载更多
+        </button>
+    </div>
+</section>
+
+<script>
+    // 当前筛选条件（使用window避免重复声明错误）
+    window.activitiesCurrentFilter = {
+        type: 0,
+        status: 1,
+        is_hot: -1,
+        page: 1,
+        limit: 10
+    };
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    function formatTime(timestamp) {
+        const date = new Date(timestamp * 1000);
+        return date.toLocaleString('zh-CN');
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // 加载活动列表
+    async function loadActivities(page = 1, reset = false) {
+        if (reset) {
+            window.activitiesCurrentFilter.page = 1;
+        } else if (page > 0) {
+            window.activitiesCurrentFilter.page = page;
+        }
+
+        document.getElementById('loading-activities').style.display = 'block';
+        document.getElementById('activities-container').style.display = 'none';
+        document.getElementById('load-more-container').style.display = 'none';
+
+        try {
+            const url = `/discovery/getActivityList?type=${window.activitiesCurrentFilter.type}&status=${window.activitiesCurrentFilter.status}&is_hot=${window.activitiesCurrentFilter.is_hot}&page=${window.activitiesCurrentFilter.page}&limit=${window.activitiesCurrentFilter.limit}`;
+
+            const response = await fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200 && result.data) {
+                const activities = result.data.list;
+                const container = document.getElementById('activities-container');
+
+                renderActivities(activities, reset);
+                container.style.display = 'block';
+
+                const loadMoreContainer = document.getElementById('load-more-container');
+                if (result.data.total > result.data.page * result.data.limit) {
+                    loadMoreContainer.style.display = 'block';
+                } else {
+                    loadMoreContainer.style.display = 'none';
+                }
+            } else {
+                console.error('加载活动失败:', result.msg);
+                showToast(result.msg || '加载活动失败');
+            }
+        } catch (error) {
+            console.error('加载活动失败:', error);
+            showToast('网络错误，请稍后重试');
+        } finally {
+            document.getElementById('loading-activities').style.display = 'none';
+        }
+    }
+
+    // 渲染活动列表
+    function renderActivities(activities, reset = false) {
+        const container = document.getElementById('activities-container');
+
+        if (reset) {
+            container.innerHTML = '';
+        }
+
+        activities.forEach(activity => {
+            const card = createActivityCard(activity);
+            container.appendChild(card);
+        });
+    }
+
+    // 创建活动卡片
+    function createActivityCard(activity) {
+        const card = document.createElement('div');
+        card.className = 'bg-white dark:bg-dark-bg-card rounded-xl shadow-soft overflow-hidden hover:shadow-lg transition-shadow';
+
+        const coverStyle = activity.cover_image ? `background-image: url(${activity.cover_image});` : '';
+
+        let statusTag = '';
+        if (activity.status === 1) {
+            statusTag = '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">进行中</span>';
+        } else if (activity.status === 2) {
+            statusTag = '<span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">已结束</span>';
+        }
+
+        let typeTag = '';
+        if (activity.type === 1) {
+            typeTag = '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">线上活动</span>';
+        } else if (activity.type === 2) {
+            typeTag = '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs">线下活动</span>';
+        }
+
+        const hotTag = activity.is_hot ? '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs"><i class="fa fa-fire"></i> 热门</span>' : '';
+
+        card.innerHTML = `
+            <div class="h-48 bg-gray-200 bg-cover bg-center" style="${coverStyle}"></div>
+            <div class="p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary">${escapeHtml(activity.title)}</h3>
+                    <div class="flex flex-col items-end gap-1">
+                        ${statusTag}
+                        ${typeTag}
+                        ${hotTag}
+                    </div>
+                </div>
+                <p class="text-gray-600 dark:text-dark-text-secondary text-sm mb-4 line-clamp-2">${escapeHtml(activity.content)}</p>
+
+                <div class="flex justify-between items-center text-sm text-gray-500 mb-4">
+                    <div class="flex items-center gap-4">
+                        <span><i class="fa fa-calendar mr-1"></i>${formatTime(activity.start_time)}</span>
+                        <span><i class="fa fa-map-marker mr-1"></i>${escapeHtml(activity.location || '线上')}</span>
+                    </div>
+                    <span><i class="fa fa-users mr-1"></i>${activity.participant_count || 0}人参与</span>
+                </div>
+
+                <div class="flex gap-2">
+                    <button class="flex-1 bg-gradient-to-r from-primary to-secondary text-white py-2 rounded-lg hover:shadow-lg transition-all"
+                            onclick="participateActivity(${activity.id})">
+                        ${activity.is_participated ? '<i class="fa fa-check mr-2"></i>已参与' : '<i class="fa fa-calendar-check-o mr-2"></i>立即参与'}
+                    </button>
+                    <button class="bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                            onclick="viewActivityDetail(${activity.id})">
+                        <i class="fa fa-eye mr-2"></i>查看详情
+                    </button>
+                </div>
+            </div>
+        `;
+
+        return card;
+    }
+
+    // 参与活动
+    async function participateActivity(activityId) {
+        const userId = getCookie('user_id');
+        if (!userId) {
+            window.location.href = '/login';
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/activities/participate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    activity_id: activityId
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                showToast('参与活动成功');
+                loadActivities(1, true);
+            } else {
+                showToast(result.msg || '参与活动失败');
+            }
+        } catch (error) {
+            console.error('参与活动失败:', error);
+            showToast('网络错误，请稍后重试');
+        }
+    }
+
+    // 查看活动详情
+    async function viewActivityDetail(activityId) {
+        try {
+            const response = await fetch(`/api/activities/detail?id=${activityId}`, {
+                method: 'GET'
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200 && result.data) {
+                const activity = result.data;
+                alert(`活动详情：\n\n标题：${activity.title}\n内容：${activity.content}\n参与人数：${activity.participant_count}`);
+            } else {
+                showToast(result.msg || '获取活动详情失败');
+            }
+        } catch (error) {
+            console.error('获取活动详情失败:', error);
+            showToast('网络错误，请稍后重试');
+        }
+    }
+
+    // 显示提示消息
+    function showToast(msg) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-6 py-3 rounded-full z-50';
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.remove();
+        }, 2000);
+    }
+
+    // 初始化页面
+    document.addEventListener('DOMContentLoaded', () => {
+        loadActivities(1, true);
+
+        document.querySelectorAll('.filter-tag').forEach(tag => {
+            tag.addEventListener('click', (e) => {
+                const type = e.target.dataset.type;
+                const status = e.target.dataset.status;
+                const isHot = e.target.dataset.is_hot;
+
+                if (type !== undefined) {
+                    window.activitiesCurrentFilter.type = parseInt(type);
+                    document.querySelectorAll('[data-type]').forEach(t => {
+                        t.classList.remove('active', 'bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white');
+                        t.classList.add('bg-gray-100', 'dark:bg-dark-bg-main', 'text-gray-700', 'dark:text-dark-text-secondary');
+                    });
+                }
+                if (status !== undefined) {
+                    window.activitiesCurrentFilter.status = parseInt(status);
+                    document.querySelectorAll('[data-status]').forEach(t => {
+                        t.classList.remove('active', 'bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white');
+                        t.classList.add('bg-gray-100', 'dark:bg-dark-bg-main', 'text-gray-700', 'dark:text-dark-text-secondary');
+                    });
+                }
+                if (isHot !== undefined) {
+                    window.activitiesCurrentFilter.is_hot = parseInt(isHot);
+                    document.querySelectorAll('[data-is-hot]').forEach(t => {
+                        t.classList.remove('active', 'bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white');
+                        t.classList.add('bg-gray-100', 'dark:bg-dark-bg-main', 'text-gray-700', 'dark:text-dark-text-secondary');
+                    });
+                }
+
+                e.target.classList.add('active', 'bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white');
+                e.target.classList.remove('bg-gray-100', 'dark:bg-dark-bg-main', 'text-gray-700', 'dark:text-dark-text-secondary');
+
+                loadActivities(1, true);
+            });
+        });
+
+        document.getElementById('load-more-btn')?.addEventListener('click', () => {
+            loadActivities(window.activitiesCurrentFilter.page + 1, false);
+        });
+    });
+</script>
+{/block}
+
+<!-- 移动端内容 -->
+{block name="contentMobile"}
+<!-- 活动筛选 -->
+<section class="mb-6">
+    <div class="bg-white dark:bg-dark-bg-card rounded-xl shadow-soft p-4">
+        <h2 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary mb-4 flex items-center gap-2">
+            <i class="fa fa-filter text-primary"></i>
+            筛选活动
+        </h2>
+
+        <!-- 活动类型筛选 -->
+        <div class="mb-4">
+            <div class="flex flex-wrap gap-2">
+                <span class="filter-tag active bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-full text-sm cursor-pointer" data-type="0">全部类型</span>
+                <span class="filter-tag bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700" data-type="1">线上活动</span>
+                <span class="filter-tag bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700" data-type="2">线下活动</span>
+            </div>
+        </div>
+
+        <!-- 活动状态筛选 -->
+        <div class="mb-4">
+            <div class="flex flex-wrap gap-2">
+                <span class="filter-tag active bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-full text-sm cursor-pointer" data-status="1">进行中</span>
+                <span class="filter-tag bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700" data-status="0">未开始</span>
+                <span class="filter-tag bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700" data-status="2">已结束</span>
+            </div>
+        </div>
+
+        <!-- 热门筛选 -->
+        <div>
+            <div class="flex flex-wrap gap-2">
+                <span class="filter-tag active bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-full text-sm cursor-pointer" data-is-hot="-1">全部</span>
+                <span class="filter-tag bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700" data-is-hot="1">热门活动</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 活动列表 -->
+<section>
+    <h2 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary mb-4 flex items-center gap-2">
+        <i class="fa fa-calendar-check-o text-primary"></i>
+        活动列表
+    </h2>
+
+    <!-- 加载中状态 -->
+    <div id="loading-activities" class="text-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+        <p class="text-gray-500">加载活动中...</p>
+    </div>
+
+    <!-- 活动容器 -->
+    <div id="activities-container" class="space-y-4" style="display: none;"></div>
+
+    <!-- 加载更多按钮 -->
+    <div id="load-more-container" class="text-center py-4" style="display: none;">
+        <button id="load-more-btn" class="bg-white dark:bg-dark-bg-card border border-primary text-primary px-6 py-2 rounded-full hover:bg-primary hover:text-white transition-colors">
+            <i class="fa fa-refresh mr-2"></i>加载更多
+        </button>
+    </div>
+</section>
+
+<script>
+    // 当前筛选条件（使用window避免重复声明错误）
+    window.activitiesCurrentFilter = {
+        type: 0,
+        status: 1,
+        is_hot: -1,
+        page: 1,
+        limit: 10
+    };
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    function formatTime(timestamp) {
+        const date = new Date(timestamp * 1000);
+        return date.toLocaleString('zh-CN');
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // 加载活动列表
+    async function loadActivities(page = 1, reset = false) {
+        if (reset) {
+            window.activitiesCurrentFilter.page = 1;
+        } else if (page > 0) {
+            window.activitiesCurrentFilter.page = page;
+        }
+
+        document.getElementById('loading-activities').style.display = 'block';
+        document.getElementById('activities-container').style.display = 'none';
+        document.getElementById('load-more-container').style.display = 'none';
+
+        try {
+            const url = `/discovery/getActivityList?type=${window.activitiesCurrentFilter.type}&status=${window.activitiesCurrentFilter.status}&is_hot=${window.activitiesCurrentFilter.is_hot}&page=${window.activitiesCurrentFilter.page}&limit=${window.activitiesCurrentFilter.limit}`;
+
+            const response = await fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200 && result.data) {
+                const activities = result.data.list;
+                const container = document.getElementById('activities-container');
+
+                renderActivities(activities, reset);
+                container.style.display = 'block';
+
+                const loadMoreContainer = document.getElementById('load-more-container');
+                if (result.data.total > result.data.page * result.data.limit) {
+                    loadMoreContainer.style.display = 'block';
+                } else {
+                    loadMoreContainer.style.display = 'none';
+                }
+            } else {
+                console.error('加载活动失败:', result.msg);
+                showToast(result.msg || '加载活动失败');
+            }
+        } catch (error) {
+            console.error('加载活动失败:', error);
+            showToast('网络错误，请稍后重试');
+        } finally {
+            document.getElementById('loading-activities').style.display = 'none';
+        }
+    }
+
+    // 渲染活动列表
+    function renderActivities(activities, reset = false) {
+        const container = document.getElementById('activities-container');
+
+        if (reset) {
+            container.innerHTML = '';
+        }
+
+        activities.forEach(activity => {
+            const card = createActivityCard(activity);
+            container.appendChild(card);
+        });
+    }
+
+    // 创建活动卡片
+    function createActivityCard(activity) {
+        const card = document.createElement('div');
+        card.className = 'bg-white dark:bg-dark-bg-card rounded-xl shadow-soft overflow-hidden hover:shadow-lg transition-shadow';
+
+        const coverStyle = activity.cover_image ? `background-image: url(${activity.cover_image});` : '';
+
+        let statusTag = '';
+        if (activity.status === 1) {
+            statusTag = '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">进行中</span>';
+        } else if (activity.status === 2) {
+            statusTag = '<span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">已结束</span>';
+        }
+
+        let typeTag = '';
+        if (activity.type === 1) {
+            typeTag = '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">线上活动</span>';
+        } else if (activity.type === 2) {
+            typeTag = '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs">线下活动</span>';
+        }
+
+        const hotTag = activity.is_hot ? '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs"><i class="fa fa-fire"></i> 热门</span>' : '';
+
+        card.innerHTML = `
+            <div class="h-48 bg-gray-200 bg-cover bg-center" style="${coverStyle}"></div>
+            <div class="p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-dark-text-primary">${escapeHtml(activity.title)}</h3>
+                    <div class="flex flex-col items-end gap-1">
+                        ${statusTag}
+                        ${typeTag}
+                        ${hotTag}
+                    </div>
+                </div>
+                <p class="text-gray-600 dark:text-dark-text-secondary text-sm mb-4 line-clamp-2">${escapeHtml(activity.content)}</p>
+
+                <div class="flex justify-between items-center text-sm text-gray-500 mb-4">
+                    <div class="flex items-center gap-4">
+                        <span><i class="fa fa-calendar mr-1"></i>${formatTime(activity.start_time)}</span>
+                        <span><i class="fa fa-map-marker mr-1"></i>${escapeHtml(activity.location || '线上')}</span>
+                    </div>
+                    <span><i class="fa fa-users mr-1"></i>${activity.participant_count || 0}人参与</span>
+                </div>
+
+                <div class="flex gap-2">
+                    <button class="flex-1 bg-gradient-to-r from-primary to-secondary text-white py-2 rounded-lg hover:shadow-lg transition-all"
+                            onclick="participateActivity(${activity.id})">
+                        ${activity.is_participated ? '<i class="fa fa-check mr-2"></i>已参与' : '<i class="fa fa-calendar-check-o mr-2"></i>立即参与'}
+                    </button>
+                    <button class="bg-gray-100 dark:bg-dark-bg-main text-gray-700 dark:text-dark-text-secondary py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                            onclick="viewActivityDetail(${activity.id})">
+                        <i class="fa fa-eye mr-2"></i>查看详情
+                    </button>
+                </div>
+            </div>
+        `;
+
+        return card;
+    }
+
+    // 参与活动
+    async function participateActivity(activityId) {
+        const userId = getCookie('user_id');
+        if (!userId) {
+            window.location.href = '/login';
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/activities/participate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    activity_id: activityId
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200) {
+                showToast('参与活动成功');
+                loadActivities(1, true);
+            } else {
+                showToast(result.msg || '参与活动失败');
+            }
+        } catch (error) {
+            console.error('参与活动失败:', error);
+            showToast('网络错误，请稍后重试');
+        }
+    }
+
+    // 查看活动详情
+    async function viewActivityDetail(activityId) {
+        try {
+            const response = await fetch(`/api/activities/detail?id=${activityId}`, {
+                method: 'GET'
+            });
+
+            const result = await response.json();
+
+            if (result.code === 200 && result.data) {
+                const activity = result.data;
+                alert(`活动详情：\n\n标题：${activity.title}\n内容：${activity.content}\n参与人数：${activity.participant_count}`);
+            } else {
+                showToast(result.msg || '获取活动详情失败');
+            }
+        } catch (error) {
+            console.error('获取活动详情失败:', error);
+            showToast('网络错误，请稍后重试');
+        }
+    }
+
+    // 显示提示消息
+    function showToast(msg) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-6 py-3 rounded-full z-50';
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.remove();
+        }, 2000);
+    }
+
+    // 初始化页面
+    document.addEventListener('DOMContentLoaded', () => {
+        loadActivities(1, true);
+
+        document.querySelectorAll('.filter-tag').forEach(tag => {
+            tag.addEventListener('click', (e) => {
+                const type = e.target.dataset.type;
+                const status = e.target.dataset.status;
+                const isHot = e.target.dataset.is_hot;
+
+                if (type !== undefined) {
+                    window.activitiesCurrentFilter.type = parseInt(type);
+                    document.querySelectorAll('[data-type]').forEach(t => {
+                        t.classList.remove('active', 'bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white');
+                        t.classList.add('bg-gray-100', 'dark:bg-dark-bg-main', 'text-gray-700', 'dark:text-dark-text-secondary');
+                    });
+                }
+                if (status !== undefined) {
+                    window.activitiesCurrentFilter.status = parseInt(status);
+                    document.querySelectorAll('[data-status]').forEach(t => {
+                        t.classList.remove('active', 'bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white');
+                        t.classList.add('bg-gray-100', 'dark:bg-dark-bg-main', 'text-gray-700', 'dark:text-dark-text-secondary');
+                    });
+                }
+                if (isHot !== undefined) {
+                    window.activitiesCurrentFilter.is_hot = parseInt(isHot);
+                    document.querySelectorAll('[data-is-hot]').forEach(t => {
+                        t.classList.remove('active', 'bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white');
+                        t.classList.add('bg-gray-100', 'dark:bg-dark-bg-main', 'text-gray-700', 'dark:text-dark-text-secondary');
+                    });
+                }
+
+                e.target.classList.add('active', 'bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white');
+                e.target.classList.remove('bg-gray-100', 'dark:bg-dark-bg-main', 'text-gray-700', 'dark:text-dark-text-secondary');
+
+                loadActivities(1, true);
+            });
+        });
+
+        document.getElementById('load-more-btn')?.addEventListener('click', () => {
+            loadActivities(window.activitiesCurrentFilter.page + 1, false);
+        });
+    });
+</script>
+{/block}

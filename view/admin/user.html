@@ -1,0 +1,883 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - 后台管理系统</title>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <!-- 引入统一弹窗组件 -->
+    <script src="/static/js/modal.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar {
+            background: linear-gradient(to bottom, #1e293b, #334155);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar-menu li {
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu li:hover {
+            background-color: rgba(148, 163, 184, 0.1);
+        }
+        .sidebar-menu li.active {
+            background-color: rgba(96, 165, 250, 0.2);
+            border-left: 4px solid #60a5fa;
+        }
+        .sidebar-menu li.active a {
+            color: #60a5fa;
+        }
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .sidebar-menu a:hover {
+            color: #60a5fa;
+        }
+        .sidebar-menu i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .header {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 50;
+        }
+        .menu-toggle {
+            display: none;
+        }
+        .content {
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        .stat-card {
+            border-left: 4px solid #60a5fa;
+        }
+        .bg-modern-success {
+            background-color: #10b981;
+        }
+        .text-modern-success {
+            color: #10b981;
+        }
+        .bg-modern-light {
+            background-color: #f1f5f9;
+        }
+        .bg-modern-white {
+            background-color: #ffffff;
+        }
+        .bg-modern-gray {
+            background-color: #64748b;
+        }
+        .bg-modern-darkGray {
+            background-color: #475569;
+        }
+        .border-modern-lightGray {
+            border-color: #e2e8f0;
+        }
+        .shadow-modern {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .text-modern-dark {
+            color: #1e293b;
+        }
+        .text-modern-gray {
+            color: #64748b;
+        }
+        .bg-modern-primary {
+            background-color: #3b82f6;
+        }
+        .bg-modern-secondary {
+            background-color: #2563eb;
+        }
+        .text-modern-primary {
+            color: #3b82f6;
+        }
+        .text-modern-secondary {
+            color: #2563eb;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                z-index: 1000;
+                height: 100vh;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .menu-toggle {
+                display: block;
+            }
+            .ml-64 {
+                margin-left: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <?php
+        $current_active = 'user';
+        include app()->getRootPath() . 'view/admin/components/sidebar.php';
+    ?>
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col ml-64">
+        <!-- 头部导航 -->
+        <header class="header h-16 flex items-center justify-between px-6">
+            <!-- 移动端菜单按钮 -->
+            <button class="menu-toggle text-gray-500 hover:text-gray-700">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+
+            <!-- 页面标题 -->
+            <h1 class="text-xl font-semibold text-gray-800">用户管理</h1>
+
+            <!-- 头部右侧工具 -->
+            <div class="flex items-center space-x-4">
+                <!-- 返回前台首页 -->
+                <a href="/" class="flex items-center space-x-2 text-gray-500 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home"></i>
+                    <span class="text-sm font-medium">返回前台</span>
+                </a>
+                <!-- 用户信息 -->
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                    <span class="text-sm font-medium text-gray-700 ml-2">{$admin_name}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="content flex-1 p-6 overflow-y-auto">
+            <div class="mb-4">
+                <h2 class="text-lg font-semibold text-modern-dark">用户列表</h2>
+                <p class="text-modern-gray text-sm mt-1">管理系统注册用户</p>
+            </div>
+
+            <!-- 搜索栏 -->
+            <div class="bg-modern-white rounded-lg shadow-modern p-4 mb-4">
+                <form action="" method="get" class="flex flex-wrap items-center gap-3">
+                    <!-- 关键词搜索 -->
+                    <div class="flex-1 min-w-[180px]">
+                        <input type="text" name="keyword" value="<?php echo isset($keyword) ? $keyword : ''; ?>"
+                               placeholder="用户名/昵称/邮箱/手机号"
+                               class="w-full bg-modern-light border border-modern-lightGray rounded-md px-3 py-1.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary">
+                    </div>
+
+                    <!-- 用户状态筛选 -->
+                    <div class="min-w-[120px]">
+                        <select name="status"
+                                class="w-full bg-modern-light border border-modern-lightGray rounded-md px-3 py-1.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary">
+                            <option value="" <?php echo isset($status) && $status === '' ? 'selected' : ''; ?>>全部状态</option>
+                            <option value="1" <?php echo isset($status) && $status == 1 ? 'selected' : ''; ?>>正常</option>
+                            <option value="0" <?php echo isset($status) && $status == 0 ? 'selected' : ''; ?>>禁用</option>
+                        </select>
+                    </div>
+
+                    <!-- 发言状态筛选 -->
+                    <div class="min-w-[120px]">
+                        <select name="can_speak"
+                                class="w-full bg-modern-light border border-modern-lightGray rounded-md px-3 py-1.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary">
+                            <option value="" <?php echo isset($can_speak) && $can_speak === '' ? 'selected' : ''; ?>>全部发言</option>
+                            <option value="1" <?php echo isset($can_speak) && $can_speak == 1 ? 'selected' : ''; ?>>允许发言</option>
+                            <option value="0" <?php echo isset($can_speak) && $can_speak == 0 ? 'selected' : ''; ?>>禁止发言</option>
+                        </select>
+                    </div>
+
+                    <!-- 注册时间开始 -->
+                    <div class="min-w-[140px]">
+                        <input type="date" name="reg_time_start" value="<?php echo isset($reg_time_start) ? $reg_time_start : ''; ?>"
+                               class="w-full bg-modern-light border border-modern-lightGray rounded-md px-3 py-1.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary">
+                    </div>
+
+                    <!-- 注册时间结束 -->
+                    <div class="min-w-[140px]">
+                        <input type="date" name="reg_time_end" value="<?php echo isset($reg_time_end) ? $reg_time_end : ''; ?>"
+                               class="w-full bg-modern-light border border-modern-lightGray rounded-md px-3 py-1.5 text-sm text-modern-dark focus:outline-none focus:border-modern-primary">
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="flex gap-2">
+                        <button type="submit" class="px-4 py-1.5 bg-modern-primary text-white text-sm rounded-md hover:bg-modern-secondary transition-colors">
+                            搜索
+                        </button>
+                        <a href="/admin/user" class="px-4 py-1.5 bg-modern-gray text-white text-sm rounded-md hover:bg-modern-darkGray transition-colors">
+                            重置
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 用户列表 -->
+            <div class="bg-modern-white rounded-lg shadow-modern overflow-hidden">
+                <!-- 批量操作工具栏 -->
+                <div class="p-3 border-b border-modern-lightGray bg-modern-light">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="selectAll" class="rounded text-modern-primary focus:ring-modern-primary">
+                            <label for="selectAll" class="text-xs text-modern-gray">全选</label>
+                        </div>
+                        <div class="flex gap-2 flex-wrap">
+                            <button id="batchDeleteBtn" class="px-2 py-1 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 transition-colors">
+                                批量删除
+                            </button>
+                            <button id="batchEnableBtn" class="px-2 py-1 bg-modern-success text-white text-xs rounded-md hover:bg-modern-success/90 transition-colors">
+                                批量启用
+                            </button>
+                            <button id="batchDisableBtn" class="px-2 py-1 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 transition-colors">
+                                批量禁用
+                            </button>
+                            <button id="batchSpeakBtn" class="px-2 py-1 bg-orange-500 text-white text-xs rounded-md hover:bg-orange-600 transition-colors">
+                                允许发言
+                            </button>
+                            <button id="batchMuteBtn" class="px-2 py-1 bg-orange-500 text-white text-xs rounded-md hover:bg-orange-600 transition-colors">
+                                禁止发言
+                            </button>
+                            <button id="batchSendNotifBtn" class="px-2 py-1 bg-modern-primary text-white text-xs rounded-md hover:bg-modern-secondary transition-colors">
+                                发送通知
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="w-full text-xs">
+                    <thead class="bg-modern-light border-b border-modern-lightGray">
+                        <tr>
+                            <th class="py-2 px-2 w-[40px]">
+                                <input type="checkbox" id="selectAllHeader" class="rounded text-modern-primary focus:ring-modern-primary">
+                            </th>
+                            <th class="py-2 px-4 text-left text-modern-gray font-medium">ID</th>
+                            <th class="py-2 px-4 text-left text-modern-gray font-medium">用户信息</th>
+                            <th class="py-2 px-4 text-left text-modern-gray font-medium">注册时间</th>
+                            <th class="py-2 px-4 text-left text-modern-gray font-medium">最后登录</th>
+                            <th class="py-2 px-4 text-left text-modern-gray font-medium">状态</th>
+                            <th class="py-2 px-4 text-left text-modern-gray font-medium">发言状态</th>
+                            <th class="py-2 px-4 text-left text-modern-gray font-medium">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($users)): ?>
+                        <tr class="border-b border-modern-lightGray">
+                            <td colspan="7" class="py-8 text-center text-modern-gray">暂无用户数据</td>
+                        </tr>
+                        <?php else: foreach ($users as $user): ?>
+                        <tr class="border-b border-modern-lightGray hover:bg-modern-light transition-colors">
+                            <td class="py-2 px-2">
+                                <input type="checkbox" class="userCheckbox rounded text-modern-primary focus:ring-modern-primary" value="<?php echo $user['id']; ?>">
+                            </td>
+                            <td class="py-2 px-4 text-modern-dark"><?php echo $user['id']; ?></td>
+                            <td class="py-2 px-4">
+                                <div class="flex items-center gap-2">
+                                    <img src="<?php echo $user['avatar'] ?: '/static/images/default-avatar.png'; ?>"
+                                         alt="头像" class="w-8 h-8 rounded-full object-cover">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-medium text-modern-dark truncate"><?php echo $user['username']; ?></div>
+                                        <div class="text-xs text-modern-gray truncate"><?php echo $user['email'] ?: '未设置邮箱'; ?></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-2 px-4 text-modern-dark"><?php echo $user['regtime'] ? date('Y-m-d H:i', $user['regtime']) : ($user['create_time'] ? date('Y-m-d H:i', $user['create_time']) : '未知'); ?></td>
+                            <td class="py-2 px-4 text-modern-dark"><?php echo $user['logtime'] ? date('Y-m-d H:i', $user['logtime']) : ($user['last_login_time'] ? date('Y-m-d H:i', $user['last_login_time']) : '从未登录'); ?></td>
+                            <td class="py-2 px-4">
+                                <span class="px-1.5 py-0.5 text-xs rounded <?php echo ($user['status'] ?? 1) == 1 ? 'bg-modern-success/10 text-modern-success' : 'bg-red-100 text-red-600'; ?>">
+                                    <?php echo ($user['status'] ?? 1) == 1 ? '正常' : '禁用'; ?>
+                                </span>
+                            </td>
+                            <td class="py-2 px-4">
+                                <span class="px-1.5 py-0.5 text-xs rounded <?php echo ($user['can_speak'] ?? 1) == 1 ? 'bg-modern-success/10 text-modern-success' : 'bg-orange-100 text-orange-600'; ?>">
+                                    <?php echo ($user['can_speak'] ?? 1) == 1 ? '允许' : '禁止'; ?>
+                                </span>
+                            </td>
+                            <td class="py-2 px-4">
+                                <div class="flex items-center gap-1 flex-wrap">
+                                    <a href="/admin/user/edit?id=<?php echo $user['id']; ?>"
+                                       class="px-2 py-0.5 text-modern-secondary hover:bg-modern-light rounded transition-colors text-xs">
+                                        编辑
+                                    </a>
+                                    <button onclick="changePassword(<?php echo $user['id']; ?>)"
+                                            class="px-2 py-0.5 text-modern-gray hover:text-modern-primary hover:bg-modern-light rounded transition-colors text-xs">
+                                        修改密码
+                                    </button>
+                                    <button onclick="toggleStatus(<?php echo $user['id']; ?>, <?php echo ($user['status'] ?? 1) == 1 ? 0 : 1; ?>)"
+                                            class="px-2 py-0.5 text-modern-gray hover:text-modern-primary hover:bg-modern-light rounded transition-colors text-xs">
+                                        <?php echo ($user['status'] ?? 1) == 1 ? '禁用' : '启用'; ?>
+                                    </button>
+                                    <button onclick="toggleSpeakStatus(<?php echo $user['id']; ?>, <?php echo ($user['can_speak'] ?? 1) == 1 ? 0 : 1; ?>)"
+                                            class="px-2 py-0.5 text-modern-gray hover:text-orange-500 hover:bg-orange-50 rounded transition-colors text-xs">
+                                        <?php echo ($user['can_speak'] ?? 1) == 1 ? '禁言' : '允许'; ?>
+                                    </button>
+                                    <?php if ($user['id'] != 1): ?>
+                                    <button onclick="deleteUser(<?php echo $user['id']; ?>)"
+                                            class="px-2 py-0.5 text-modern-gray hover:text-red-500 hover:bg-red-50 rounded transition-colors text-xs">
+                                        删除
+                                    </button>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+                
+                <!-- 分页 -->
+                <?php if (isset($users) && $users->total() > $users->listRows()): ?>
+                <div class="px-6 py-4 border-t border-modern-lightGray flex justify-center">
+                    <?php echo $users->render(); ?>
+                </div>
+                <?php endif; ?>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 移动端菜单切换
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+
+            if (menuToggle && sidebar) {
+                menuToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('open');
+                });
+
+                // 点击侧边栏外部关闭侧边栏
+                document.addEventListener('click', function(e) {
+                    if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+                        sidebar.classList.remove('open');
+                    }
+                });
+            }
+        });
+
+        // 切换用户状态
+        async function toggleStatus(id, status) {
+            modal.show({
+                title: '确认操作',
+                content: status === 1 ? '确定要启用该用户吗？' : '确定要禁用该用户吗？',
+                type: 'confirm',
+                onConfirm: async function() {
+                    try {
+                        const response = await fetch(`/admin/user/updateStatus?id=${id}&status=${status}`, {
+                            method: 'POST'
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            location.reload();
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '操作失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                },
+                onCancel: function() {
+                    console.log('操作已取消');
+                }
+            });
+        }
+        
+        // 修改用户密码
+        async function changePassword(id) {
+            // 创建密码输入表单
+            const passwordForm = `
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-modern-gray mb-2">新密码</label>
+                        <input type="password" id="newPassword" placeholder="请输入新密码" 
+                               class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-modern-gray mb-2">确认密码</label>
+                        <input type="password" id="confirmPassword" placeholder="请再次输入新密码" 
+                               class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary">
+                    </div>
+                </div>
+            `;
+            
+            modal.show({
+                title: '修改密码',
+                content: passwordForm,
+                type: 'custom',
+                onConfirm: async function() {
+                    const newPassword = document.getElementById('newPassword').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+                    
+                    if (!newPassword || !confirmPassword) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '请输入密码',
+                            type: 'error',
+                            showCancel: false
+                        });
+                        return;
+                    }
+                    
+                    if (newPassword !== confirmPassword) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '两次输入的密码不一致',
+                            type: 'error',
+                            showCancel: false
+                        });
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch(`/admin/user/change-password`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id, new_password: newPassword })
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            modal.show({
+                                title: '成功提示',
+                                content: '密码修改成功',
+                                type: 'success',
+                                showCancel: false,
+                                onConfirm: function() {
+                                    location.reload();
+                                }
+                            });
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '操作失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                },
+                onCancel: function() {
+                    console.log('操作已取消');
+                }
+            });
+        }
+
+        // 切换用户发言状态
+        async function toggleSpeakStatus(id, canSpeak) {
+            modal.show({
+                title: '确认操作',
+                content: canSpeak === 1 ? '确定要允许该用户发言吗？' : '确定要禁止该用户发言吗？',
+                type: 'confirm',
+                onConfirm: async function() {
+                    try {
+                        const response = await fetch(`/admin/user/toggleSpeakStatus?id=${id}&can_speak=${canSpeak}`, {
+                            method: 'POST'
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            location.reload();
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '操作失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                },
+                onCancel: function() {
+                    console.log('操作已取消');
+                }
+            });
+        }
+
+        // 删除用户
+        async function deleteUser(id) {
+            modal.show({
+                title: '确认删除',
+                content: '确定要删除该用户吗？此操作不可恢复！',
+                type: 'error',
+                onConfirm: async function() {
+                    try {
+                        const response = await fetch(`/admin/user/delete?id=${id}`, {
+                            method: 'POST'
+                        });
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            location.reload();
+                        } else {
+                            modal.show({
+                                title: '错误提示',
+                                content: result.msg,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    } catch (error) {
+                        modal.show({
+                            title: '错误提示',
+                            content: '删除失败',
+                            type: 'error',
+                            showCancel: false
+                        });
+                    }
+                },
+                onCancel: function() {
+                    console.log('删除已取消');
+                }
+            });
+            return;
+        }
+        // 批量操作功能
+        (function() {
+            // 获取所有用户复选框
+            const userCheckboxes = document.querySelectorAll('.userCheckbox');
+            // 获取全选复选框
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const selectAllHeaderCheckbox = document.getElementById('selectAllHeader');
+            
+            // 批量操作按钮
+            const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+            const batchEnableBtn = document.getElementById('batchEnableBtn');
+            const batchDisableBtn = document.getElementById('batchDisableBtn');
+            const batchSpeakBtn = document.getElementById('batchSpeakBtn');
+            const batchMuteBtn = document.getElementById('batchMuteBtn');
+            const batchSendNotifBtn = document.getElementById('batchSendNotifBtn');
+            
+            // 获取选中的用户ID
+            function getSelectedUserIds() {
+                const selectedIds = [];
+                userCheckboxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        selectedIds.push(checkbox.value);
+                    }
+                });
+                return selectedIds;
+            }
+            
+            // 更新全选复选框状态
+            function updateSelectAllStatus() {
+                const allChecked = Array.from(userCheckboxes).every(checkbox => checkbox.checked);
+                const anyChecked = Array.from(userCheckboxes).some(checkbox => checkbox.checked);
+                
+                selectAllCheckbox.checked = allChecked;
+                selectAllHeaderCheckbox.checked = allChecked;
+                
+                // 更新批量操作按钮状态
+                const selectedCount = getSelectedUserIds().length;
+                batchDeleteBtn.disabled = selectedCount === 0;
+                batchEnableBtn.disabled = selectedCount === 0;
+                batchDisableBtn.disabled = selectedCount === 0;
+                batchSpeakBtn.disabled = selectedCount === 0;
+                batchMuteBtn.disabled = selectedCount === 0;
+                batchSendNotifBtn.disabled = selectedCount === 0;
+            }
+            
+            // 全选/取消全选
+            function toggleSelectAll() {
+                const isChecked = this.checked;
+                userCheckboxes.forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                });
+                updateSelectAllStatus();
+            }
+            
+            // 批量删除
+            async function batchDelete() {
+                const selectedIds = getSelectedUserIds();
+                if (selectedIds.length === 0) {
+                    modal.show({
+                        title: '提示',
+                        content: '请选择要删除的用户',
+                        type: 'info',
+                        showCancel: false
+                    });
+                    return;
+                }
+                
+                modal.show({
+                    title: '确认批量删除',
+                    content: `确定要删除选中的 ${selectedIds.length} 个用户吗？此操作不可恢复！`,
+                    type: 'error',
+                    onConfirm: async function() {
+                        try {
+                            const response = await fetch('/admin/user/batchDelete', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ids: selectedIds })
+                            });
+                            const result = await response.json();
+                            if (result.code === 200) {
+                                location.reload();
+                            } else {
+                                modal.show({
+                                    title: '错误提示',
+                                    content: result.msg,
+                                    type: 'error',
+                                    showCancel: false
+                                });
+                            }
+                        } catch (error) {
+                            modal.show({
+                                title: '错误提示',
+                                content: '批量删除失败',
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    },
+                    onCancel: function() {
+                        console.log('操作已取消');
+                    }
+                });
+            }
+            
+            // 批量更新状态
+            async function batchUpdateStatus(status, actionName) {
+                const selectedIds = getSelectedUserIds();
+                if (selectedIds.length === 0) {
+                    modal.show({
+                        title: '提示',
+                        content: `请选择要${actionName}的用户`,
+                        type: 'info',
+                        showCancel: false
+                    });
+                    return;
+                }
+                
+                modal.show({
+                    title: `确认批量${actionName}`,
+                    content: `确定要${actionName}选中的 ${selectedIds.length} 个用户吗？`,
+                    type: 'confirm',
+                    onConfirm: async function() {
+                        try {
+                            const response = await fetch('/admin/user/batchUpdateStatus', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ids: selectedIds, status: status })
+                            });
+                            const result = await response.json();
+                            if (result.code === 200) {
+                                location.reload();
+                            } else {
+                                modal.show({
+                                    title: '错误提示',
+                                    content: result.msg,
+                                    type: 'error',
+                                    showCancel: false
+                                });
+                            }
+                        } catch (error) {
+                            modal.show({
+                                title: '错误提示',
+                                content: `批量${actionName}失败`,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    },
+                    onCancel: function() {
+                        console.log('操作已取消');
+                    }
+                });
+            }
+            
+            // 批量更新发言状态
+            async function batchUpdateSpeakStatus(canSpeak, actionName) {
+                const selectedIds = getSelectedUserIds();
+                if (selectedIds.length === 0) {
+                    modal.show({
+                        title: '提示',
+                        content: `请选择要${actionName}的用户`,
+                        type: 'info',
+                        showCancel: false
+                    });
+                    return;
+                }
+                
+                modal.show({
+                    title: `确认批量${actionName}`,
+                    content: `确定要${actionName}选中的 ${selectedIds.length} 个用户吗？`,
+                    type: 'confirm',
+                    onConfirm: async function() {
+                        try {
+                            const response = await fetch('/admin/user/batchUpdateSpeakStatus', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ids: selectedIds, can_speak: canSpeak })
+                            });
+                            const result = await response.json();
+                            if (result.code === 200) {
+                                location.reload();
+                            } else {
+                                modal.show({
+                                    title: '错误提示',
+                                    content: result.msg,
+                                    type: 'error',
+                                    showCancel: false
+                                });
+                            }
+                        } catch (error) {
+                            modal.show({
+                                title: '错误提示',
+                                content: `批量${actionName}失败`,
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    },
+                    onCancel: function() {
+                        console.log('操作已取消');
+                    }
+                });
+            }
+            
+            // 批量发送通知
+            function batchSendNotification() {
+                const selectedIds = getSelectedUserIds();
+                if (selectedIds.length === 0) {
+                    modal.show({
+                        title: '提示',
+                        content: '请选择要发送通知的用户',
+                        type: 'info',
+                        showCancel: false
+                    });
+                    return;
+                }
+                
+                // 创建通知内容输入表单
+                const notificationForm = `
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-modern-gray mb-2">通知标题</label>
+                            <input type="text" id="notificationTitle" placeholder="请输入通知标题" 
+                                   class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-modern-gray mb-2">通知内容</label>
+                            <textarea id="notificationContent" placeholder="请输入通知内容" rows="4" 
+                                      class="w-full bg-modern-light border border-modern-lightGray rounded-md px-4 py-2.5 text-modern-dark focus:outline-none focus:border-modern-primary"></textarea>
+                        </div>
+                    </div>
+                `;
+                
+                modal.show({
+                    title: '批量发送通知',
+                    content: notificationForm,
+                    type: 'custom',
+                    onConfirm: async function() {
+                        const title = document.getElementById('notificationTitle').value;
+                        const content = document.getElementById('notificationContent').value;
+                        
+                        if (!title || !content) {
+                            modal.show({
+                                title: '错误提示',
+                                content: '请输入通知标题和内容',
+                                type: 'error',
+                                showCancel: false
+                            });
+                            return;
+                        }
+                        
+                        try {
+                            const response = await fetch('/admin/user/batchSendNotification', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ 
+                                    ids: selectedIds, 
+                                    title: title, 
+                                    content: content 
+                                })
+                            });
+                            const result = await response.json();
+                            if (result.code === 200) {
+                                modal.show({
+                                    title: '成功提示',
+                                    content: '通知发送成功',
+                                    type: 'success',
+                                    showCancel: false,
+                                    onConfirm: function() {
+                                        location.reload();
+                                    }
+                                });
+                            } else {
+                                modal.show({
+                                    title: '错误提示',
+                                    content: result.msg,
+                                    type: 'error',
+                                    showCancel: false
+                                });
+                            }
+                        } catch (error) {
+                            modal.show({
+                                title: '错误提示',
+                                content: '通知发送失败',
+                                type: 'error',
+                                showCancel: false
+                            });
+                        }
+                    },
+                    onCancel: function() {
+                        console.log('操作已取消');
+                    }
+                });
+            }
+            
+            // 事件监听
+            selectAllCheckbox.addEventListener('change', toggleSelectAll);
+            selectAllHeaderCheckbox.addEventListener('change', toggleSelectAll);
+            
+            userCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectAllStatus);
+            });
+            
+            batchDeleteBtn.addEventListener('click', batchDelete);
+            batchEnableBtn.addEventListener('click', () => batchUpdateStatus(1, '启用'));
+            batchDisableBtn.addEventListener('click', () => batchUpdateStatus(0, '禁用'));
+            batchSpeakBtn.addEventListener('click', () => batchUpdateSpeakStatus(1, '允许发言'));
+            batchMuteBtn.addEventListener('click', () => batchUpdateSpeakStatus(0, '禁止发言'));
+            batchSendNotifBtn.addEventListener('click', batchSendNotification);
+            
+            // 初始化
+            updateSelectAllStatus();
+        })();
+    </script>
+</body>
+</html>
