@@ -1,0 +1,385 @@
+<?php /*a:1:{s:31:"D:\wwwroot\view\user\login.html";i:1770122626;}*/ ?>
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户登录 - 我圈社交平台</title>
+    <?php if(isset($config['icon']) && $config['icon'] != ''): ?>
+    <link rel="icon" href="<?php echo htmlentities((string) $config['icon']); ?>" type="image/x-icon" />
+    <link rel="shortcut icon" href="<?php echo htmlentities((string) $config['icon']); ?>" />
+    <?php else: ?>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <?php endif; ?>
+    <link rel="stylesheet" href="/fontawesome/latest/css/all.min.css">
+    <!-- 网站配置 -->
+    <script src="/static/js/site-config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            overflow: hidden;
+            border: 2px solid rgba(254, 44, 85, 0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #FE2C55 0%, #D81F42 100%);
+            color: white;
+            text-align: center;
+            padding: 30px 20px 20px;
+        }
+
+        .logo-img {
+            max-width: 120px;
+            height: auto;
+            margin: 0 auto 15px;
+            display: block;
+        }
+
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 28px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .form-container {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333333;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #FE2C55;
+            box-shadow: 0 0 0 3px rgba(254, 44, 85, 0.1);
+        }
+        
+        .form-group input.error {
+            border-color: #333333;
+        }
+
+        .error-message {
+            color: #ff4757;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #FE2C55 0%, #D81F42 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(254, 44, 85, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .register-link a {
+            color: #FE2C55;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .error-message-global {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+            text-align: center;
+        }
+        
+        .remember-forgot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .remember {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .forgot-password {
+            color: #FE2C55;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        .password-input-wrapper {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #666;
+            font-size: 14px;
+            user-select: none;
+        }
+
+        .password-toggle:hover {
+            color: #FE2C55;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <?php if(isset($config['logo']) && $config['logo'] != ''): ?>
+            <img src="<?php echo htmlentities((string) $config['logo']); ?>" alt="<?php echo htmlentities((string) (isset($config['name']) && ($config['name'] !== '')?$config['name']:'社交平台')); ?>" class="logo-img">
+            <?php else: ?>
+            <div class="logo-icon">
+                <i class="fa fa-comments"></i>
+            </div>
+            <?php endif; ?>
+            <h1>欢迎回来</h1>
+            <p>登录您的账号，继续社交之旅</p>
+        </div>
+        
+        <div class="form-container">
+            <div id="errorMessage" class="error-message-global"></div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">账号或手机号</label>
+                    <input type="text" id="username" name="username" placeholder="请输入账号或手机号" required>
+                    <div class="error-message" id="usernameError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="password" name="password" placeholder="请输入密码" required style="padding-right: 40px;">
+                        <span class="password-toggle" onclick="togglePassword('password', this)">
+                            <i class="fa fa-eye-slash"></i>
+                        </span>
+                    </div>
+                    <div class="error-message" id="passwordError"></div>
+                </div>
+                
+                <div class="remember-forgot">
+                    <label class="remember">
+                        <input type="checkbox" name="remember">
+                        <span>记住我</span>
+                    </label>
+                    <a href="#" class="forgot-password">忘记密码？</a>
+                </div>
+                
+                <button type="submit" class="btn">立即登录</button>
+            </form>
+
+            <div class="register-link">
+                还没有账号？<a href="/register">立即注册</a>
+                <span style="margin: 0 10px;">|</span>
+                <a href="/forgot-password">忘记密码？</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // 清除之前的错误信息
+            clearErrors();
+            
+            const formData = new FormData(this);
+            const data = {
+                username: formData.get('username'),
+                password: formData.get('password'),
+                remember: formData.get('remember') ? 1 : 0
+            };
+            
+            try {
+                console.log('开始登录...', data);
+
+                const response = await fetch('/user/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams(data)
+                });
+
+                console.log('响应状态:', response.status);
+
+                const result = await response.json();
+
+                console.log('响应结果:', result);
+
+                if (result.code === 200) {
+                    // 登录成功，保存用户信息到本地存储
+                    localStorage.setItem('user', JSON.stringify(result.data));
+                    localStorage.setItem('token', Date.now().toString()); // 使用时间戳作为token
+
+                    // 显示成功消息
+                    const container = document.querySelector('.form-container');
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px 0;">
+                            <div style="font-size: 60px; margin-bottom: 20px;">✓</div>
+                            <h2 style="color: #666; margin-bottom: 10px;">登录成功！</h2>
+                            <p style="color: #999;">正在跳转到首页...</p>
+                        </div>
+                    `;
+
+                    // 延迟跳转，让用户看到成功消息
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    // 显示错误信息
+                    showError(result.msg);
+                    
+                    // 显示具体字段错误
+                    if (result.msg.includes('用户不存在')) {
+                        showFieldError('username', result.msg);
+                    } else if (result.msg.includes('密码')) {
+                        showFieldError('password', result.msg);
+                    }
+                }
+            } catch (error) {
+                console.error('登录失败:', error);
+                // 检查是否是数据库连接错误
+                let errorMsg = '网络错误，请稍后重试';
+                if (error.message && (error.message.includes('SQLSTATE') || error.message.includes('Access denied'))) {
+                    errorMsg = '数据库连接失败，请检查数据库配置是否正确';
+                } else if (error.message && error.message.includes('Failed to fetch')) {
+                    errorMsg = '服务器连接失败，请稍后重试';
+                }
+                showError(errorMsg);
+            }
+        });
+        
+        function clearErrors() {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.style.display = 'none';
+            });
+            document.querySelectorAll('input').forEach(input => {
+                input.classList.remove('error');
+            });
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function showFieldError(fieldName, message) {
+            const input = document.getElementById(fieldName);
+            const errorDiv = document.getElementById(fieldName + 'Error');
+
+            input.classList.add('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function togglePassword(inputId, toggleElement) {
+            const passwordInput = document.getElementById(inputId);
+            const icon = toggleElement.querySelector('i');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        }
+    </script>
+</body>
+</html>

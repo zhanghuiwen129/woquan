@@ -1,18 +1,17 @@
+<?php /*a:1:{s:39:"D:\wwwroot\view\index\index_mobile.html";i:1771394375;}*/ ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>{$name} - {$subtitle}</title>
-    {if isset($config.icon) && $config.icon != ''}
-    <link rel="icon" href="{$config.icon}" type="image/x-icon" />
-    <link rel="shortcut icon" href="{$config.icon}" />
-    {else}
+    <title><?php echo htmlentities((string) $name); ?> - <?php echo htmlentities((string) $subtitle); ?></title>
+    <?php if(isset($config['icon']) && $config['icon'] != ''): ?>
+    <link rel="icon" href="<?php echo htmlentities((string) $config['icon']); ?>" type="image/x-icon" />
+    <link rel="shortcut icon" href="<?php echo htmlentities((string) $config['icon']); ?>" />
+    <?php else: ?>
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-    {/if}
-    <script src="/static/js/site-config.js"></script>
-    <!-- Tailwind CSS 本地版本 -->
-    <script src="/static/css/tailwind.css"></script>
+    <?php endif; ?>
+    <script src="https://cdn.tailwindcss.com?hide-warning=true"></script>
     <!-- 使用本地 FontAwesome 图标库 -->
     <link rel="stylesheet" href="/fontawesome/css/font-awesome.min.css">
     <!-- 表情选择器样式 -->
@@ -117,57 +116,6 @@
             display: block;
         }
 
-<<<<<<< HEAD
-        /* 移动端 textarea 优化 */
-        textarea {
-            -webkit-appearance: none;
-            appearance: none;
-            border: none;
-            outline: none;
-            resize: none;
-        }
-
-        /* 确保移动端输入框可以正常获得焦点 */
-        @media (max-width: 768px) {
-            textarea#mobile-publish-input {
-                font-size: 16px;
-                line-height: 1.5;
-                -webkit-tap-highlight-color: transparent;
-                -webkit-touch-callout: default;
-                -webkit-user-select: text;
-                user-select: text;
-            }
-
-            /* 针对vivo浏览器的特殊处理 */
-            @supports (-webkit-touch-callout: default) {
-                textarea#mobile-publish-input {
-                    -webkit-transform: translateZ(0);
-                    transform: translateZ(0);
-                }
-            }
-
-            /* 移动端发布弹窗内容区域优化 */
-            #mobile-publish-content {
-                -webkit-overflow-scrolling: touch;
-                overflow-scrolling: touch;
-            }
-
-            /* 确保输入框在弹窗中可以正常交互 */
-            #mobile-publish-modal {
-                -webkit-transform: translateZ(0);
-                transform: translateZ(0);
-            }
-
-            /* 针对不同浏览器的输入框优化 */
-            textarea#mobile-publish-input:focus {
-                outline: none;
-                -webkit-user-select: text;
-                user-select: text;
-            }
-        }
-
-=======
->>>>>>> 24c2eb66050ced987fc7a67e7de02eb4d7685ce3
         /* App 风格补充样式 */
         .app-btn {
             display: inline-flex;
@@ -334,12 +282,12 @@
     <!-- 移动端顶部导航（App 风格） -->
     <header class="sticky top-0 z-50 flex items-center justify-between px-4" style="padding-top: calc(0.5rem + var(--safe-area-top)); padding-bottom: 0.5rem;">
         <div class="flex items-center gap-3">
-            {if isset($config.logo) && $config.logo != ''}
-            <img src="{$config.logo}" alt="{$name}" class="h-10 w-auto object-contain" style="max-height: 40px;">
-            {/if}
+            <?php if(isset($config['logo']) && $config['logo'] != ''): ?>
+            <img src="<?php echo htmlentities((string) $config['logo']); ?>" alt="<?php echo htmlentities((string) $name); ?>" class="h-10 w-auto object-contain" style="max-height: 40px;">
+            <?php endif; ?>
             <div class="leading-tight">
-                <a href="/" class="text-white font-bold text-base tracking-wide">{$name}</a>
-                <div class="site-subtitle text-white/90 text-[10px]">{$subtitle}</div>
+                <a href="/" class="text-white font-bold text-base tracking-wide"><?php echo htmlentities((string) $name); ?></a>
+                <div class="site-subtitle text-white/90 text-[10px]"><?php echo htmlentities((string) $subtitle); ?></div>
             </div>
         </div>
         <div class="flex-1 max-w-[200px] mx-4 relative">
@@ -613,11 +561,7 @@
                     <i class="fa fa-times text-lg"></i>
                 </button>
             </div>
-<<<<<<< HEAD
-            <textarea id="mobile-publish-input" placeholder="分享新鲜事..." class="w-full border-2 border-gray-200 bg-white rounded-2xl p-4 resize-none focus:outline-none focus:border-primary text-text-primary placeholder-text-tertiary min-h-[100px] max-h-[180px] overflow-y-auto outline-none leading-relaxed" style="min-height: 100px;"></textarea>
-=======
             <div id="mobile-publish-input" contenteditable="true" placeholder="分享新鲜事..." class="w-full border-2 border-gray-200 bg-white rounded-2xl p-4 resize-none focus:outline-none focus:border-primary text-text-primary placeholder-text-tertiary min-h-[100px] max-h-[180px] overflow-y-auto outline-none leading-relaxed" style="min-height: 100px;"></div>
->>>>>>> 24c2eb66050ced987fc7a67e7de02eb4d7685ce3
 
             <!-- 移动端图片预览区域 -->
             <div id="mobile-image-preview-container" class="mt-3 hidden">
@@ -1121,15 +1065,13 @@
                                class="w-full px-4 py-3 bg-white border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-text-primary placeholder:text-text-tertiary">
                     </div>
                     
-                    {if (isset($config.register_phone_verify) && $config.register_phone_verify == 1) || (!isset($config.register_phone_verify))}
+                    <?php if((isset($config['register_phone_verify']) && $config['register_phone_verify'] == 1) || (!isset($config['register_phone_verify']))): ?>
                     <div>
                         <label for="register-phone" class="block text-sm font-medium text-text-secondary mb-1">手机号</label>
                         <input type="tel" id="register-phone" name="phone" required placeholder="请输入手机号" 
                                class="w-full px-4 py-3 bg-white border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-text-primary placeholder:text-text-tertiary">
                     </div>
-                    {/if}
-                    
-                    {if (isset($config.register_sms_verify) && $config.register_sms_verify == 1) || (!isset($config.register_sms_verify))}
+                    <?php endif; if((isset($config['register_sms_verify']) && $config['register_sms_verify'] == 1) || (!isset($config['register_sms_verify']))): ?>
                     <div class="flex gap-3">
                         <div class="flex-1">
                             <label for="register-code" class="block text-sm font-medium text-text-secondary mb-1">验证码</label>
@@ -1144,9 +1086,7 @@
                             </button>
                         </div>
                     </div>
-                    {/if}
-                    
-                    {if isset($config.register_captcha_verify) && $config.register_captcha_verify == 1}
+                    <?php endif; if(isset($config['register_captcha_verify']) && $config['register_captcha_verify'] == 1): ?>
                     <div class="flex gap-2">
                         <div class="flex-1">
                             <label for="register-captcha" class="block text-sm font-medium text-text-secondary mb-1">图形验证码</label>
@@ -1161,7 +1101,7 @@
                             </div>
                         </div>
                     </div>
-                    {/if}
+                    <?php endif; ?>
                     
                     <button type="submit" id="registerSubmitBtn" 
                             class="w-full py-3 bg-primary hover:bg-darkPrimary text-white rounded-lg font-medium transition-colors">
