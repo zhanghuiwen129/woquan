@@ -1,0 +1,15 @@
+location / {
+    # 安装页面重写
+    rewrite ^/install/?$ /scripts/install.php last;
+    
+    # 如果请求的是真实存在的文件或目录，则直接访问
+    if (!-e $request_filename) {
+        # 将所有请求重写到index.php
+        rewrite ^(.*)$ /index.php?s=$1 last;
+    }
+}
+
+# 禁止访问app目录
+location ~ ^/app/ {
+    deny all;
+}

@@ -241,23 +241,34 @@ class Index extends BaseFrontendController
                 $moment['topics'] = [];
             }
 
-            // 检查当前用户对每条动态的点赞状态和关注状态
+            // 检查当前用户对每条动态的点赞状态和关注状态（批量查询优化）
             if ($userId) {
-                foreach ($moments as &$moment) {
-                    // 检查是否点赞
-                    $isLiked = \think\facade\Db::name('likes')
+                // 批量查询点赞状态
+                $momentIds = array_column($moments, 'moment_id');
+                $likedMomentIds = [];
+                if (!empty($momentIds)) {
+                    $likedMomentIds = \think\facade\Db::name('likes')
                         ->where('user_id', $userId)
-                        ->where('target_id', $moment['moment_id'])
+                        ->whereIn('target_id', $momentIds)
                         ->where('target_type', 1)
-                        ->find();
-                    $moment['is_liked'] = $isLiked ? 1 : 0;
+                        ->column('target_id');
+                }
 
-                    // 检查是否关注
-                    $isFollowed = \think\facade\Db::name('follows')
+                // 批量查询关注状态
+                $userIds = array_unique(array_column($moments, 'user_id'));
+                $followedUserIds = [];
+                if (!empty($userIds)) {
+                    $followedUserIds = \think\facade\Db::name('follows')
                         ->where('follower_id', $userId)
-                        ->where('following_id', $moment['user_id'])
-                        ->find();
-                    $moment['is_followed'] = $isFollowed ? 1 : 0;
+                        ->whereIn('following_id', $userIds)
+                        ->where('status', 1)
+                        ->column('following_id');
+                }
+
+                // 设置点赞和关注状态
+                foreach ($moments as &$moment) {
+                    $moment['is_liked'] = in_array($moment['moment_id'], $likedMomentIds) ? 1 : 0;
+                    $moment['is_followed'] = in_array($moment['user_id'], $followedUserIds) ? 1 : 0;
                 }
             } else {
                 foreach ($moments as &$moment) {
@@ -789,11 +800,6 @@ class Index extends BaseFrontendController
     public function error404()
     {
         return View::fetch('404');
-    }
-
-    public function test()
-    {
-        return View::fetch('test');
     }
 
     public function register()

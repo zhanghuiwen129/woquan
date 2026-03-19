@@ -46,10 +46,4 @@ class Index extends AdminController
     {
         return View::fetch('admin/welcome');
     }
-    
-    // 测试方法
-    public function test()
-    {
-        return 'Test method works!';
-    }
 }

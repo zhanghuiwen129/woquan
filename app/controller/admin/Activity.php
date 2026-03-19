@@ -9,15 +9,6 @@ use think\facade\Session;
 
 class Activity extends AdminController
 {
-    public function test()
-    {
-        return json([
-            'code' => 200,
-            'msg' => 'Activity控制器正常工作',
-            'time' => time()
-        ]);
-    }
-    
     public function index()
     {
         $page = Request::param('page', 1);

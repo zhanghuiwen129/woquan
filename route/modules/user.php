@@ -1,0 +1,61 @@
+<?php
+
+use think\facade\Route;
+
+Route::group(function () {
+    Route::get('user/check', 'User/check');
+    Route::get('user/getUserProfile', 'User/getUserProfile');
+    Route::get('user/profile/:id', 'User/profile');
+    Route::get('user/register-config', 'User/registerConfig');
+    Route::post('user/login', 'User/login');
+    Route::post('user/register', 'User/register');
+    Route::post('user/logout', 'User/logout');
+    Route::post('api/logout', 'User/logout');
+    Route::get('user/captcha', 'User/captcha');
+    Route::post('user/sendSms', 'User/sendSms');
+    Route::get('users/recommended', 'User/getRecommendedUsers');
+    Route::post('user/follow', 'User/follow');
+    Route::post('user/unfollow', 'User/unfollow');
+    Route::get('user/following', 'User/getFollowing');
+    Route::get('user/followers', 'User/getFollowers');
+    Route::get('user/card', 'User/card');
+    Route::post('user/updateCardSettings', 'User/updateCardSettings');
+    Route::get('user/card/visitors', 'User/cardVisitors');
+    Route::get('user/visitors', 'User/cardVisitors');
+    Route::get('user/moments', 'User/getUsermoments');
+    Route::get('user/favorites', 'User/getUserFavorites');
+    Route::get('user/notifications', 'User/getNotifications');
+    Route::get('user/mentions', 'User/getMentions');
+    Route::post('user/markMentionRead', 'User/markMentionRead');
+    Route::get('user/login-logs', 'User/getLoginLogs');
+    Route::post('user/uploadAvatar', 'User/uploadAvatar');
+    Route::get('user/getCurrentUser', 'User/getCurrentUser');
+    Route::get('user/getCurrentUserProfile', 'User/getCurrentUserProfile');
+    Route::post('user/updateProfile', 'User/updateProfile');
+    Route::post('user/changePassword', 'User/changePassword');
+    Route::post('user/updateSettings', 'User/updateSettings');
+    Route::get('user/list', 'User/listUsers');
+    Route::get('user/search', 'User/searchUsers');
+    Route::post('user/sendResetSms', 'User/sendResetSms');
+    Route::post('user/resetPassword', 'User/resetPassword');
+    Route::get('user/avatar', 'User/avatar');
+    Route::get('user/getLoginHistory', 'User/getLoginHistory');
+    Route::get('user/exportUserData', 'User/exportUserData');
+    Route::post('user/deleteAccount', 'User/deleteAccount');
+    Route::post('api/user/heartbeat', 'User/heartbeat');
+})->middleware('Auth');
+
+Route::get('login', 'User/login');
+Route::get('register', 'User/register');
+Route::get('user/:id', 'User/index')->pattern(['id' => '\d+']);
+Route::get('user/:id/following', 'User/following');
+Route::get('user/:id/followers', 'User/followers');
+Route::get('user/:id/moments', 'User/moments');
+Route::get('users/:id', 'User/index')->pattern(['id' => '\d+']);
+Route::get('users/:id/following', 'User/following');
+Route::get('users/:id/followers', 'User/followers');
+Route::get('users/:id/moments', 'User/moments');
+Route::get('following', 'User/following');
+Route::get('followers', 'User/followers');
+Route::get('profile', 'Index/profile');
+Route::get('api/user/info', 'User/getCurrentUserProfile');

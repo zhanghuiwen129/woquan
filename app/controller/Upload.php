@@ -4,6 +4,7 @@ declare (strict_types = 1);
 namespace app\controller;
 
 use app\service\StorageFactory;
+use app\helper\FileValidator;
 use think\facade\Db;
 use think\facade\Request;
 
@@ -121,58 +122,45 @@ class Upload extends BaseFrontendController
             return $this->badRequest('未选择文件');
         }
 
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        if (!in_array($file->getMime(), $allowedTypes)) {
-            return $this->badRequest('不支持的图片格式');
-        }
-        
-        // 文件大小限制（10MB）
         $maxSize = 10 * 1024 * 1024;
-        if ($file->getSize() > $maxSize) {
-            return $this->badRequest('文件大小不能超过10MB');
+        $sizeCheck = FileValidator::checkFileSize($file, $maxSize);
+        if (!$sizeCheck['valid']) {
+            return $this->badRequest($sizeCheck['message']);
         }
-        
-        // 验证文件内容
-        $imageInfo = getimagesize($file->getPathname());
-        if (!$imageInfo) {
-            return $this->badRequest('无效的图片文件');
+
+        $imageCheck = FileValidator::validateImage($file);
+        if (!$imageCheck['valid']) {
+            return $this->badRequest($imageCheck['message']);
         }
 
         try {
             $storageConfig = $this->getStorageConfig();
             $storage = StorageFactory::create($storageConfig['type'], $storageConfig['config']);
 
-            $fileName = date('Ymd_His') . '_' . bin2hex(random_bytes(8)) . '.' . $file->extension();
+            $fileName = FileValidator::generateSafeFileName($file->getOriginalName(), 'img');
             $result = $storage->upload($file, 'images', $fileName);
 
-            $imageInfo = getimagesize($result['path']);
             $fileInfo = [
                 'name' => $file->getOriginalName(),
                 'size' => $file->getSize(),
                 'type' => $file->getMime(),
                 'url' => $result['url'],
                 'path' => $result['path'],
-                'width' => $imageInfo[0],
-                'height' => $imageInfo[1]
+                'width' => $imageCheck['width'],
+                'height' => $imageCheck['height']
             ];
 
-            // 将文件信息记录到storage_files表
-            try {
-                $storageFileInfo = [
-                    'user_id' => $userId,
-                    'filename' => $fileName,
-                    'filepath' => $result['url'],
-                    'filesize' => $file->getSize(),
-                    'mimetype' => $file->getMime(),
-                    'storage_type' => $storageConfig['type'],
-                    'status' => 1,
-                    'create_time' => time()
-                ];
-                Db::name('storage_files')->insert($storageFileInfo);
-            } catch (\Exception $e) {
-                // 记录失败不影响上传流程，只记录错误
-                error_log('记录文件信息到storage_files表失败: ' . $e->getMessage());
-            }
+            $storageFileInfo = [
+                'user_id' => $userId,
+                'filename' => $fileName,
+                'filepath' => $result['url'],
+                'filesize' => $file->getSize(),
+                'mimetype' => $file->getMime(),
+                'storage_type' => $storageConfig['type'],
+                'status' => 1,
+                'create_time' => time()
+            ];
+            Db::name('storage_files')->insert($storageFileInfo);
 
             return $this->success($fileInfo, '上传成功');
         } catch (\Exception $e) {
@@ -194,48 +182,43 @@ class Upload extends BaseFrontendController
             return $this->badRequest('未选择文件');
         }
 
-        $allowedTypes = ['video/mp4', 'video/webm', 'video/ogg'];
-        if (!in_array($file->getMime(), $allowedTypes)) {
-            return $this->badRequest('不支持的视频格式');
+        $maxSize = 50 * 1024 * 1024;
+        $sizeCheck = FileValidator::checkFileSize($file, $maxSize);
+        if (!$sizeCheck['valid']) {
+            return $this->badRequest($sizeCheck['message']);
+        }
+
+        $videoCheck = FileValidator::validateVideo($file);
+        if (!$videoCheck['valid']) {
+            return $this->badRequest($videoCheck['message']);
         }
 
         try {
-            $uploadDir = ROOT_PATH . 'public' . DIRECTORY_SEPARATOR . 'static' . DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . 'videos';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
+            $storageConfig = $this->getStorageConfig();
+            $storage = StorageFactory::create($storageConfig['type'], $storageConfig['config']);
 
-            $fileName = date('Ymd_His') . '_' . uniqid() . '.' . $file->extension();
-            $filePath = $uploadDir . DIRECTORY_SEPARATOR . $fileName;
-            $fileUrl = '/static/upload/videos/' . $fileName;
-
-            $file->move($uploadDir, $fileName);
+            $fileName = FileValidator::generateSafeFileName($file->getOriginalName(), 'video');
+            $result = $storage->upload($file, 'videos', $fileName);
 
             $fileInfo = [
                 'name' => $file->getOriginalName(),
                 'size' => $file->getSize(),
                 'type' => $file->getMime(),
-                'url' => $fileUrl,
-                'path' => $filePath
+                'url' => $result['url'],
+                'path' => $result['path']
             ];
 
-            // 将文件信息记录到storage_files表
-            try {
-                $storageFileInfo = [
-                    'user_id' => $userId,
-                    'filename' => $fileName,
-                    'filepath' => $fileUrl,
-                    'filesize' => $file->getSize(),
-                    'mimetype' => $file->getMime(),
-                    'storage_type' => 'local',
-                    'status' => 1,
-                    'create_time' => time()
-                ];
-                Db::name('storage_files')->insert($storageFileInfo);
-            } catch (\Exception $e) {
-                // 记录失败不影响上传流程，只记录错误
-                error_log('记录文件信息到storage_files表失败: ' . $e->getMessage());
-            }
+            $storageFileInfo = [
+                'user_id' => $userId,
+                'filename' => $fileName,
+                'filepath' => $result['url'],
+                'filesize' => $file->getSize(),
+                'mimetype' => $file->getMime(),
+                'storage_type' => $storageConfig['type'],
+                'status' => 1,
+                'create_time' => time()
+            ];
+            Db::name('storage_files')->insert($storageFileInfo);
 
             return $this->success($fileInfo, '上传成功');
         } catch (\Exception $e) {
@@ -257,22 +240,23 @@ class Upload extends BaseFrontendController
             return $this->badRequest('未选择文件');
         }
 
-        $allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm'];
-        if (!in_array($file->getMime(), $allowedTypes)) {
-            return $this->badRequest('不支持的音频格式');
+        $maxSize = 20 * 1024 * 1024;
+        $sizeCheck = FileValidator::checkFileSize($file, $maxSize);
+        if (!$sizeCheck['valid']) {
+            return $this->badRequest($sizeCheck['message']);
+        }
+
+        $audioCheck = FileValidator::validateAudio($file);
+        if (!$audioCheck['valid']) {
+            return $this->badRequest($audioCheck['message']);
         }
 
         try {
-            $uploadDir = ROOT_PATH . 'public' . DIRECTORY_SEPARATOR . 'static' . DIRECTORY_SEPARATOR . 'upload' . DIRECTORY_SEPARATOR . 'audio';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
+            $storageConfig = $this->getStorageConfig();
+            $storage = StorageFactory::create($storageConfig['type'], $storageConfig['config']);
 
-            $fileName = date('Ymd_His') . '_' . uniqid() . '.' . $file->extension();
-            $filePath = $uploadDir . DIRECTORY_SEPARATOR . $fileName;
-            $fileUrl = '/static/upload/audio/' . $fileName;
-
-            $file->move($uploadDir, $fileName);
+            $fileName = FileValidator::generateSafeFileName($file->getOriginalName(), 'audio');
+            $result = $storage->upload($file, 'audio', $fileName);
 
             $duration = input('duration', 0);
 
@@ -280,28 +264,22 @@ class Upload extends BaseFrontendController
                 'name' => $file->getOriginalName(),
                 'size' => $file->getSize(),
                 'type' => $file->getMime(),
-                'url' => $fileUrl,
-                'path' => $filePath,
+                'url' => $result['url'],
+                'path' => $result['path'],
                 'duration' => $duration
             ];
 
-            // 将文件信息记录到storage_files表
-            try {
-                $storageFileInfo = [
-                    'user_id' => $userId,
-                    'filename' => $fileName,
-                    'filepath' => $fileUrl,
-                    'filesize' => $file->getSize(),
-                    'mimetype' => $file->getMime(),
-                    'storage_type' => 'local',
-                    'status' => 1,
-                    'create_time' => time()
-                ];
-                Db::name('storage_files')->insert($storageFileInfo);
-            } catch (\Exception $e) {
-                // 记录失败不影响上传流程，只记录错误
-                error_log('记录文件信息到storage_files表失败: ' . $e->getMessage());
-            }
+            $storageFileInfo = [
+                'user_id' => $userId,
+                'filename' => $fileName,
+                'filepath' => $result['url'],
+                'filesize' => $file->getSize(),
+                'mimetype' => $file->getMime(),
+                'storage_type' => $storageConfig['type'],
+                'status' => 1,
+                'create_time' => time()
+            ];
+            Db::name('storage_files')->insert($storageFileInfo);
 
             return $this->success($fileInfo, '上传成功');
         } catch (\Exception $e) {
@@ -328,29 +306,37 @@ class Upload extends BaseFrontendController
 
         $mimeType = $file->getMime();
 
-        // 根据文件类型确定保存目录
+        $maxSize = 10 * 1024 * 1024;
+        $sizeCheck = FileValidator::checkFileSize($file, $maxSize);
+        if (!$sizeCheck['valid']) {
+            return $this->badRequest($sizeCheck['message']);
+        }
+
+        $subDir = '';
+        $fileCheck = null;
+
         if (strpos($mimeType, 'image') === 0) {
             $subDir = 'images';
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            $fileCheck = FileValidator::validateImage($file);
         } elseif (strpos($mimeType, 'audio') === 0) {
             $subDir = 'audio';
-            $allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm'];
+            $fileCheck = FileValidator::validateAudio($file);
         } elseif (strpos($mimeType, 'video') === 0) {
             $subDir = 'videos';
-            $allowedTypes = ['video/mp4', 'video/webm', 'video/ogg'];
+            $fileCheck = FileValidator::validateVideo($file);
         } else {
             return $this->badRequest('不支持的文件类型');
         }
 
-        if (!in_array($mimeType, $allowedTypes)) {
-            return $this->badRequest('不支持的文件格式');
+        if (!$fileCheck['valid']) {
+            return $this->badRequest($fileCheck['message']);
         }
 
         try {
             $storageConfig = $this->getStorageConfig();
             $storage = StorageFactory::create($storageConfig['type'], $storageConfig['config']);
 
-            $fileName = date('Ymd_His') . '_' . uniqid() . '.' . $file->extension();
+            $fileName = FileValidator::generateSafeFileName($file->getOriginalName(), 'chat');
             $result = $storage->upload($file, $subDir, $fileName);
 
             $fileInfo = [
@@ -361,31 +347,23 @@ class Upload extends BaseFrontendController
                 'path' => $result['path']
             ];
 
-            // 如果是图片，获取尺寸
-            if (strpos($mimeType, 'image') === 0) {
-                $imageInfo = getimagesize($result['path']);
-                $fileInfo['width'] = $imageInfo[0];
-                $fileInfo['height'] = $imageInfo[1];
+            if (strpos($mimeType, 'image') === 0 && isset($fileCheck['width'])) {
+                $fileInfo['width'] = $fileCheck['width'];
+                $fileInfo['height'] = $fileCheck['height'];
             }
 
-            // 将文件信息记录到storage_files表
-            try {
-                $storageFileInfo = [
-                    'user_id' => $userId,
-                    'filename' => $fileName,
-                    'filepath' => $result['url'],
-                    'filesize' => $fileSize,
-                    'mimetype' => $mimeType,
-                    'storage_type' => $storageConfig['type'],
-                    'status' => 1,
-                    'create_time' => time(),
-                    'update_time' => time()
-                ];
-                Db::name('storage_files')->insert($storageFileInfo);
-            } catch (\Exception $e) {
-                // 记录失败不影响上传流程，只记录错误
-                error_log('记录文件信息到storage_files表失败: ' . $e->getMessage());
-            }
+            $storageFileInfo = [
+                'user_id' => $userId,
+                'filename' => $fileName,
+                'filepath' => $result['url'],
+                'filesize' => $file->getSize(),
+                'mimetype' => $mimeType,
+                'storage_type' => $storageConfig['type'],
+                'status' => 1,
+                'create_time' => time(),
+                'update_time' => time()
+            ];
+            Db::name('storage_files')->insert($storageFileInfo);
 
             return $this->success($fileInfo, '上传成功');
         } catch (\Exception $e) {

@@ -205,30 +205,98 @@ class Moments extends BaseFrontendController
                     ->where('target_type', 1)
                     ->column('target_id');
 
+                // 批量查询当前用户的关注记录
+                $followingUserIds = Db::name('follows')
+                    ->where('follower_id', $currentUserId)
+                    ->where('status', 1)
+                    ->column('following_id');
+
+                // 批量查询所有动态的顶级评论
+                $allComments = [];
+                if (!empty($momentIds)) {
+                    $allComments = Db::name('comments')
+                        ->alias('c')
+                        ->leftJoin('user u', 'c.user_id = u.id')
+                        ->whereIn('c.moment_id', $momentIds)
+                        ->where('c.status', 1)
+                        ->where(function($query) {
+                            $query->where('c.parent_id', 0)->whereOr('c.parent_id', null);
+                        })
+                        ->field('c.id, c.content, c.create_time, c.user_id, c.parent_id, c.likes, c.moment_id, u.nickname, u.avatar, u.username')
+                        ->order('c.create_time', 'desc')
+                        ->select()
+                        ->toArray();
+                }
+
+                // 按moment_id分组评论，每个动态取前3条
+                $commentsByMoment = [];
+                foreach ($allComments as $comment) {
+                    $momentId = $comment['moment_id'];
+                    if (!isset($commentsByMoment[$momentId])) {
+                        $commentsByMoment[$momentId] = [];
+                    }
+                    if (count($commentsByMoment[$momentId]) < 3) {
+                        $commentsByMoment[$momentId][] = $comment;
+                    }
+                }
+
+                // 批量查询所有顶级评论的子评论
+                $allReplies = [];
+                if (!empty($commentsByMoment)) {
+                    $topLevelCommentIds = [];
+                    foreach ($commentsByMoment as $comments) {
+                        foreach ($comments as $comment) {
+                            $topLevelCommentIds[] = $comment['id'];
+                        }
+                    }
+
+                    if (!empty($topLevelCommentIds)) {
+                        $allReplies = Db::name('comments')
+                            ->alias('c')
+                            ->leftJoin('user u', 'c.user_id = u.id')
+                            ->whereIn('c.parent_id', $topLevelCommentIds)
+                            ->where('c.status', 1)
+                            ->field('c.id, c.content, c.create_time, c.user_id, c.parent_id, c.likes, u.nickname, u.avatar, u.username')
+                            ->order('c.create_time', 'desc')
+                            ->select()
+                            ->toArray();
+                    }
+                }
+
+                // 按parent_id分组回复，每个顶级评论取前2条
+                $repliesByComment = [];
+                foreach ($allReplies as $reply) {
+                    $parentId = $reply['parent_id'];
+                    if (!isset($repliesByComment[$parentId])) {
+                        $repliesByComment[$parentId] = [];
+                    }
+                    if (count($repliesByComment[$parentId]) < 2) {
+                        $repliesByComment[$parentId][] = $reply;
+                    }
+                }
+
+                // 批量查询被回复用户信息
+                $replyUserIds = [];
+                foreach ($allReplies as $reply) {
+                    $replyUserIds[] = $reply['user_id'];
+                }
+                $replyUserIds = array_unique($replyUserIds);
+                $replyUsers = [];
+                if (!empty($replyUserIds)) {
+                    $replyUsers = Db::name('user')
+                        ->whereIn('id', $replyUserIds)
+                        ->column('nickname', 'id');
+                }
+
                 foreach ($moments as &$moment) {
-                    // 检查是否点赞
                     $moment['is_liked'] = in_array($moment['id'], $likedMomentIds) ? 1 : 0;
-
-                    // 检查是否关注
-                    $isFollowed = Db::name('follows')
-                        ->where('follower_id', $currentUserId)
-                        ->where('following_id', $moment['user_id'])
-                        ->find();
-                    $moment['is_followed'] = $isFollowed ? 1 : 0;
-
-                    // 添加mentions数据
+                    $moment['is_followed'] = in_array($moment['user_id'], $followingUserIds) ? 1 : 0;
                     $moment['mentions'] = $mentionsData[$moment['id']] ?? [];
-
-                    // 添加topics数据
                     $moment['topics'] = $topicsData[$moment['id']] ?? [];
 
-                    // 格式化动态内容，将@用户替换为可点击链接
                     $moment['content'] = $this->formatMentionContent($moment['content'], $moment['mentions']);
-
-                    // 格式化动态内容，将话题替换为可点击链接
                     $moment['content'] = $this->formatTopicContent($moment['content'], $moment['topics']);
 
-                    // 处理图片和视频数据
                     if (!empty($moment['images'])) {
                         $moment['images'] = json_decode($moment['images'], true);
                     } else {
@@ -241,82 +309,85 @@ class Moments extends BaseFrontendController
                         $moment['videos'] = [];
                     }
 
-                    // 加载前3条顶级评论数据（不包括楼中楼）
-                    $comments = Db::name('comments')
-                        ->alias('c')
-                        ->leftJoin('user u', 'c.user_id = u.id')
-                        ->where('c.moment_id', $moment['id'])
-                        ->where('c.status', 1)
-                        ->where(function($query) {
-                            $query->where('c.parent_id', 0)->whereOr('c.parent_id', null);
-                        })
-                        ->field('c.id, c.content, c.create_time, c.user_id, c.parent_id, c.likes, u.nickname, u.avatar, u.username')
-                        ->order('c.create_time', 'desc')
-                        ->limit(3)
-                        ->select()
-                        ->toArray();
+                    $comments = $commentsByMoment[$moment['id']] ?? [];
 
-                    // 为每条顶级评论加载最新的2条楼中楼回复
                     foreach ($comments as &$comment) {
-                        $comment['replies'] = [];
-
-                        // 查询该顶级评论的子评论
-                        $replies = Db::name('comments')
-                            ->alias('c')
-                            ->leftJoin('user u', 'c.user_id = u.id')
-                            ->where('c.moment_id', $moment['id'])
-                            ->where('c.parent_id', $comment['id'])
-                            ->where('c.status', 1)
-                            ->field('c.id, c.content, c.create_time, c.user_id, c.parent_id, c.likes, u.nickname, u.avatar, u.username')
-                            ->order('c.create_time', 'desc')
-                            ->limit(2)
-                            ->select()
-                            ->toArray();
-
-                        // 获取被回复用户信息
-                        if (!empty($replies)) {
-                            $parentCommentIds = array_column($replies, 'parent_id');
-                            if (!empty($parentCommentIds)) {
-                                $parentComments = Db::name('comments')
-                                    ->where('id', 'in', $parentCommentIds)
-                                    ->column('user_id', 'id');
-
-                                $parentUserIds = array_values($parentComments);
-                                if (!empty($parentUserIds)) {
-                                    $parentUserIds = array_unique($parentUserIds);
-                                    $parentUsers = Db::name('user')
-                                        ->where('id', 'in', $parentUserIds)
-                                        ->column('nickname', 'id');
-
-                                    // 添加被回复用户昵称到每条回复
-                                    foreach ($replies as &$reply) {
-                                        if (isset($parentComments[$reply['parent_id']])) {
-                                            $replyUserId = $parentComments[$reply['parent_id']];
-                                            $reply['reply_nickname'] = $parentUsers[$replyUserId] ?? '';
-                                        } else {
-                                            $reply['reply_nickname'] = '';
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        $comment['replies'] = $replies;
-                        $comment['reply_count'] = count($replies);
+                        $comment['replies'] = $repliesByComment[$comment['id']] ?? [];
+                        $comment['reply_count'] = count($comment['replies']);
                     }
 
                     $moment['comments_data'] = $comments;
                 }
             } else {
-                // 未登录用户，不显示点赞和关注状态
+                // 批量查询所有动态的顶级评论
+                $allComments = [];
+                if (!empty($momentIds)) {
+                    $allComments = Db::name('comments')
+                        ->alias('c')
+                        ->leftJoin('user u', 'c.user_id = u.id')
+                        ->whereIn('c.moment_id', $momentIds)
+                        ->where('c.status', 1)
+                        ->where(function($query) {
+                            $query->where('c.parent_id', 0)->whereOr('c.parent_id', null);
+                        })
+                        ->field('c.id, c.content, c.create_time, c.user_id, c.parent_id, c.likes, c.moment_id, u.nickname, u.avatar, u.username')
+                        ->order('c.create_time', 'desc')
+                        ->select()
+                        ->toArray();
+                }
+
+                // 按moment_id分组评论，每个动态取前3条
+                $commentsByMoment = [];
+                foreach ($allComments as $comment) {
+                    $momentId = $comment['moment_id'];
+                    if (!isset($commentsByMoment[$momentId])) {
+                        $commentsByMoment[$momentId] = [];
+                    }
+                    if (count($commentsByMoment[$momentId]) < 3) {
+                        $commentsByMoment[$momentId][] = $comment;
+                    }
+                }
+
+                // 批量查询所有顶级评论的子评论
+                $allReplies = [];
+                if (!empty($commentsByMoment)) {
+                    $topLevelCommentIds = [];
+                    foreach ($commentsByMoment as $comments) {
+                        foreach ($comments as $comment) {
+                            $topLevelCommentIds[] = $comment['id'];
+                        }
+                    }
+
+                    if (!empty($topLevelCommentIds)) {
+                        $allReplies = Db::name('comments')
+                            ->alias('c')
+                            ->leftJoin('user u', 'c.user_id = u.id')
+                            ->whereIn('c.parent_id', $topLevelCommentIds)
+                            ->where('c.status', 1)
+                            ->field('c.id, c.content, c.create_time, c.user_id, c.parent_id, c.likes, u.nickname, u.avatar, u.username')
+                            ->order('c.create_time', 'desc')
+                            ->select()
+                            ->toArray();
+                    }
+                }
+
+                // 按parent_id分组回复，每个顶级评论取前2条
+                $repliesByComment = [];
+                foreach ($allReplies as $reply) {
+                    $parentId = $reply['parent_id'];
+                    if (!isset($repliesByComment[$parentId])) {
+                        $repliesByComment[$parentId] = [];
+                    }
+                    if (count($repliesByComment[$parentId]) < 2) {
+                        $repliesByComment[$parentId][] = $reply;
+                    }
+                }
+
                 foreach ($moments as &$moment) {
                     $moment['is_liked'] = 0;
                     $moment['is_followed'] = 0;
-
-                    // 添加mentions数据
                     $moment['mentions'] = $mentionsData[$moment['id']] ?? [];
 
-                    // 处理图片和视频数据
                     if (!empty($moment['images'])) {
                         $moment['images'] = json_decode($moment['images'], true);
                     } else {
@@ -329,68 +400,11 @@ class Moments extends BaseFrontendController
                         $moment['videos'] = [];
                     }
 
-                    // 加载前3条顶级评论数据（不包括楼中楼）
-                    $comments = Db::name('comments')
-                        ->alias('c')
-                        ->leftJoin('user u', 'c.user_id = u.id')
-                        ->where('c.moment_id', $moment['id'])
-                        ->where('c.status', 1)
-                        ->where(function($query) {
-                            $query->where('c.parent_id', 0)->whereOr('c.parent_id', null);
-                        })
-                        ->field('c.id, c.content, c.create_time, c.user_id, c.parent_id, c.likes, u.nickname, u.avatar, u.username')
-                        ->order('c.create_time', 'desc')
-                        ->limit(3)
-                        ->select()
-                        ->toArray();
+                    $comments = $commentsByMoment[$moment['id']] ?? [];
 
-                    // 为每条顶级评论加载最新的2条楼中楼回复
                     foreach ($comments as &$comment) {
-                        $comment['replies'] = [];
-
-                        // 查询该顶级评论的子评论
-                        $replies = Db::name('comments')
-                            ->alias('c')
-                            ->leftJoin('user u', 'c.user_id = u.id')
-                            ->where('c.moment_id', $moment['id'])
-                            ->where('c.parent_id', $comment['id'])
-                            ->where('c.status', 1)
-                            ->field('c.id, c.content, c.create_time, c.user_id, c.parent_id, c.likes, u.nickname, u.avatar, u.username')
-                            ->order('c.create_time', 'desc')
-                            ->limit(2)
-                            ->select()
-                            ->toArray();
-
-                        // 获取被回复用户信息
-                        if (!empty($replies)) {
-                            $parentCommentIds = array_column($replies, 'parent_id');
-                            if (!empty($parentCommentIds)) {
-                                $parentComments = Db::name('comments')
-                                    ->where('id', 'in', $parentCommentIds)
-                                    ->column('user_id', 'id');
-
-                                $parentUserIds = array_values($parentComments);
-                                if (!empty($parentUserIds)) {
-                                    $parentUserIds = array_unique($parentUserIds);
-                                    $parentUsers = Db::name('user')
-                                        ->where('id', 'in', $parentUserIds)
-                                        ->column('nickname', 'id');
-
-                                    // 添加被回复用户昵称到每条回复
-                                    foreach ($replies as &$reply) {
-                                        if (isset($parentComments[$reply['parent_id']])) {
-                                            $replyUserId = $parentComments[$reply['parent_id']];
-                                            $reply['reply_nickname'] = $parentUsers[$replyUserId] ?? '';
-                                        } else {
-                                            $reply['reply_nickname'] = '';
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        $comment['replies'] = $replies;
-                        $comment['reply_count'] = count($replies);
+                        $comment['replies'] = $repliesByComment[$comment['id']] ?? [];
+                        $comment['reply_count'] = count($comment['replies']);
                     }
 
                     $moment['comments_data'] = $comments;

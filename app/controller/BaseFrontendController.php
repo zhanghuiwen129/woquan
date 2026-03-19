@@ -187,15 +187,4 @@ class BaseFrontendController extends BaseController
     {
         return $this->jsonResponse(404, $msg);
     }
-
-    /**
-     * 错误响应（别名方法）
-     * @param string $msg 错误消息
-     * @param int $code 错误码
-     * @return \think\Response
-     */
-    protected function returnError($msg = 'error', $code = 500)
-    {
-        return $this->jsonResponse($code, $msg);
-    }
 }

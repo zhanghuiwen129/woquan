@@ -2,56 +2,109 @@
 
 namespace app\middleware;
 
-use Closure;
 use think\Request;
 use think\Response;
 
 class Csrf
 {
-    protected $except = [
-        'api/user/login',
-        'api/user/register',
-        'api/upload',
-        'api/upload/avatar',
-    ];
-
-    public function handle(Request $request, Closure $next)
+    protected $tokenName = '_token';
+    protected $headerName = 'X-CSRF-TOKEN';
+    protected $excludeMethods = ['GET', 'HEAD', 'OPTIONS'];
+    
+    public function handle(Request $request, \Closure $next)
     {
-        $path = $request->pathinfo();
-        
-        if ($this->shouldExcept($path)) {
+        if (in_array($request->method(), $this->excludeMethods)) {
             return $next($request);
         }
         
-        if ($request->isPost() || $request->isPut() || $request->isDelete()) {
-            $token = $request->param('__token__');
-            
-            if (!$token || !check_csrf_token($token)) {
-                return Response::create([
+        if ($this->shouldExclude($request)) {
+            return $next($request);
+        }
+        
+        $token = $this->getTokenFromRequest($request);
+        
+        if (!$this->validateToken($token)) {
+            if ($request->isAjax() || $request->header('accept') === 'application/json') {
+                return json([
                     'code' => 403,
                     'msg' => 'CSRF token验证失败，请刷新页面重试'
-                ], 'json', 403);
+                ], 403);
             }
+            
+            return redirect('/')->with('error', 'CSRF token验证失败，请刷新页面重试');
         }
         
         return $next($request);
     }
-
-    protected function shouldExcept($path)
+    
+    protected function shouldExclude(Request $request)
     {
-        foreach ($this->except as $except) {
-            if (strpos($path, $except) !== false) {
+        $excludeRoutes = [
+            'api/upload',
+            'api/user/login',
+            'api/user/register',
+            'api/user/captcha',
+            'api/user/sendSms',
+            'api/websocket',
+        ];
+        
+        $path = $request->pathinfo();
+        
+        foreach ($excludeRoutes as $route) {
+            if (strpos($path, $route) === 0) {
                 return true;
             }
         }
         
         return false;
     }
-}
-
-if (!function_exists('check_csrf_token')) {
-    function check_csrf_token($token)
+    
+    protected function getTokenFromRequest(Request $request)
     {
-        return $token === session('__token__');
+        $token = $request->post($this->tokenName);
+        
+        if (empty($token)) {
+            $token = $request->header($this->headerName);
+        }
+        
+        if (empty($token)) {
+            $token = $request->param($this->tokenName);
+        }
+        
+        return $token;
+    }
+    
+    protected function validateToken($token)
+    {
+        if (empty($token)) {
+            return false;
+        }
+        
+        $sessionToken = session($this->tokenName);
+        
+        if (empty($sessionToken)) {
+            return false;
+        }
+        
+        return hash_equals($sessionToken, $token);
+    }
+    
+    public static function generateToken()
+    {
+        $token = bin2hex(random_bytes(32));
+        session('_token', $token);
+        return $token;
+    }
+    
+    public static function getTokenField()
+    {
+        $token = self::generateToken();
+        return '<input type="hidden" name="_token" value="' . $token . '">';
+    }
+    
+    public static function getMetaTag()
+    {
+        $token = self::generateToken();
+        return '<meta name="csrf-token" content="' . $token . '">';
     }
 }

@@ -50,7 +50,7 @@ class InstallCheck
             $tables = $stmt->fetchAll(\PDO::FETCH_COLUMN);
             $hasTables = !empty($tables);
         } catch (\Exception $e) {
-            $hasTables = !empty($tables);
+            $hasTables = false;
         }
 
         // 情况1：有安装锁，但没有数据表 -> 跳转到安装页面

@@ -49,19 +49,7 @@ class User extends Model
         $user = self::where('username', $username)->find();
         
         if ($user) {
-            $passwordValid = false;
-            
             if (password_verify($password, $user->password)) {
-                $passwordValid = true;
-            } elseif (md5($password) === $user->password) {
-                $passwordValid = true;
-                if (strlen($user->password) === 32) {
-                    $user->password = password_hash($password, PASSWORD_BCRYPT);
-                    $user->save();
-                }
-            }
-            
-            if ($passwordValid) {
                 $user->logtime = date('Y-m-d H:i:s');
                 $user->logip = request()->ip();
                 $user->is_online = 1;
@@ -199,5 +187,15 @@ class User extends Model
     public function visitors()
     {
         return $this->hasMany('CardVisitor', 'user_id', 'id');
+    }
+    
+    /**
+     * 密码修改器
+     * @param string $value
+     * @return string
+     */
+    public function setPasswordAttr($value)
+    {
+        return password_hash($value, PASSWORD_BCRYPT);
     }
 }
