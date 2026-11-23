@@ -9,7 +9,7 @@
 
 - **官网**：<https://woquan.com.cn>
 - **Gitee 仓库**：<https://gitee.com/aiwoquan/woquan>
-- **在线文档**：<https://yuechou.com.cn/guide/>（持续补充中）
+- **在线文档**：<https://yuechou.com.cn/woquan/>（持续补充中）
 
 ## 项目简介
 
