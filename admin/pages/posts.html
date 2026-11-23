@@ -1,0 +1,70 @@
+        <div id="page-posts" class="hidden">
+            <div class="card">
+                <div class="post-status-tabs" id="post-status-tabs">
+                    <button class="post-status-tab active" data-status="-1" data-action="filter-posts-by-status">全部 <span class="post-status-count" id="post-count-all">0</span></button>
+                    <button class="post-status-tab" data-status="1" data-action="filter-posts-by-status">已发布 <span class="post-status-count" id="post-count-published">0</span></button>
+                    <button class="post-status-tab" data-status="0" data-action="filter-posts-by-status">已下架/受限 <span class="post-status-count" id="post-count-restricted">0</span></button>
+                </div>
+                <div class="search-bar">
+                    <select id="post-category" data-change="load-posts" style="min-width:140px;">
+                        <option value="">全部分类</option>
+                    </select>
+                    <input type="text" id="post-search" placeholder="搜索标题/内容/作者..." data-keydown="enter-posts">
+                    <button class="btn btn-primary" data-action="load-posts">搜索</button>
+                </div>
+                <div id="posts-batch-bar" class="hidden" style="display:flex;gap:8px;margin-bottom:12px;padding:12px;background:var(--notice-bg);border-radius:6px;align-items:center;flex-wrap:wrap;">
+                    <span style="font-size:13px;color:var(--text-secondary);">已选择 <strong id="posts-selected-count">0</strong> 项：</span>
+                    <button class="btn btn-danger" data-action="batch-posts" data-value="delete">批量删除</button>
+                    <button class="btn btn-default" data-action="batch-posts" data-value="hide">批量隐藏</button>
+                    <button class="btn btn-primary" data-action="batch-posts" data-value="show">批量显示</button>
+                    <button class="btn btn-primary" data-action="batch-posts" data-value="pin">批量置顶</button>
+                    <button class="btn btn-default" data-action="batch-posts" data-value="unpin">批量取消置顶</button>
+                    <button class="btn btn-default" data-action="clear-post-selection">取消选择</button>
+                </div>
+                <div class="table-scroll">
+                <table class="table-posts">
+                    <thead><tr><th style="width:32px;"><input type="checkbox" id="post-select-all" data-change="toggle-select-all-posts"></th><th style="width:48px;">ID</th><th style="width:64px;">作者</th><th style="width:64px;">分类</th><th>标题/内容</th><th style="width:58px;">状态</th><th style="width:72px;">置顶</th><th style="width:96px;">发布时间</th><th style="width:160px;">操作</th></tr></thead>
+                    <tbody id="posts-table"></tbody>
+                </table>
+                </div>
+                <div class="pagination" id="posts-pagination"></div>
+            </div>
+
+            <!-- 内容编辑弹窗 -->
+            <div id="post-edit-mask" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;" data-action="close-post-edit-mask">
+                <div style="background:var(--surface-solid);border-radius:8px;padding:24px;width:92%;max-width:640px;max-height:86vh;overflow:auto;">
+                    <h3 style="font-size:16px;margin-bottom:16px;"><i data-icon="plus"></i>编辑动态 <span id="post-edit-id" style="color:var(--text-muted);font-weight:normal;"></span></h3>
+                    <div class="form-group">
+                        <label>标题（留空为无标题）</label>
+                        <input type="text" class="form-input" id="post-edit-title" placeholder="标题">
+                    </div>
+                    <div class="form-group">
+                        <label>分类</label>
+                        <select class="form-input" id="post-edit-category"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>内容</label>
+                        <div style="border:1px solid var(--border);border-radius:6px;padding:8px;background:var(--surface-solid);">
+                            <div id="post-edit-vditor" style="min-height:160px;"></div>
+                            <textarea id="post-edit-content" rows="6" placeholder="动态内容" style="display:none;"></textarea>
+                            <div id="post-edit-media" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
+                            <div style="display:flex;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed #ebeef5;">
+                                <label class="btn btn-default" style="cursor:pointer;margin:0;">
+                                    上传图片
+                                    <input type="file" id="post-edit-image-input" accept="image/*" multiple style="display:none;" data-change="upload-edit-images">
+                                </label>
+                                <label class="btn btn-default" style="cursor:pointer;margin:0;">
+                                    上传视频
+                                    <input type="file" id="post-edit-video-input" accept="video/*" style="display:none;" data-change="upload-edit-videos">
+                                </label>
+                                <span id="post-edit-upload-tip" style="color:var(--text-muted);font-size:12px;line-height:30px;"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:12px;">
+                        <button class="btn btn-primary" data-action="save-post-edit">保存</button>
+                        <button class="btn btn-default" data-action="close-post-edit">取消</button>
+                    </div>
+                </div>
+            </div>
+        </div>

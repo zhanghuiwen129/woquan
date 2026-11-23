@@ -1,0 +1,117 @@
+        <div id="page-realname" class="hidden">
+            <div class="card">
+                <div class="card-head">
+                    <h3><i data-icon="shield-check"></i>核验服务配置</h3>
+                </div>
+                <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">
+                    <div>
+                        <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">启用实名认证</label>
+                        <select id="rn-enabled" class="form-input" style="width:120px;">
+                            <option value="1">开启</option>
+                            <option value="0">关闭</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">服务商</label>
+                        <select id="rn-provider" class="form-input" style="width:200px;" data-change="switch-realname-provider">
+                            <option value="aliyun_market">阿里云（云市场 APPCODE）</option>
+                            <option value="tencent_cloud">腾讯云（API 3.0 签名）</option>
+                            <option value="baidu_cloud">百度智能云（BCE 签名）</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" data-action="save-realname-settings">保存配置</button>
+                </div>
+
+                <!-- 阿里云凭证 -->
+                <div id="rn-creds-aliyun" class="rn-creds" style="margin-top:4px;padding:14px 16px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);">
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;">
+                        <div style="flex:1;min-width:240px;">
+                            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">AppCode（留空则全部转人工审核）</label>
+                            <input id="rn-appcode" class="form-input" type="password" placeholder="阿里云市场 APPCODE" autocomplete="off">
+                        </div>
+                        <div style="flex:1;min-width:260px;">
+                            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">核验接口地址</label>
+                            <input id="rn-apiurl" class="form-input" placeholder="https://idcardcheck.market.alicloudapi.com/idcardCheck">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 腾讯云凭证 -->
+                <div id="rn-creds-tencent" class="rn-creds" style="display:none;margin-top:4px;padding:14px 16px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);">
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;">
+                        <div style="flex:1;min-width:240px;">
+                            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">SecretId</label>
+                            <input id="rn-tc-id" class="form-input" type="password" placeholder="腾讯云 SecretId" autocomplete="off">
+                        </div>
+                        <div style="flex:1;min-width:240px;">
+                            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">SecretKey</label>
+                            <input id="rn-tc-key" class="form-input" type="password" placeholder="腾讯云 SecretKey" autocomplete="off">
+                        </div>
+                        <div style="flex:1;min-width:220px;">
+                            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">Endpoint（host）</label>
+                            <input id="rn-tc-host" class="form-input" placeholder="faceid.tencentcloudapi.com">
+                        </div>
+                        <div style="flex:1;min-width:160px;">
+                            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">Action</label>
+                            <input id="rn-tc-action" class="form-input" placeholder="CheckIdCardInfo">
+                        </div>
+                        <div style="flex:1;min-width:130px;">
+                            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">Version</label>
+                            <input id="rn-tc-version" class="form-input" placeholder="2018-03-01">
+                        </div>
+                        <div style="flex:1;min-width:130px;">
+                            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">Region</label>
+                            <input id="rn-tc-region" class="form-input" placeholder="ap-guangzhou">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 百度云凭证 -->
+                <div id="rn-creds-baidu" class="rn-creds" style="display:none;margin-top:4px;padding:14px 16px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);">
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;">
+                        <div style="flex:1;min-width:240px;">
+                            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">AccessKey(AK)</label>
+                            <input id="rn-bd-ak" class="form-input" type="password" placeholder="百度云 AK" autocomplete="off">
+                        </div>
+                        <div style="flex:1;min-width:240px;">
+                            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">SecretKey(SK)</label>
+                            <input id="rn-bd-sk" class="form-input" type="password" placeholder="百度云 SK" autocomplete="off">
+                        </div>
+                        <div style="flex:1;min-width:220px;">
+                            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">Endpoint（host）</label>
+                            <input id="rn-bd-host" class="form-input" placeholder="face.baidubce.com">
+                        </div>
+                        <div style="flex:1;min-width:220px;">
+                            <label style="font-size:13px;color:var(--text-secondary);display:block;margin-bottom:6px;">请求路径 Path</label>
+                            <input id="rn-bd-path" class="form-input" placeholder="/rest/2.0/face/v4/idcard">
+                        </div>
+                    </div>
+                </div>
+                <p style="font-size:12px;color:var(--text-muted);margin-top:10px;line-height:1.7;">
+                    库内只保存脱敏姓名（如 张*）、脱敏身份证号（如 1****************X）与其哈希，不保存明文；哈希用于「一个身份证只能认证一个账号」的查重。
+                    未配置 AppCode 或服务商返回结果无法确定时，提交会自动转为人工审核。
+                </p>
+            </div>
+
+            <div class="card" style="margin-top:16px;">
+                <div class="card-head">
+                    <h3><i data-icon="shield-check"></i>认证记录</h3>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <select id="rn-status" class="form-input" style="width:130px;" data-change="load-realname">
+                            <option value="">全部状态</option>
+                            <option value="pending">待复核</option>
+                            <option value="verified">已通过</option>
+                            <option value="rejected">未通过</option>
+                            <option value="revoked">已撤销</option>
+                        </select>
+                        <input type="text" class="form-input" id="rn-keyword" placeholder="搜索用户名/昵称" style="width:200px;" data-keydown="enter-realname">
+                        <button class="btn btn-default" data-action="load-realname">搜索</button>
+                    </div>
+                </div>
+                <table>
+                    <thead><tr><th>ID</th><th>用户</th><th>姓名(脱敏)</th><th>身份证(脱敏)</th><th>服务商</th><th>状态</th><th>说明</th><th>提交时间</th><th>操作</th></tr></thead>
+                    <tbody id="rn-table"></tbody>
+                </table>
+                <div id="rn-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;"></div>
+            </div>
+        </div>

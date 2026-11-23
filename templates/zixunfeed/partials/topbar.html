@@ -1,0 +1,23 @@
+<header class="topbar">
+    <div class="topbar-inner">
+        <a class="logo" href="/" data-home>
+            <span class="logo-mark">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+                    <path d="M4 20C8 14 12 10 20 5"/><circle cx="6" cy="18" r="1.6" fill="#fff" stroke="none"/>
+                </svg>
+            </span>
+            <span id="brandName">woquan</span>
+        </a>
+        <label class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input type="text" id="searchInput" placeholder="搜索资讯、话题、作者">
+        </label>
+        <div class="topbar-right">
+            <button class="btn-login" id="loginBtn">登录</button>
+            <span class="topbar-avatar" id="topbarAvatar" style="display:none"><img alt=""></span>
+        </div>
+    </div>
+    <nav class="channel-bar">
+        <div class="channel-inner" id="channelBar"><!--{{SSR_CHANNELS}}--></div>
+    </nav>
+</header>

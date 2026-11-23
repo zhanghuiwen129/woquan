@@ -1,0 +1,19 @@
+# uploads 目录：允许媒体静态显示，禁止脚本执行与可渲染文件（防同源 XSS），附件强制下载
+Options -Indexes -MultiViews
+
+<IfModule mod_mime.c>
+    RemoveHandler .php .phtml .php3 .php4 .php5 .pl .py .cgi .sh .rb
+    RemoveType .php .phtml .php3 .php4 .php5
+</IfModule>
+
+<FilesMatch "(?i)\.(php\d*|phtml|pht|phar|php3|php4|php5|phps|cgi|pl|py|rb|sh|asp|aspx|jsp|jspx|do|action|htaccess|ini|conf|sql|html?|xhtml|shtml|svgz?|xml|xsl|js|mjs|swf|hta)$">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    <IfModule mod_setenvif.c>
+        SetEnvIf Request_URI "uploads/attachments/" HUBLOG_ATTACHMENT=1
+        Header always set Content-Disposition "attachment" env=HUBLOG_ATTACHMENT
+    </IfModule>
+</IfModule>

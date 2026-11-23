@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>一根竿 · 沉浸式信息流预览</title>
+<style>
+  :root{
+    --bg:#F3F5F4;
+    --card:#FFFFFF;
+    --ink:#17211E;
+    --body:#2A3330;
+    --sub:#66726E;
+    --line:#E6EAE8;
+    --brand:#0E7C6B;
+    --brand-soft:#E3F1EE;
+    --accent:#E8833A;
+    --accent-soft:#FBEFE6;
+    --radius:12px;
+    --maxw:1180px;
+    --shadow:0 1px 3px rgba(23,33,30,.06),0 6px 18px rgba(23,33,30,.05);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none}
+  img{display:block;width:100%;height:100%;object-fit:cover}
+  button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
+  input,textarea{font-family:inherit}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  :focus-visible{outline:2px solid var(--brand) !important;outline-offset:2px}
+
+  /* ===================== 顶部导航 ===================== */
+  .topbar{
+    position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .topbar-inner{
+    max-width:var(--maxw);margin:0 auto;padding:10px 16px;
+    display:flex;align-items:center;gap:14px;
+  }
+  .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:19px;letter-spacing:.5px;flex:none}
+  .logo-mark{
+    width:30px;height:30px;border-radius:8px;background:var(--brand);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .logo-mark svg{width:18px;height:18px}
+  .search{
+    flex:1;max-width:340px;display:flex;align-items:center;gap:8px;
+    background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:7px 14px;color:var(--sub);
+  }
+  .search svg{width:16px;height:16px;flex:none}
+  .search input{border:none;background:none;outline:none;flex:1;font-size:14px;color:var(--ink);min-width:0}
+  .search input::placeholder{color:#9AA6A2}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  @media(min-width:768px){
+    .topbar .topbar-inner > .search{flex:0 1 320px;max-width:320px;margin-left:auto}
+    .topbar .topbar-inner > .topbar-right{margin-left:0}
+  }
+  .btn-login{
+    background:var(--brand);color:#fff;font-size:14px;padding:8px 18px;border-radius:20px;white-space:nowrap;
+  }
+  .topbar-avatar{width:34px;height:34px;border-radius:50%;flex:none;display:none;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;background:var(--brand);overflow:hidden}
+  .topbar-avatar img{width:100%;height:100%;object-fit:cover}
+  @media(max-width:767px){.search{display:none}}
+
+  /* ===================== 频道 Tab ===================== */
+  .channel-bar{border-bottom:1px solid var(--line);background:#fff}
+  .channel-inner{
+    max-width:var(--maxw);margin:0 auto;padding:0 16px;
+    display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  }
+  .channel-inner::-webkit-scrollbar{display:none}
+  .channel-tab{
+    flex:none;padding:13px 14px;font-size:15px;color:var(--sub);position:relative;white-space:nowrap;background:none;
+  }
+  .channel-tab.active{color:var(--ink);font-weight:700}
+  .channel-tab.active::after{
+    content:"";position:absolute;left:14px;right:14px;bottom:-1px;height:3px;border-radius:3px;background:var(--brand);
+  }
+
+  /* ===================== 主体布局 ===================== */
+  .wrap{
+    max-width:var(--maxw);margin:0 auto;padding:14px 16px 32px;
+    display:grid;grid-template-columns:minmax(0,1fr);gap:16px;
+  }
+  @media(min-width:960px){
+    .wrap{grid-template-columns:minmax(0,1fr) 320px;gap:20px;padding-top:20px}
+  }
+
+  /* ===================== 首屏轮播 ===================== */
+  .hero{
+    position:relative;border-radius:var(--radius);overflow:hidden;margin-bottom:14px;height:210px;background:var(--line);
+  }
+  @media(min-width:960px){.hero{height:320px}}
+  .hero-slide{position:absolute;inset:0;opacity:0;transition:opacity .5s ease;pointer-events:none}
+  .hero-slide.active{opacity:1;pointer-events:auto}
+  .hero-slide img{width:100%;height:100%;object-fit:cover}
+  .hero-mask{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(0,0,0,.72))}
+  .hero-text{position:absolute;left:16px;right:16px;bottom:16px;color:#fff}
+  .hero-tag{display:inline-block;font-size:12px;background:var(--accent);color:#fff;padding:2px 9px;border-radius:4px;margin-bottom:8px}
+  .hero-title{font-size:18px;font-weight:700;line-height:1.45;max-width:640px;text-shadow:0 1px 4px rgba(0,0,0,.4)}
+  @media(min-width:960px){.hero-title{font-size:24px}}
+  .hero-dots{position:absolute;right:16px;bottom:16px;display:flex;gap:6px}
+  .hero-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.5);cursor:pointer;transition:width .25s}
+  .hero-dot.active{background:#fff;width:18px;border-radius:4px}
+
+  /* ===================== 快讯条 ===================== */
+  .flash{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:11px 14px;display:flex;align-items:center;gap:10px;margin-bottom:14px;
+  }
+  .flash-label{display:flex;align-items:center;gap:5px;color:var(--accent);font-weight:700;font-size:13px;flex:none}
+  .flash-label svg{width:15px;height:15px}
+  .flash-track{overflow:hidden;flex:1;position:relative;height:20px}
+  .flash-text{font-size:14px;color:var(--sub);white-space:nowrap;position:absolute;left:0;top:0;animation:flash 22s linear infinite}
+  @keyframes flash{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+
+  /* ===================== 卡片通用 ===================== */
+  .feed{display:flex;flex-direction:column;gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+  .card-head{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+  .avatar{
+    width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:14px;font-weight:700;background:var(--brand);overflow:hidden;
+  }
+  .avatar img{width:100%;height:100%;object-fit:cover}
+  .author{font-size:14px;font-weight:600}
+  .meta{font-size:12px;color:var(--sub)}
+  .follow{margin-left:auto;flex:none;font-size:13px;color:var(--brand);border:1px solid var(--brand);border-radius:15px;padding:4px 12px;background:none;transition:.15s}
+  .follow.followed{color:var(--sub);border-color:var(--line)}
+  .card-title{font-size:16px;font-weight:700;line-height:1.5;margin-bottom:8px}
+  .card-cover-link{display:block;height:100%}
+  .card-title-link{color:inherit}
+  .card-title-link:hover{color:var(--brand)}
+  @media(min-width:960px){.card-title{font-size:17px}}
+  .card-desc{font-size:14px;color:var(--sub);line-height:1.6;margin-bottom:10px}
+  .card-foot{display:flex;align-items:center;gap:18px;font-size:12px;color:var(--sub)}
+  .card-foot .act{display:flex;align-items:center;gap:5px;cursor:pointer;background:none}
+  .card-foot svg{width:16px;height:16px}
+  .act.liked{color:var(--brand)}
+  .act.collected{color:var(--accent)}
+  .tag{display:inline-block;font-size:12px;color:var(--brand);background:var(--brand-soft);border-radius:4px;padding:2px 8px;margin-right:6px}
+
+  /* 大图卡 */
+  .big-thumb{border-radius:10px;overflow:hidden;margin-bottom:12px;aspect-ratio:16/9;background:var(--line)}
+  /* 左图右文卡 */
+  .side-body{display:flex;gap:12px}
+  .side-thumb{flex:none;width:120px;border-radius:10px;overflow:hidden;aspect-ratio:4/3;background:var(--line)}
+  .side-content{flex:1;min-width:0;display:flex;flex-direction:column}
+  .side-content .card-title{margin-bottom:6px}
+  .side-content .card-foot{margin-top:auto;padding-top:8px}
+  @media(min-width:960px){.side-thumb{width:168px}}
+  /* 视频卡 */
+  .video-thumb{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:16/9;margin-bottom:12px;background:#000}
+  .video-thumb .play{position:absolute;inset:0;margin:auto;width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;pointer-events:none}
+  .video-thumb .play svg{width:24px;height:24px;fill:#fff;margin-left:3px}
+  .duration{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.65);color:#fff;font-size:12px;padding:2px 8px;border-radius:4px}
+
+  /* ===================== 侧边栏 ===================== */
+  .aside{display:none;flex-direction:column;gap:16px}
+  @media(min-width:960px){.aside{display:flex}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .panel-title{font-size:16px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+  .panel-title a{font-size:12px;color:var(--sub);font-weight:400}
+  .rank-list{display:flex;flex-direction:column;gap:13px}
+  .rank-item{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+  .rank-no{flex:none;width:20px;height:20px;border-radius:5px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--sub);background:var(--bg)}
+  .rank-item:nth-child(1) .rank-no,.rank-item:nth-child(2) .rank-no,.rank-item:nth-child(3) .rank-no{background:var(--accent);color:#fff}
+  .rank-text{font-size:14px;line-height:1.45}
+  .rank-hot{font-size:12px;color:var(--sub)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-size:13px;background:var(--bg);border-radius:16px;padding:6px 12px;cursor:pointer;transition:.15s}
+  .chip:hover{background:var(--brand-soft);color:var(--brand)}
+  .aside-author{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .aside-author:last-child{margin-bottom:0}
+  .aside-author .info{flex:1;min-width:0}
+  .aside-author .desc{font-size:12px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* ===================== 底部 Tab =====================
+     资讯主题移动端不设页脚导航：保留 DOM 以维持主题契约，仅隐藏显示。 */
+  .tabbar{
+    position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;border-top:1px solid var(--line);
+    display:none;padding-bottom:env(safe-area-inset-bottom);
+  }
+  .tabbar-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;
+    font-size:11px;color:var(--sub);background:none;
+  }
+  .tabbar-item svg{width:22px;height:22px}
+  .tabbar-item.active{color:var(--brand)}
+  .tabbar-pub{
+    width:46px;height:46px;border-radius:50%;background:var(--brand);color:#fff;
+    display:flex;align-items:center;justify-content:center;margin-top:-22px;box-shadow:0 4px 12px rgba(14,124,107,.35);
+  }
+  .tabbar-pub svg{width:24px;height:24px}
+  @media(min-width:960px){.tabbar{display:none}}
+
+  /* ===================== Toast ===================== */
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(23,33,30,.88);
+    color:#fff;font-size:14px;padding:10px 18px;border-radius:20px;z-index:100;opacity:0;
+    pointer-events:none;transition:opacity .25s;max-width:80vw;text-align:center;
+  }
+  .toast.show{opacity:1}
+
+  .load-more{text-align:center;font-size:13px;color:var(--sub);padding:14px;cursor:pointer}
+  .load-more.no-more{cursor:default}
+  .empty-state{text-align:center;color:var(--sub);padding:48px 16px;font-size:14px}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+  }
+</style>
+</head>
+<body>
+<h1 class="sr-only">一根竿</h1>
+
+<!-- ===== 顶部导航 ===== -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="logo" href="javascript:;" data-toast="一根竿 · 首页">
+      <span class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+          <path d="M4 20C8 14 12 10 20 5"/><circle cx="6" cy="18" r="1.6" fill="#fff" stroke="none"/>
+        </svg>
+      </span>
+      <span id="brandName">一根竿</span>
+    </a>
+    <label class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+      </svg>
+      <input type="text" id="searchInput" placeholder="搜索资讯、话题、作者">
+    </label>
+    <div class="topbar-right">
+      <button class="btn-login" id="loginBtn" data-toast="登录（演示）">登录</button>
+      <span class="topbar-avatar" id="topbarAvatar" style="display:none"><img alt=""></span>
+    </div>
+  </div>
+  <nav class="channel-bar">
+    <div class="channel-inner" id="channelBar">
+      <a class="channel-tab active" data-channel="all" href="javascript:;">推荐</a>
+      <a class="channel-tab" data-channel="hot" href="javascript:;">热点</a>
+      <a class="channel-tab" data-channel="cat:3" href="javascript:;">野钓</a>
+      <a class="channel-tab" data-channel="cat:4" href="javascript:;">路亚</a>
+      <a class="channel-tab" data-channel="cat:5" href="javascript:;">台钓</a>
+      <a class="channel-tab" data-channel="cat:6" href="javascript:;">鱼种</a>
+      <a class="channel-tab" data-channel="cat:7" href="javascript:;">装备</a>
+    </div>
+  </nav>
+</header>
+
+<div class="wrap">
+  <!-- ===== 主信息流 ===== -->
+  <main>
+    <section class="hero" id="hero"></section>
+
+    <section class="flash" id="flash">
+      <span class="flash-label">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>
+        快讯
+      </span>
+      <div class="flash-track"><div class="flash-text" id="flashTrack"></div></div>
+    </section>
+
+    <section class="feed" id="feed"></section>
+    <div class="load-more" id="load-more">上滑加载更多</div>
+  </main>
+
+  <!-- ===== 侧边栏 ===== -->
+  <aside class="aside">
+    <section class="panel">
+      <div class="panel-title">热榜 <a href="javascript:;" id="rankMore" data-toast="查看完整热榜">更多</a></div>
+      <div class="rank-list" id="rankList"></div>
+    </section>
+    <section class="panel">
+      <div class="panel-title">热门话题</div>
+      <div class="chips" id="topicChips"></div>
+    </section>
+    <section class="panel">
+      <div class="panel-title">关注作者</div>
+      <div id="asideAuthors"></div>
+    </section>
+  </aside>
+</div>
+
+<!-- ===== 移动端底部 Tab（真实主题默认隐藏，保留 DOM 契约） ===== -->
+<nav class="tabbar" id="tabbar">
+  <button class="tabbar-item active" data-tab="home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+    首页
+  </button>
+  <button class="tabbar-item" data-tab="video">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5l5 2.5-5 2.5z" fill="currentColor" stroke="none"/></svg>
+    视频
+  </button>
+  <button class="tabbar-pub" data-tab="publish">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+  <button class="tabbar-item" data-tab="messages">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/></svg>
+    消息
+  </button>
+  <button class="tabbar-item" data-tab="me">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></svg>
+    我的
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== 图片素材（已上传，URL 持久） ===== */
+const IMG = {
+  hero:        "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/DGMIbCWygoEvWRxGelHcpaMqnxc",
+  calm:        "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/DYjQb0CJCoiJCvxnv9Fc5WwIn6f",
+  reed:        "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/JapFbukAYoUn0fxuqbccorXVnDg",
+  fisherBack:  "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/YolHb2VNhowWiYxkqetcKZn6ngv",
+  lakeBack:    "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/D0KhbsPuKovu7HxKZfccatMinIe",
+  purple:      "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/Cew1bGDkLo5Kt5xpc2Icf5gUnGd",
+  carp:        "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/Y2wfbpb1aoFE5nxCtB5cX9nJnjb",
+  bucketFish:  "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/AMfZbkU33owAl1xV3HwcX1gbnGc",
+  lure:        "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/X9HqbJndjoT1cBxADttc6sdznKf"
+};
+
+/* ===== 图标（与 ssr.php / feed.js 常量一致） ===== */
+const ICON = {
+  eye:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  clock:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  like:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v10H4V10h3zm0 0l4.2-6a2.4 2.4 0 0 1 3.4 1.6L15 8h3a2 2 0 0 1 2 2.4l-1.7 8A2 2 0 0 1 16.3 20H7"/></svg>',
+  comment: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H4l2-3a8 8 0 1 1 15-5z"/></svg>',
+  star:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>'
+};
+
+/* ===== Feed 数据（type: big 大图 / side 左图右文 / video 视频，与真实卡片节奏一致） ===== */
+const FEED = [
+  {
+    type:"big", channel:"cat:3", tag:"野钓", author:"川北老钓手", avatar:"川", color:"#0E7C6B",
+    time:"2小时前", views:1284, comments:128, likes:346,
+    title:"一斤半大板鲫上岸：冬季守钓浅滩的实战记录，窝料和钓位全记录",
+    desc:"连续三天同一片老塘口，水温下降后鲫鱼扎堆浅滩草边，分享找湾、打窝、调漂的完整过程。",
+    img:IMG.carp
+  },
+  {
+    type:"side", channel:"cat:3", tag:"野钓", author:"水边的阿强", avatar:"水", color:"#2E86AB",
+    time:"3小时前", views:862, comments:86, likes:219,
+    title:"晨雾出钓全攻略：看水色、辨风向、选钓位，新手也能快速下竿",
+    desc:"起雾天鱼口反而活跃，但钓位选择很关键。顺着芦苇边找深浅交界，下竿半小时就见口。",
+    img:IMG.fisherBack
+  },
+  {
+    type:"video", channel:"video", tag:"视频", author:"路亚小课堂", avatar:"路", color:"#7A5EA6",
+    time:"6小时前", views:2310, comments:94, likes:287, duration:"02:47",
+    title:"实拍：清晨路亚翘嘴，三本钩中鱼瞬间拉力拉满",
+    desc:"窗口期六点半到七点半，浮水米诺匀速收线，截口那一记闷顿直接弯弓。",
+    img:IMG.purple
+  },
+  {
+    type:"side", channel:"cat:5", tag:"台钓", author:"静水湖客", avatar:"静", color:"#3E7C59",
+    time:"8小时前", views:615, comments:61, likes:158,
+    title:"森林静水湖探钓：长竿短线守草边，窝料这样配留鱼更久",
+    desc:"湖底草区多，容易挂底，线组放细一号，七星钩配酒米打窝，主攻底层鲫鱼。",
+    img:IMG.lakeBack
+  },
+  {
+    type:"big", channel:"cat:5", tag:"台钓", author:"调漂研究所", avatar:"调", color:"#B5495B",
+    time:"10小时前", views:1980, comments:142, likes:398,
+    title:"秋季湖库钓鲤鱼的线组搭配与调漂思路，大小通吃不跑鱼",
+    desc:"主线、子线、钩号怎么选？走水和静水两种情况分别调几目？一篇讲清楚。",
+    img:IMG.calm
+  },
+  {
+    type:"side", channel:"cat:7", tag:"装备", author:"装备评测室", avatar:"装", color:"#4A6FA5",
+    time:"12小时前", views:788, comments:78, likes:176,
+    title:"新手路亚套装怎么选：竿、轮、饵、线一次讲清，避免交学费",
+    desc:"入门预算两百到五百区间，直柄纺车轮更友好，附常见假饵适用鱼种对照表。",
+    img:IMG.lure
+  },
+  {
+    type:"big", channel:"cat:3", tag:"野钓", author:"芦苇岸边", avatar:"芦", color:"#6B8E23",
+    time:"昨天 21:40", views:552, comments:55, likes:132,
+    title:"芦苇荡里藏大鱼：秋季找湾子、读草缝的选位技巧",
+    desc:"枯草与新草交界、草洞下风向，往往是鲫鱼藏身之处；打窝后先守二十分钟再逗钓。",
+    img:IMG.reed
+  },
+  {
+    type:"side", channel:"cat:6", tag:"鱼种", author:"渔获日记", avatar:"渔", color:"#C26B2E",
+    time:"昨天 18:20", views:1030, comments:203, likes:512,
+    title:"周末渔获合集：30条鲫鱼一盆鲤鱼，老塘口连竿不断",
+    desc:"从上午七点钓到下午三点，中途换了两次饵，发一组当天的鱼获和钓点实拍。",
+    img:IMG.bucketFish
+  }
+];
+
+const HERO = [
+  {img:IMG.hero, tag:"野钓", title:"深秋野钓鲫鱼的三个黄金时段，找准位置比盲目打窝更重要"},
+  {img:IMG.calm, tag:"台钓", title:"秋季湖库守钓鲤鱼：线组、窝料与调漂的完整思路"},
+  {img:IMG.reed, tag:"野钓", title:"芦苇荡草洞作钓指南：找湾读缝，把藏在草里的鱼钓上来"}
+];
+
+const RANKS = [
+  {t:"降温后鲫鱼开口变差？饵料味型这样调", hot:326},
+  {t:"今年秋冬季禁渔期公布，这些水域严禁垂钓", hot:281},
+  {t:"抄网选购避坑：尺寸、网眼、支架怎么挑", hot:214},
+  {t:"野钓遇到走水，铅坠和调漂的应急办法", hot:173},
+  {t:"鲤鱼窝料配方：酒米、玉米、菜籽饼实测对比", hot:152},
+  {t:"黑坑偷驴和正钓有什么区别，新手先去哪类塘", hot:121},
+  {t:"冬季大棚钓鲫鱼，竿长和线号怎么搭配", hot:98},
+  {t:"白条闹窝严重？几招把目标鱼留住", hot:87}
+];
+
+const TOPICS = ["#野钓","#路亚","#台钓","#鱼种","#装备","#渔获分享","#黑坑","#冬季作钓"];
+
+const AUTHORS = [
+  {name:"川北老钓手", desc:"野钓八年 · 12.6万粉丝", color:"#0E7C6B", ch:"川"},
+  {name:"路亚小课堂", desc:"翘嘴鲈鱼作钓视频", color:"#7A5EA6", ch:"路"},
+  {name:"装备评测室", desc:"渔具实测与避坑", color:"#4A6FA5", ch:"装"}
+];
+
+/* ===== 工具 ===== */
+const $ = s => document.querySelector(s);
+let toastTimer;
+function toast(msg){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), 1600);
+}
+
+/* ===== 渲染轮播 ===== */
+let heroIdx = 0;
+function renderHero(){
+  const box = $("#hero");
+  box.innerHTML = HERO.map((h,i)=>`
+    <a class="hero-slide ${i===0?"active":""}" href="javascript:;" data-toast="演示：打开头条详情">
+      <img src="${h.img}" alt="${h.title}" loading="eager">
+      <div class="hero-mask"></div>
+      <div class="hero-text">
+        <span class="hero-tag">${h.tag}</span>
+        <div class="hero-title">${h.title}</div>
+      </div>
+    </a>`).join("") +
+    `<div class="hero-dots">${HERO.map((_,i)=>`<span class="hero-dot ${i===0?"active":""}" data-dot="${i}"></span>`).join("")}</div>`;
+  box.querySelectorAll(".hero-dot").forEach(d=>d.addEventListener("click",e=>{
+    e.stopPropagation(); goHero(+d.dataset.dot);
+  }));
+}
+function goHero(i){
+  heroIdx = i;
+  document.querySelectorAll(".hero-slide").forEach((s,k)=>s.classList.toggle("active",k===i));
+  document.querySelectorAll(".hero-dot").forEach((d,k)=>d.classList.toggle("active",k===i));
+}
+const reduceMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+if(!reduceMotion){
+  setInterval(()=>goHero((heroIdx+1)%HERO.length), 5000);
+}
+
+/* ===== 快讯条 ===== */
+function renderFlash(){
+  const titles = FEED.slice(0,6).map(c=>c.title);
+  $("#flashTrack").textContent = titles.join("　·　");
+}
+
+/* ===== 卡片模板 ===== */
+function cardFoot(c, liked, collected){
+  return `<div class="card-foot">
+    <span class="act read" title="阅读量">${ICON.eye}<span>${c.views}</span></span>
+    <span class="act time" title="发布时间">${ICON.clock}<span>${c.time}</span></span>
+    <span class="act ${liked?"liked":""}" data-like>${ICON.like}<span>${c.likes + (liked?1:0)}</span></span>
+    <span class="act" data-comment>${ICON.comment} ${c.comments}</span>
+    <span class="act ${collected?"collected":""}" data-collect>${ICON.star} 收藏</span>
+  </div>`;
+}
+
+function renderCard(c, idx){
+  const liked = false, collected = false;
+  const head = `
+    <div class="card-head">
+      <span class="avatar" style="background:${c.color}">${c.avatar}</span>
+      <div><div class="author">${c.author}</div><div class="meta">${c.time}</div></div>
+      <button class="follow" data-follow>关注</button>
+    </div>`;
+  const title = `<div class="card-title"><span class="tag">${c.tag}</span><a class="card-title-link" href="javascript:;" data-toast="演示：进入文章详情">${c.title}</a></div>`;
+  const desc = c.desc ? `<div class="card-desc">${c.desc}</div>` : "";
+
+  let body = "";
+  if(c.type==="big"){
+    body = `<div class="big-thumb"><a class="card-cover-link" href="javascript:;" data-toast="演示：进入文章详情"><img src="${c.img}" alt="${c.title}" loading="lazy"></a></div>${title}${desc}${cardFoot(c,liked,collected)}`;
+  }else if(c.type==="side"){
+    body = `<div class="side-body">
+      <div class="side-thumb"><a class="card-cover-link" href="javascript:;" data-toast="演示：进入文章详情"><img src="${c.img}" alt="${c.title}" loading="lazy"></a></div>
+      <div class="side-content">${title}${desc}${cardFoot(c,liked,collected)}</div>
+    </div>`;
+  }else if(c.type==="video"){
+    body = `<div class="video-thumb">
+      <a class="card-cover-link" href="javascript:;" data-toast="演示：播放视频"><img src="${c.img}" alt="${c.title}" loading="lazy"></a>
+      <span class="play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+      <span class="duration">${c.duration}</span>
+    </div>${title}${desc}${cardFoot(c,liked,collected)}`;
+  }
+  return `<article class="card" data-idx="${idx}">${head}${body}</article>`;
+}
+
+/* ===== 渲染 Feed（含筛选） ===== */
+let currentChannel = "all";
+
+function filteredFeed(){
+  if(currentChannel==="all") return FEED;
+  if(currentChannel==="hot") return [...FEED].sort((a,b)=>b.likes-a.likes);
+  return FEED.filter(c=>c.channel===currentChannel);
+}
+
+function renderFeed(reset){
+  const feed = $("#feed");
+  if(reset) feed.innerHTML = "";
+  const list = filteredFeed();
+  if(!list.length){
+    feed.innerHTML = `<div class="empty-state">该频道暂无内容，先看看其他频道吧</div>`;
+    return;
+  }
+  feed.insertAdjacentHTML("beforeend", list.map((c,i)=>renderCard(c,i)).join(""));
+  bindCardActions(feed);
+  const lm = $("#load-more");
+  lm.textContent = "上滑加载更多";
+  lm.classList.remove("no-more");
+}
+
+function bindCardActions(scope){
+  scope.querySelectorAll("[data-like]").forEach(btn=>{
+    btn.onclick = e=>{
+      e.stopPropagation();
+      const on = btn.classList.toggle("liked");
+      const num = btn.querySelector("span");
+      num.textContent = +num.textContent + (on?1:-1);
+    };
+  });
+  scope.querySelectorAll("[data-collect]").forEach(btn=>{
+    btn.onclick = e=>{
+      e.stopPropagation();
+      const on = btn.classList.toggle("collected");
+      toast(on?"已收藏":"已取消收藏");
+    };
+  });
+  scope.querySelectorAll("[data-follow]").forEach(btn=>{
+    btn.onclick = e=>{
+      e.stopPropagation();
+      const on = btn.classList.toggle("followed");
+      btn.textContent = on?"已关注":"关注";
+      if(on) toast("已关注该作者");
+    };
+  });
+}
+
+/* ===== 频道切换 ===== */
+$("#channelBar").addEventListener("click", e=>{
+  const tab = e.target.closest(".channel-tab");
+  if(!tab) return;
+  document.querySelectorAll(".channel-tab").forEach(t=>t.classList.remove("active"));
+  tab.classList.add("active");
+  currentChannel = tab.dataset.channel;
+  renderFeed(true);
+});
+
+/* ===== 侧栏：热榜 / 话题 / 作者 ===== */
+function renderAside(){
+  $("#rankList").innerHTML = RANKS.map((r,i)=>`
+    <a class="rank-item" href="javascript:;" data-toast="演示：打开热榜话题">
+      <span class="rank-no">${i+1}</span>
+      <div><div class="rank-text">${r.t}</div><div class="rank-hot">${r.hot} 赞</div></div>
+    </a>`).join("");
+  $("#topicChips").innerHTML = TOPICS.map(t=>`<a class="chip" href="javascript:;" data-toast="演示：进入话题 ${t}">${t}</a>`).join("");
+  $("#asideAuthors").innerHTML = AUTHORS.map(a=>`
+    <div class="aside-author">
+      <span class="avatar" style="background:${a.color}">${a.ch}</span>
+      <div class="info"><div class="author"><a href="javascript:;" data-toast="演示：查看作者主页">${a.name}</a></div><div class="desc">${a.desc}</div></div>
+      <button class="follow" data-follow>关注</button>
+    </div>`).join("");
+  bindCardActions($("#asideAuthors"));
+}
+
+/* ===== 全局 toast 绑定 ===== */
+document.addEventListener("click", e=>{
+  const el = e.target.closest("[data-toast]");
+  if(el){ e.stopPropagation(); toast(el.dataset.toast); }
+});
+
+/* ===== 加载更多（演示：到底提示） ===== */
+const sentinel = $("#load-more");
+let loaded = false;
+sentinel.addEventListener("click", ()=>{
+  if(loaded) return;
+  loaded = true;
+  sentinel.textContent = "没有更多内容了";
+  sentinel.classList.add("no-more");
+});
+if("IntersectionObserver" in window){
+  const io = new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting && !loaded){
+      loaded = true;
+      sentinel.textContent = "没有更多内容了";
+      sentinel.classList.add("no-more");
+      io.disconnect();
+    }
+  },{rootMargin:"160px"});
+  io.observe(sentinel);
+}
+
+/* ===== 初始化 ===== */
+renderHero();
+renderFlash();
+renderFeed(true);
+renderAside();
+</script>
+</body>
+</html>

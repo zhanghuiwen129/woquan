@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#0E7C6B"/>
+      <stop offset="0.5" stop-color="#0A5048"/>
+      <stop offset="1" stop-color="#06241F"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0.78" cy="0.18" r="0.55">
+      <stop offset="0" stop-color="#39E0C0" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#39E0C0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0.15" cy="0.85" r="0.6">
+      <stop offset="0" stop-color="#0E7C6B" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#0E7C6B" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.04"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5BE3C8"/>
+      <stop offset="1" stop-color="#E8A24A"/>
+    </linearGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+    <pattern id="dots" width="34" height="34" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.4" fill="#FFFFFF" opacity="0.10"/>
+    </pattern>
+  </defs>
+
+  <rect width="800" height="1200" fill="url(#bg)"/>
+  <rect width="800" height="1200" fill="url(#glowA)"/>
+  <rect width="800" height="1200" fill="url(#glowB)"/>
+  <rect width="800" height="1200" fill="url(#dots)"/>
+
+  <!-- 抽象信息流卡片 -->
+  <g transform="translate(150 430)">
+    <rect x="0" y="0" width="420" height="120" rx="20" fill="url(#card)" stroke="#FFFFFF" stroke-opacity="0.22"/>
+    <rect x="24" y="30" width="60" height="60" rx="14" fill="#5BE3C8" opacity="0.55"/>
+    <rect x="104" y="36" width="220" height="14" rx="7" fill="#FFFFFF" opacity="0.75"/>
+    <rect x="104" y="62" width="280" height="10" rx="5" fill="#FFFFFF" opacity="0.30"/>
+    <rect x="104" y="80" width="180" height="10" rx="5" fill="#FFFFFF" opacity="0.22"/>
+
+    <rect x="40" y="160" width="420" height="120" rx="20" fill="url(#card)" stroke="#FFFFFF" stroke-opacity="0.22"/>
+    <rect x="64" y="190" width="60" height="60" rx="14" fill="#E8A24A" opacity="0.55"/>
+    <rect x="144" y="196" width="240" height="14" rx="7" fill="#FFFFFF" opacity="0.75"/>
+    <rect x="144" y="222" width="290" height="10" rx="5" fill="#FFFFFF" opacity="0.30"/>
+    <rect x="144" y="240" width="160" height="10" rx="5" fill="#FFFFFF" opacity="0.22"/>
+
+    <rect x="80" y="320" width="420" height="120" rx="20" fill="url(#card)" stroke="#FFFFFF" stroke-opacity="0.22"/>
+    <rect x="104" y="350" width="60" height="60" rx="14" fill="#7FD3C0" opacity="0.55"/>
+    <rect x="184" y="356" width="200" height="14" rx="7" fill="#FFFFFF" opacity="0.75"/>
+    <rect x="184" y="382" width="270" height="10" rx="5" fill="#FFFFFF" opacity="0.30"/>
+    <rect x="184" y="400" width="150" height="10" rx="5" fill="#FFFFFF" opacity="0.22"/>
+  </g>
+
+  <!-- 社群节点连线 -->
+  <g stroke="url(#accent)" stroke-width="2" opacity="0.5" fill="none">
+    <path d="M250 250 L420 180 L600 250 L470 330 Z"/>
+    <path d="M420 180 L520 90"/>
+  </g>
+  <g fill="#FFFFFF">
+    <circle cx="250" cy="250" r="9" opacity="0.9"/>
+    <circle cx="420" cy="180" r="11" opacity="0.95"/>
+    <circle cx="600" cy="250" r="9" opacity="0.9"/>
+    <circle cx="470" cy="330" r="8" opacity="0.85"/>
+    <circle cx="520" cy="90" r="7" opacity="0.8"/>
+  </g>
+  <circle cx="420" cy="180" r="26" fill="url(#accent)" opacity="0.18" filter="url(#soft)"/>
+
+  <!-- 底部柔光 -->
+  <ellipse cx="400" cy="1180" rx="420" ry="120" fill="#39E0C0" opacity="0.10" filter="url(#soft)"/>
+</svg>

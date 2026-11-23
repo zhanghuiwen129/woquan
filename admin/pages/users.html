@@ -1,0 +1,51 @@
+        <div id="page-users" class="hidden">
+            <div class="card">
+                <div class="card-head"><h3><i data-icon="users"></i>用户列表</h3></div>
+                <div class="search-bar">
+                    <input type="text" id="user-search" placeholder="搜索用户名/昵称/邮箱..." data-keydown="enter-users">
+                    <button class="btn btn-primary" data-action="load-users">搜索</button>
+                </div>
+                <table>
+                    <thead><tr><th>ID</th><th>用户名</th><th>昵称</th><th>角色</th><th>状态</th><th>注册时间</th><th>操作</th></tr></thead>
+                    <tbody id="users-table"></tbody>
+                </table>
+                <div class="pagination" id="users-pagination"></div>
+            </div>
+
+            <!-- 编辑用户弹窗 -->
+            <div id="user-edit-mask" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;" data-action="close-user-edit-mask">
+                <div style="background:var(--surface-solid);border-radius:8px;padding:24px;width:92%;max-width:460px;max-height:86vh;overflow:auto;">
+                    <h3 style="font-size:16px;margin-bottom:16px;"><i data-icon="users"></i>编辑用户 <span id="user-edit-id" style="color:var(--text-muted);font-weight:normal;"></span></h3>
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" class="form-input" id="user-edit-username" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>昵称</label>
+                        <input type="text" class="form-input" id="user-edit-nickname" placeholder="昵称">
+                    </div>
+                    <div class="form-group">
+                        <label>角色</label>
+                        <select class="form-input" id="user-edit-role">
+                            <option value="user">用户</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>状态</label>
+                        <select class="form-input" id="user-edit-status">
+                            <option value="1">正常</option>
+                            <option value="0">禁用</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>重置密码（留空不修改，至少 6 位）</label>
+                        <input type="text" class="form-input" id="user-edit-password" placeholder="新密码" autocomplete="new-password">
+                    </div>
+                    <div style="display:flex;gap:12px;">
+                        <button class="btn btn-primary" data-action="save-user-edit">保存</button>
+                        <button class="btn btn-default" data-action="close-user-edit">取消</button>
+                    </div>
+                </div>
+            </div>
+        </div>

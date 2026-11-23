@@ -1,0 +1,28 @@
+{
+    "generated_at": "2026-11-21T00:39:24+08:00",
+    "note": "G5 历史差异基线：门禁只拦 allowed_missing 之外的新增缺失，差异数只减不增。存量补齐后请重新执行 php scripts/check_route_docs.php --write-baseline 并人工评审。",
+    "baseline_count": 19,
+    "route_count": 416,
+    "openapi_path_count": 349,
+    "allowed_missing": [
+        "GET /api/admin/appcenter/app",
+        "GET /api/admin/appcenter/apps",
+        "GET /api/admin/appcenter/baselines",
+        "GET /api/admin/appcenter/config",
+        "GET /api/admin/appcenter/installed",
+        "GET /api/admin/appcenter/licenses",
+        "GET /api/admin/appcenter/ping",
+        "GET /api/admin/appcenter/verify",
+        "GET /api/health",
+        "GET /metrics",
+        "POST /api/admin/appcenter/activate",
+        "POST /api/admin/appcenter/baseline",
+        "POST /api/admin/appcenter/baseline/delete",
+        "POST /api/admin/appcenter/check-updates",
+        "POST /api/admin/appcenter/config",
+        "POST /api/admin/appcenter/install",
+        "POST /api/admin/appcenter/register",
+        "POST /api/admin/appcenter/uninstall",
+        "POST /api/cron/circle-subscribes"
+    ]
+}

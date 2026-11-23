@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的收藏 · 赛博博客 SHAIBOBLOG</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2300e5ff' d='M12 2l8.66 5v10L12 22l-8.66-5V7z'/%3E%3C/svg%3E">
+<style>
+:root{
+  --primary:#00e5ff; --primary-dark:#00b8d4; --primary-light:#66f0ff;
+  --bg:#0d1321; --card-bg:#131c2e; --panel:#101827; --text:#e6f1ff; --text-secondary:#8aa0bf;
+  --border:#24334d; --link:#5ee7ff; --danger:#ff4d6d; --magenta:#ff2d95;
+  --grid:rgba(0,229,255,.055); --glow:0 0 14px rgba(0,229,255,.22);
+  --font-mono:'JetBrains Mono','SF Mono',Consolas,'Courier New',monospace;
+  --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',Helvetica,Arial,sans-serif;
+  background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:42px 42px;background-attachment:fixed;
+  color:var(--text);line-height:1.6;min-height:100vh;
+}
+::selection{background:rgba(0,229,255,.32);color:#fff}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,229,255,.25);border-radius:8px}
+a{color:var(--link);text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+svg{display:block}
+
+.topbar{position:sticky;top:0;z-index:50;background:rgba(13,19,33,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:20px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-mark{width:30px;height:30px;flex-shrink:0}
+.brand-name{font-weight:700;font-size:17px;letter-spacing:.5px;white-space:nowrap}
+.brand-name em{font-style:normal;color:var(--primary);font-family:var(--font-mono);font-size:12px;margin-left:6px}
+.main-nav{display:flex;gap:4px;margin-left:auto}
+.main-nav a{padding:8px 12px;border-radius:9px;color:var(--text-secondary);font-size:14px}
+.main-nav a.active,.main-nav a:hover{color:var(--primary);background:rgba(0,229,255,.08)}
+.nav-search{display:none}
+.nav-search input{width:180px;padding:9px 12px;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;outline:none}
+@media(min-width:900px){.nav-search{display:block}}
+
+.page-head{max-width:1280px;margin:24px auto 0;padding:0 20px}
+.breadcrumb{font-size:13px;color:var(--text-secondary);margin-bottom:14px}
+.breadcrumb a:hover{color:var(--primary)}
+.page-head h1{font-size:28px;line-height:1.3;margin-bottom:8px}
+.page-head .head-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:var(--text-secondary);font-size:13px}
+.head-meta .count{font-family:var(--font-mono);color:var(--primary)}
+.auth-hint{margin-top:12px;font-size:13px;color:var(--text-secondary);background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.18);border-radius:10px;padding:10px 14px}
+
+.layout{max-width:1280px;margin:0 auto;padding:24px 20px;display:grid;gap:28px;grid-template-columns:1fr}
+.side-left,.side-right{display:none}
+.article-list{min-width:0;display:flex;flex-direction:column;gap:18px}
+@media(min-width:768px){
+  .layout{grid-template-columns:220px 1fr}
+  .side-left{display:block}
+}
+@media(min-width:1024px){
+  .layout{grid-template-columns:232px 1fr 264px}
+  .side-right{display:block}
+}
+
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.card-title{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12px;letter-spacing:1.6px;color:var(--text-secondary);margin-bottom:12px}
+.card-title .icon{width:17px;height:17px;color:var(--primary)}
+
+.side-list{list-style:none;display:flex;flex-direction:column}
+.side-list li a{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;color:var(--text);font-size:14px;border:1px solid transparent}
+.side-list li a.active,.side-list li a:hover{background:rgba(0,229,255,.08);color:var(--primary)}
+.side-list .count{margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--text-secondary)}
+.about-text{font-size:13px;color:var(--text-secondary)}
+.recent-item{display:block;padding:9px 0;border-bottom:1px solid var(--border)}
+.recent-item:last-child{border-bottom:none}
+.recent-item .t{font-size:14px;color:var(--text);display:block;margin-bottom:3px}
+.recent-item .t:hover{color:var(--link)}
+.recent-item .d{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary)}
+
+.tag-cloud{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;font-family:var(--font-mono);font-size:12px;color:var(--primary);background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.22);padding:4px 10px;border-radius:8px}
+
+.post{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:22px;transition:border-color .2s}
+.post:hover{border-color:rgba(0,229,255,.35);box-shadow:var(--glow)}
+.post-meta{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.cat-chip{font-family:var(--font-mono);font-size:11px;letter-spacing:.5px;color:var(--primary);background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.25);padding:2px 9px;border-radius:6px}
+.save-badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:11px;letter-spacing:.5px;color:var(--primary);background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.25);padding:2px 9px;border-radius:6px}
+.save-badge .icon{width:13px;height:13px}
+.post-date{font-family:var(--font-mono);font-size:12px;color:var(--text-secondary)}
+.post h3{font-size:18px;line-height:1.4;margin-bottom:8px}
+.post h3 a{color:var(--text)}
+.post h3 a:hover{color:var(--link)}
+.excerpt{font-size:14px;color:var(--text-secondary);margin-bottom:14px}
+.post-row{display:flex;gap:18px;min-width:0}
+.post-row .text{flex:1;min-width:0}
+.post-thumb{width:180px;flex-shrink:0;border-radius:12px;overflow:hidden;border:1px solid var(--border);display:block}
+.post-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+@media(max-width:600px){
+  .post-row{flex-direction:column}
+  .post-thumb{width:100%;height:150px}
+}
+.post-foot{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:14px}
+.meta-item{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary)}
+.meta-item .icon{width:15px;height:15px}
+.post-tags{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 14px;border-radius:10px;font-size:13px;background:rgba(255,255,255,.05);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:rgba(0,229,255,.35);color:var(--primary)}
+
+.site-footer{border-top:1px solid var(--border);margin-top:28px;padding:24px 20px;text-align:center;color:var(--text-secondary);font-family:var(--font-mono);font-size:11px;letter-spacing:.4px}
+.site-footer .links{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin-bottom:10px}
+
+.toast{position:fixed;left:50%;bottom:64px;transform:translateX(-50%) translateY(8px);background:var(--card-bg);border:1px solid var(--primary);color:var(--text);padding:10px 16px;border-radius:10px;font-size:13px;box-shadow:var(--glow);opacity:0;pointer-events:none;transition:all .25s;z-index:100}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:767px){
+  .layout{padding:16px 12px;gap:16px}
+  .page-head h1{font-size:23px}
+  .topbar-inner{flex-wrap:wrap;gap:10px}
+  .main-nav{order:3;width:100%;overflow-x:auto;gap:2px;margin-left:0}
+  .main-nav a{white-space:nowrap;flex-shrink:0;padding:8px 10px;font-size:13px}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="1.6" stroke-linejoin="round">
+        <path d="M12 2l8.66 5v10L12 22l-8.66-5V7z" fill="rgba(0,229,255,.12)"/>
+        <circle cx="12" cy="12" r="3" fill="#00e5ff"/>
+      </svg>
+      <div class="brand-name">赛博博客<em>SHAIBOBLOG</em></div>
+    </div>
+    <nav class="main-nav" aria-label="主导航">
+      <a href="赛博博客主题预览.html">首页</a>
+      <a href="赛博博客主题预览.html">文章</a>
+      <a href="分类页预览.html">分类</a>
+      <a href="话题页预览.html">标签</a>
+      <a href="javascript:void(0)">关于</a>
+    </nav>
+    <div class="nav-search">
+      <input type="search" placeholder="搜索文章…" aria-label="搜索文章" id="site-search">
+    </div>
+  </div>
+</header>
+
+<section class="page-head">
+  <nav class="breadcrumb" aria-label="面包屑">
+    <a href="赛博博客主题预览.html">首页</a> / 我的收藏
+  </nav>
+  <h1>我的收藏</h1>
+  <div class="head-meta">
+    <span>共 <span class="count">3</span> 篇收藏文章</span>
+  </div>
+  <div class="auth-hint">收藏内容仅自己可见，需登录后查看；在文章页点击书签即可加入收藏。</div>
+</section>
+
+<div class="layout">
+
+  <aside class="side-left">
+    <div class="card">
+      <h4 class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>文章分类</h4>
+      <ul class="side-list">
+        <li><a href="分类页预览.html">路亚随笔<span class="count">12</span></a></li>
+        <li><a href="javascript:void(0)">装备测评<span class="count">8</span></a></li>
+        <li><a href="话题页预览.html">夜钓笔记<span class="count">6</span></a></li>
+        <li><a href="javascript:void(0)">钓鱼问答<span class="count">15</span></a></li>
+        <li><a href="javascript:void(0)">行程记录<span class="count">4</span></a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="article-list">
+
+    <article class="post">
+      <div class="post-meta">
+        <span class="save-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>已收藏</span>
+        <span class="cat-chip">装备测评</span>
+        <span class="post-date">2026-11-12 收藏</span>
+      </div>
+      <div class="post-row">
+        <div class="text">
+          <h3><a href="文章详情页预览.html">五百元预算内，新手第一根竿怎么选</a></h3>
+          <p class="excerpt">直柄纺车与枪柄水滴各自的上手门槛、适用场景和常见坑点，结合马口、小翘嘴这类淡水目标鱼，给新手一份务实的选购参考。</p>
+        </div>
+        <a class="post-thumb" href="文章详情页预览.html" aria-label="查看文章">
+          <img src="assets/thumb-gear.jpg" alt="路亚竿与水滴轮静物" loading="lazy">
+        </a>
+      </div>
+      <div class="post-foot">
+        <span class="meta-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>山涧</span>
+        <span class="meta-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>阅读 4 分钟</span>
+        <div class="post-tags">
+          <span class="chip">装备</span><span class="chip">新手</span>
+        </div>
+        <button class="btn-ghost" type="button" onclick="toast('演示预览页，未接入取消收藏')">取消收藏</button>
+      </div>
+    </article>
+
+    <article class="post">
+      <div class="post-meta">
+        <span class="save-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>已收藏</span>
+        <span class="cat-chip">路亚随笔</span>
+        <span class="post-date">2026-11-12 收藏</span>
+      </div>
+      <div class="post-row">
+        <div class="text">
+          <h3><a href="文章详情页预览.html">秋季傍晚的湖畔，一口黑鲈咬钩了</a></h3>
+          <p class="excerpt">入秋后水温回落，北岸芦苇边的标点重新成了热区。这篇记录最近三个晚口时段的作钓思路、线组搭配与装备调整，也整理了几个容易被忽略的细节。</p>
+        </div>
+        <a class="post-thumb" href="文章详情页预览.html" aria-label="查看文章">
+          <img src="assets/cover-lake.jpg" alt="秋季傍晚的湖畔作钓场景" loading="lazy">
+        </a>
+      </div>
+      <div class="post-foot">
+        <span class="meta-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>深空钓友</span>
+        <span class="meta-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>阅读 6 分钟</span>
+        <div class="post-tags">
+          <span class="chip">路亚</span><span class="chip">黑鲈</span>
+        </div>
+        <button class="btn-ghost" type="button" onclick="toast('演示预览页，未接入取消收藏')">取消收藏</button>
+      </div>
+    </article>
+
+    <article class="post">
+      <div class="post-meta">
+        <span class="save-badge"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>已收藏</span>
+        <span class="cat-chip">夜钓笔记</span>
+        <span class="post-date">2026-11-11 收藏</span>
+      </div>
+      <div class="post-row">
+        <div class="text">
+          <h3><a href="文章详情页预览.html">城市夜钓的灯光与站位选择</a></h3>
+          <p class="excerpt">夜晚视线受限，灯光位置、岸边站位与抛投路线比白天更讲究。整理一份从选位到收竿的夜钓清单，避免到站了才发现站位不行。</p>
+        </div>
+        <a class="post-thumb" href="文章详情页预览.html" aria-label="查看文章">
+          <img src="assets/thumb-night.jpg" alt="城市水岸夜钓夜景" loading="lazy">
+        </a>
+      </div>
+      <div class="post-foot">
+        <span class="meta-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>北岛</span>
+        <span class="meta-item"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>阅读 5 分钟</span>
+        <div class="post-tags">
+          <span class="chip">夜钓</span><span class="chip">站位</span>
+        </div>
+        <button class="btn-ghost" type="button" onclick="toast('演示预览页，未接入取消收藏')">取消收藏</button>
+      </div>
+    </article>
+  </main>
+
+  <aside class="side-right">
+    <div class="card">
+      <h4 class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>关于本站</h4>
+      <p class="about-text">深空钓友的个人博客，记录路亚、夜钓与装备心得，偶尔写点技术笔记。文章长期沉淀，欢迎按分类与标签检索。</p>
+    </div>
+    <div class="card">
+      <h4 class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>最新文章</h4>
+      <a class="recent-item" href="文章详情页预览.html"><span class="t">秋季傍晚的湖畔，一口黑鲈咬钩了</span><span class="d">2026-11-12</span></a>
+      <a class="recent-item" href="javascript:void(0)" onclick="toast('演示预览页')"><span class="t">五百元预算内，新手第一根竿怎么选</span><span class="d">2026-11-12</span></a>
+      <a class="recent-item" href="话题页预览.html"><span class="t">城市夜钓的灯光与站位选择</span><span class="d">2026-11-11</span></a>
+    </div>
+    <div class="card">
+      <h4 class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>标签云</h4>
+      <div class="tag-cloud">
+        <span class="chip">路亚</span><span class="chip">黑鲈</span><span class="chip">夜钓</span><span class="chip">装备</span><span class="chip">新手</span><span class="chip">秋季</span><span class="chip">标点</span><span class="chip">线组</span>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<footer class="site-footer">
+  <div class="links">
+    <a href="赛博博客主题预览.html">返回首页</a>
+    <a href="javascript:void(0)">归档</a>
+    <a href="javascript:void(0)">友情链接</a>
+  </div>
+  <div>© <span id="year">2026</span> 赛博博客 SHAIBOBLOG · 主题预览稿，页面数据均为示例 · 不代表线上真实内容</div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  document.querySelectorAll('.main-nav a').forEach(function(a){
+    a.addEventListener('click', function(){
+      document.querySelectorAll('.main-nav a').forEach(function(n){ n.classList.remove('active'); });
+      a.classList.add('active');
+    });
+  });
+
+  var search = document.getElementById('site-search');
+  search.addEventListener('keydown', function(e){
+    if (e.key === 'Enter') { location.href = '搜索页预览.html'; }
+  });
+
+  var toastEl = document.getElementById('toast');
+  var timer = null;
+  window.toast = function(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(timer);
+    timer = setTimeout(function(){ toastEl.classList.remove('show'); }, 1600);
+  };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="{{PAGE_DESCRIPTION}}">
+<meta name="keywords" content="{{PAGE_KEYWORDS}}">
+<title>{{PAGE_TITLE}}</title>
+<link rel="stylesheet" href="assets/css/style.css?v=20261116.16">
+<link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+<script>
+window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/';
+window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+</script>
+</head>
+<body class="page-following">
+<h1 class="sr-only">关注</h1>
+
+<!-- @include partials/topbar.html -->
+
+<main class="page-main">
+  <section class="page-head">
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="{{PAGE_BASE}}/" data-home>首页</a><span>/</span><span>关注</span>
+    </nav>
+    <span class="page-kicker">// FOLLOWING</span>
+    <h1>关注</h1>
+    <p>你关注的作者与同好。</p>
+  </section>
+
+  <div class="blog-layout">
+    <aside class="side side-left">
+      <!-- @include partials/side-left.html -->
+    </aside>
+
+    <section class="content-col">
+      <div class="user-list" id="plList"><div class="empty-state">加载中…</div></div>
+      <div class="load-more" id="plMore" style="display:none">加载更多</div>
+    </section>
+
+    <aside class="side side-right">
+      <!-- @include partials/side-right.html -->
+    </aside>
+  </div>
+</main>
+
+<!-- @include partials/footer.html -->
+
+<!-- @include partials/tabbar.html -->
+
+<!-- @include partials/page-tail.html -->
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

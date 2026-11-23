@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>个人主页 · 一根竿</title>
+<style>
+  :root{
+    --bg:#F3F5F4;--card:#FFF;--ink:#17211E;--sub:#66726E;--line:#E6EAE8;
+    --brand:#0E7C6B;--brand-soft:#E3F1EE;--accent:#E8833A;--radius:12px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+  button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
+  img{display:block;width:100%;height:100%;object-fit:cover}
+
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topbar-inner{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
+  .back-btn{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .back-btn svg{width:20px;height:20px}
+  .topbar-title{font-size:16px;font-weight:600}
+  .topbar-right{margin-left:auto;display:flex;gap:10px}
+  .icon-btn{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .icon-btn svg{width:20px;height:20px}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:16px 16px 96px;display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:960px){.wrap{grid-template-columns:minmax(0,1fr) 300px;gap:20px}}
+
+  /* 资料卡 */
+  .profile{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px 18px}
+  .profile-top{display:flex;gap:18px;align-items:center}
+  .avatar-lg{width:76px;height:76px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:700;background:var(--brand)}
+  .profile-info{flex:1;min-width:0}
+  .profile-name{font-size:20px;font-weight:700;margin-bottom:4px}
+  .profile-bio{font-size:13px;color:var(--sub);margin-bottom:6px}
+  .profile-meta{font-size:12px;color:var(--sub);display:flex;gap:14px;flex-wrap:wrap}
+  .profile-actions{display:flex;gap:10px;flex:none}
+  .btn-primary{background:var(--brand);color:#fff;font-size:14px;padding:8px 20px;border-radius:18px}
+  .btn-ghost{font-size:14px;color:var(--sub);border:1px solid var(--line);padding:8px 18px;border-radius:18px}
+  .btn-primary.followed{background:var(--bg);color:var(--sub)}
+
+  .stats{display:flex;margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+  .stat{flex:1;text-align:center}
+  .stat b{display:block;font-size:19px;font-weight:700}
+  .stat span{font-size:12px;color:var(--sub)}
+
+  /* Tab */
+  .tabs{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);display:flex;margin-top:16px}
+  .tab{flex:1;text-align:center;font-size:14px;color:var(--sub);padding:13px 0;position:relative}
+  .tab.active{color:var(--ink);font-weight:700}
+  .tab.active::after{content:"";position:absolute;left:20%;right:20%;bottom:-1px;height:3px;border-radius:3px;background:var(--brand)}
+
+  /* 作品网格 */
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:14px}
+  @media(min-width:600px){.grid{grid-template-columns:repeat(3,1fr)}}
+  .work{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;cursor:pointer}
+  .work-thumb{aspect-ratio:16/10;overflow:hidden}
+  .work-info{padding:11px 12px}
+  .work-title{font-size:14px;font-weight:600;line-height:1.5;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .work-meta{font-size:12px;color:var(--sub);display:flex;gap:10px}
+
+  .empty{grid-column:1/-1;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:50px 20px;text-align:center;color:var(--sub);font-size:14px}
+
+  /* 侧栏 */
+  .aside{display:none;flex-direction:column;gap:16px}
+  @media(min-width:960px){.aside{display:flex}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .panel-title{font-size:16px;font-weight:700;margin-bottom:12px}
+  .badge-list{display:flex;flex-wrap:wrap;gap:8px}
+  .badge{font-size:12px;background:var(--brand-soft);color:var(--brand);border-radius:12px;padding:5px 10px}
+  .about-line{font-size:13px;color:var(--sub);margin-bottom:8px}
+  .about-line b{color:var(--ink)}
+
+  .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;border-top:1px solid var(--line);display:flex}
+  .tabbar-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;font-size:11px;color:var(--sub)}
+  .tabbar-item svg{width:22px;height:22px}
+  .tabbar-item.active{color:var(--brand)}
+  @media(min-width:960px){.tabbar{display:none}}
+
+  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:rgba(23,33,30,.88);color:#fff;font-size:14px;padding:10px 18px;border-radius:20px;z-index:100;opacity:0;pointer-events:none;transition:opacity .25s}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <button class="back-btn" data-toast="返回上一页（演示）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <span class="topbar-title">个人主页</span>
+    <div class="topbar-right">
+      <button class="icon-btn" data-toast="设置（演示）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5h.1a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <main>
+    <section class="profile">
+      <div class="profile-top">
+        <span class="avatar-lg">川</span>
+        <div class="profile-info">
+          <div class="profile-name">川北老钓手</div>
+          <div class="profile-bio">野钓八年，专注川东塘库鲫鱼作钓，记录真实渔获与钓位经验。</div>
+          <div class="profile-meta"><span>四川 · 达州</span><span>加入于 2021-05</span></div>
+        </div>
+        <div class="profile-actions">
+          <button class="btn-ghost" data-toast="发私信（演示）">私信</button>
+          <button class="btn-primary" data-follow>关注</button>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>186</b><span>文章</span></div>
+        <div class="stat"><b>2.4万</b><span>获赞</span></div>
+        <div class="stat"><b>932</b><span>收藏</span></div>
+        <div class="stat"><b>8.7万</b><span>粉丝</span></div>
+        <div class="stat"><b>216</b><span>关注</span></div>
+      </div>
+    </section>
+
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-tab="works">作品</button>
+      <button class="tab" data-tab="favs">收藏</button>
+      <button class="tab" data-tab="likes">赞过</button>
+      <button class="tab" data-tab="comments">评论</button>
+    </nav>
+
+    <section class="grid" id="grid"></section>
+  </main>
+
+  <aside class="aside">
+    <section class="panel">
+      <div class="panel-title">简介</div>
+      <div class="about-line"><b>常钓水域：</b>州河、明月湖周边塘口</div>
+      <div class="about-line"><b>主攻鱼种：</b>鲫鱼、鲤鱼、翘嘴</div>
+      <div class="about-line"><b>作钓方式：</b>台钓为主，兼玩路亚</div>
+    </section>
+    <section class="panel">
+      <div class="panel-title">成就标签</div>
+      <div class="badge-list">
+        <span class="badge">年度创作者</span><span class="badge">野钓达人</span>
+        <span class="badge">万赞作者</span><span class="badge">优质内容</span>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<nav class="tabbar">
+  <button class="tabbar-item" data-toast="首页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>首页</button>
+  <button class="tabbar-item" data-toast="视频（演示）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5l5 2.5-5 2.5z" fill="currentColor" stroke="none"/></svg>视频</button>
+  <button class="tabbar-item" data-toast="消息（演示）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/></svg>消息</button>
+  <button class="tabbar-item active" data-toast="我的"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></svg>我的</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const IMG={
+  carp:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/Y2wfbpb1aoFE5nxCtB5cX9nJnjb",
+  calm:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/DYjQb0CJCoiJCvxnv9Fc5WwIn6f",
+  reed:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/JapFbukAYoUn0fxuqbccorXVnDg",
+  fisherBack:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/YolHb2VNhowWiYxkqetcKZn6ngv",
+  lakeBack:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/D0KhbsPuKovu7HxKZfccatMinIe",
+  three:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/AC5kbXKWZoVmI5xnlNPcgzBInHd",
+  lure:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/X9HqbJndjoT1cBxADttc6sdznKf"
+};
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+let t;function toast(m){const el=$("#toast");el.textContent=m;el.classList.add("show");clearTimeout(t);t=setTimeout(()=>el.classList.remove("show"),1600)}
+
+const DATA={
+  works:[
+    {img:IMG.carp,title:"一斤半大板鲫上岸：冬季守钓浅滩的实战记录",likes:346,comments:128},
+    {img:IMG.calm,title:"秋季湖库钓鲤鱼的线组搭配与调漂思路",likes:398,comments:142},
+    {img:IMG.reed,title:"芦苇荡里藏大鱼：秋季找湾子、读草缝技巧",likes:132,comments:55},
+    {img:IMG.fisherBack,title:"晨雾出钓全攻略：看水色、辨风向、选钓位",likes:219,comments:86},
+    {img:IMG.lakeBack,title:"森林静水湖探钓：长竿短线守草边窝料搭配",likes:158,comments:61},
+    {img:IMG.three,title:"周末渔获合集：30条鲫鱼一盆鲤鱼连竿不断",likes:512,comments:203}
+  ],
+  favs:[
+    {img:IMG.lure,title:"新手路亚套装怎么选：竿轮饵线一次讲清",likes:176,comments:78},
+    {img:IMG.calm,title:"野钓遇到走水，铅坠和调漂的应急办法",likes:264,comments:97}
+  ],
+  likes:[
+    {img:IMG.reed,title:"草洞钓鲫鱼，打窝后先守二十分钟再逗钓",likes:89,comments:31},
+    {img:IMG.fisherBack,title:"起雾天鱼口活跃，深浅交界最好下竿",likes:154,comments:48}
+  ],
+  comments:[]
+};
+
+function render(tab){
+  const grid=$("#grid");
+  const list=DATA[tab];
+  if(!list.length){
+    grid.innerHTML=`<div class="empty">暂无内容</div>`;return;
+  }
+  grid.innerHTML=list.map(w=>`
+    <article class="work">
+      <div class="work-thumb"><img src="${w.img}" alt="${w.title}" loading="lazy"></div>
+      <div class="work-info">
+        <div class="work-title">${w.title}</div>
+        <div class="work-meta"><span>赞 ${w.likes}</span><span>评论 ${w.comments}</span></div>
+      </div>
+    </article>`).join("");
+}
+render("works");
+
+$("#tabs").addEventListener("click",e=>{
+  const tab=e.target.closest(".tab");if(!tab)return;
+  $$(".tab").forEach(x=>x.classList.remove("active"));tab.classList.add("active");
+  render(tab.dataset.tab);
+});
+
+$$("[data-follow]").forEach(btn=>{
+  btn.onclick=()=>{const on=btn.classList.toggle("followed");btn.textContent=on?"已关注":"关注";if(on)toast("已关注");};
+});
+document.addEventListener("click",e=>{const el=e.target.closest("[data-toast]");if(el){e.stopPropagation();toast(el.dataset.toast);}});
+</script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+# ============================================================
+# Hublog Caddy v2 配置
+# 用法：将本文件放到 Caddy 配置目录，或通过 caddy run --config Caddyfile 启动
+# 替换 example.com 为你的域名
+#
+# 说明：
+# - 伪静态关闭（默认）：所有路由通过 index.php / api/index.php 的 PATH_INFO 访问，Caddy 自动处理
+# - 伪静态开启：通过 route 指令重写美化 URL 到对应入口文件
+# - Caddy 默认支持 PATH_INFO，php_fastcgi 指令已内置处理
+# ============================================================
+
+example.com {
+	# 站点根目录（PHP 入口与静态文件都在此，按实际部署路径修改；默认取 Caddy 启动目录）
+	root * .
+
+	# 编码与压缩
+	encode gzip zstd
+
+	# 上传体积上限 100M（对齐 nginx client_max_body_size 100m /
+	# .htaccess php_value upload_max_filesize、post_max_size / web.config maxRequestLength）
+	request_body {
+		max_size 100MB
+	}
+
+	# 安全响应头
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		X-XSS-Protection "1; mode=block"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		# HSTS 仅 HTTPS 启用（Caddy 默认自动 HTTPS）
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	}
+
+	# 静态资源缓存 30 天
+	@static {
+		path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot *.otf
+	}
+	header @static Cache-Control "public, max-age=2592000, immutable"
+
+	# 管理后台资源：no-cache 覆盖上方 30 天强缓存（后台文档 P0-1：
+	# immutable + 无版本号 = 改完后台代码用户永远加载旧文件）
+	# 放在 @static 之后，同字段后写覆盖先写
+	@adminStatic {
+		path /admin/*.js /admin/*.css /admin/*.png /admin/*.jpg /admin/*.jpeg /admin/*.gif /admin/*.ico /admin/*.svg /admin/*.woff /admin/*.woff2
+		path_regexp ^/admin/.*\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|otf)$
+	}
+	header @adminStatic Cache-Control "no-cache"
+	header @adminStatic Content-Security-Policy "object-src 'none'; frame-ancestors 'none'; base-uri 'self'; script-src 'self'"
+
+	# 管理后台 HTML：no-cache + 严格 CSP（B1-B6 委托化完成，内联事件已清零）
+	@adminHtml path /admin /admin/ /admin/* /admin/index.html
+	header @adminHtml Cache-Control "no-cache"
+	header @adminHtml Content-Security-Policy "object-src 'none'; frame-ancestors 'none'; base-uri 'self'; script-src 'self'"
+
+	# 保护敏感文件
+	@sensitive {
+		path /config.php /.env /install.lock /.installed.lock /install.php /composer.json /composer.lock
+		path_regexp ^/(config|install|fix_.*|composer)\.php$
+	}
+	respond @sensitive 404
+
+	# 隐藏文件（.git、.idea、.htaccess 等）
+	@hidden path /.* /*/.*
+	respond @hidden 404
+
+	# 内部目录（缓存 / 备份 / 日志 / SQL / 文档）— 含 install.lock / access-log / 限流计数
+	@internal path /cache/* /cache/ /backups/* /backups/ /logs/* /logs/ /sql/* /sql/ /docs/* /docs/
+	respond @internal 404
+
+	# 压缩包 / 整站备份 / 敏感数据目录（P0-1 + P0-3）
+	@sensitiveArchives {
+		path_regexp \.(zip|rar|7z|tar|gz|tgz|bz2|xz|lz|iso)$
+	}
+	respond @sensitiveArchives 404
+
+	@licenseSystemData {
+		path_regexp ^/license_system/data(/|$)
+	}
+	respond @licenseSystemData 404
+
+	@licenseSystemDataFiles {
+		path_regexp ^/license_system/.*\.(json|log|bak|lock|sqlite|sqlite3|db)$
+	}
+	respond @licenseSystemDataFiles 404
+
+	# ============ 路由重写（伪静态开启时使用） ============
+	# 注意：伪静态关闭时，所有请求通过 index.php / api/index.php 的 PATH_INFO 访问，
+	#       Caddy 的 php_fastcgi 会自动处理，无需以下 route 规则。
+	#       如需关闭伪静态重写，删除整个 route 块即可。
+
+	route {
+		# uploads / plugins 安全：禁止目录内的 PHP 被直接执行
+		# （等价 nginx "deny all; return 404" 与 Apache / IIS 的 uploads+plugins 封禁）
+		@uploadsPhp path_regexp ^/uploads/.*\.php\d*(/|$)
+		respond @uploadsPhp 404
+		@pluginsPhp path_regexp ^/plugins/.*\.php\d*(/|$)
+		respond @pluginsPhp 404
+
+		# uploads 附件：强制下载（对齐 nginx location ^/uploads/attachments/）
+		@attachments path_regexp ^/uploads/attachments/
+		header @attachments Content-Disposition "attachment"
+		header @attachments X-Content-Type-Options "nosniff"
+		header @attachments X-XSS-Protection "1; mode=block"
+		file_server @attachments
+
+		# API 请求：/api/xxx → /api/index.php（排除 api/index.php 直接访问）
+		@api path /api/*
+		@apiNotDirect {
+			path /api/*
+			not path /api/index.php*
+		}
+		rewrite @apiNotDirect /api/index.php{uri}
+
+		# 管理后台：真实存在的后台资源文件直接输出，其余 → /admin/index.html
+		@adminFile file {
+			try_files {path} {path}/index.html
+		}
+		file_server @adminFile
+		@admin path /admin /admin/*
+		rewrite @admin /admin/index.html
+
+		# 顶层 API 端点：/health /robots.txt /sitemap.xml → /api/index.php
+		# 这三个端点注册在 api/routes.php 顶层（不在 /api 组内），
+		# 若落到前台入口 index.php 会被主题页分支排除（health 在保留字里），/health 返回首页 HTML 而不是 JSON
+		@topApi path /health /robots.txt /sitemap.xml
+		rewrite @topApi /api/index.php{uri}
+
+		# 前台页面路由兜底：未命中真实文件/目录的路径 → /index.php（原路径保留为 PATH_INFO）
+		# 与 nginx "location / { try_files $uri $uri/ /index.php?$query_string; }" 等价：
+		# 主题扩展页（任意单段路径）与 /followers /following /messages /reset-password
+		# /wallet /points 等全部前台路由都由此可达，不再依赖硬编码白名单。
+		# not path_regexp 排除已改写成 .php 的请求（API 与顶层端点），避免二次回退把路径冲掉
+		@frontPage {
+			not path_regexp \.php(/|$)
+			file {
+				try_files {path} {path}/ /index.php{uri}
+				try_policy first_exist_fallback
+			}
+		}
+		rewrite @frontPage {file_match.relative}
+
+		# PHP 处理：只放行 .php 入口（静态资源由 file_server 输出，不进 PHP）
+		# fastcgi_pass 请根据实际环境修改：
+		#   - TCP: 127.0.0.1:9000
+		#   - Unix socket: unix//var/run/php/php8.0-fpm.sock
+		@php path_regexp \.php(/|$)
+		php_fastcgi @php 127.0.0.1:9000 {
+			split .php
+		}
+
+		# 其余请求（真实静态文件）直接输出
+		file_server
+	}
+}

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>{{PAGE_TITLE}}</title>
+    <meta name="description" content="{{PAGE_DESCRIPTION}}">
+    <meta name="keywords" content="{{PAGE_KEYWORDS}}">
+    <link rel="stylesheet" href="assets/css/style.css?v=20261117.1">
+    <script>
+        window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/'; window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+    </script>
+    <style>
+        .circle-hero { background: var(--card-bg); border-bottom: 1px solid var(--border); }
+        .circle-hero-cover { width: 100%; height: 160px; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 56px; font-weight: 600; overflow: hidden; }
+        .circle-hero-cover img { width: 100%; height: 100%; object-fit: cover; }
+        .circle-hero-body { padding: 16px; }
+        .circle-hero-name { font-size: 20px; font-weight: 600; color: var(--text); margin: 0 0 6px; }
+        .circle-hero-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin: 0 0 12px; }
+        .circle-hero-meta { display: flex; gap: 16px; font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; }
+        .circle-hero-meta span { display: inline-flex; align-items: center; gap: 4px; }
+        .circle-hero-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .circle-hero-btn { padding: 8px 18px; border: none; border-radius: 18px; font-size: 14px; cursor: pointer; }
+        .circle-hero-btn.primary { background: var(--primary); color: #fff; }
+        .circle-hero-btn.joined { background: var(--bg); color: var(--text-secondary); border: 1px solid var(--border); }
+        .circle-hero-btn.default { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+        .circle-info-bar { display: flex; gap: 14px; flex-wrap: wrap; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; }
+        .circle-info-item { display: inline-flex; align-items: center; gap: 4px; }
+        .circle-info-item strong { color: var(--text); font-weight: 600; }
+        .circle-owner-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg); border-radius: 8px; margin-top: 12px; cursor: pointer; }
+        .circle-owner-card img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+        .circle-owner-info { flex: 1; min-width: 0; }
+        .circle-owner-name { font-size: 14px; font-weight: 500; color: var(--text); }
+        .circle-owner-role { font-size: 12px; color: var(--text-secondary); }
+        .circle-members-preview { margin-top: 14px; }
+        .circle-members-preview h4 { font-size: 13px; color: var(--text-secondary); margin: 0 0 8px; }
+        .circle-members-stack { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+        .circle-members-stack img { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--card-bg); object-fit: cover; margin-left: -8px; }
+        .circle-members-stack img:first-child { margin-left: 0; }
+        .circle-members-more { font-size: 12px; color: var(--text-secondary); margin-left: 8px; }
+        .circle-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--card-bg); }
+        .circle-tab { flex: 1; padding: 12px; text-align: center; font-size: 14px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; }
+        .circle-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .circle-members-panel { display: none; padding: 8px 0; }
+        .circle-members-panel.active { display: block; }
+        .circle-member-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+        .circle-member-row img { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+        .circle-member-info { flex: 1; min-width: 0; }
+        .circle-member-name { font-size: 14px; color: var(--text); }
+        .circle-member-meta { font-size: 12px; color: var(--text-secondary); }
+        .badge-role { font-size: 11px; padding: 1px 6px; border-radius: 8px; margin-left: 6px; }
+        .badge-role.owner { background: #ffe58f; color: #874d00; }
+        .badge-role.admin { background: #b7eb8f; color: #237804; }
+        .badge-role.member { background: #efefef; color: #666; }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="pc-layout">
+
+        <!-- 左栏 (仅 PC 端显示) -->
+        <aside class="sidebar-left">
+            <div class="sidebar-card user-card">
+                <div class="user-card-avatar"><img src="assets/images/default-avatar.svg" alt="avatar" id="sidebar-avatar"></div>
+                <div class="user-card-info">
+                    <h3 id="sidebar-nickname">woquan 用户</h3>
+                    <p class="user-bio" id="sidebar-bio">这个人很懒，什么都没留下~</p>
+                </div>
+                <div class="user-card-stats" id="sidebar-stats">
+                    <div class="stat-item"><span class="stat-num" id="sidebar-stat-posts">0</span><span class="stat-label">动态</span></div>
+                    <div class="stat-item"><span class="stat-num" id="sidebar-stat-following">0</span><span class="stat-label">关注</span></div>
+                    <div class="stat-item"><span class="stat-num" id="sidebar-stat-followers">0</span><span class="stat-label">粉丝</span></div>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="if(app.checkAuth() && app.user) app.goUser(app.user.username); else app.openAuthModal();">查看主页</button>
+            </div>
+
+            <div class="sidebar-card nav-card">
+                <h4 class="sidebar-title">功能菜单</h4>
+                <ul class="nav-list">
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); location.assign(window.HUBLOG_PAGE_BASE + '/');"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>首页</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); location.assign(window.HUBLOG_PAGE_BASE + '/search');"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>发现</span></a></li>
+                    <li><a href="#" class="nav-link active" onclick="event.preventDefault(); location.assign(window.HUBLOG_PAGE_BASE + '/circles');"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>圈子</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); if(app.checkAuth()) { location.assign(window.HUBLOG_PAGE_BASE + '/chat'); } else { app.openAuthModal(); }"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>私信</span><span class="chat-nav-badge" id="chat-unread-badge" style="display:none;">0</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); if(app.checkAuth() && app.user) app.goUser(app.user.username); else app.openAuthModal();"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的主页</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); if(app.checkAuth()) { location.assign(window.HUBLOG_PAGE_BASE + '/favorites'); } else { app.openAuthModal(); }"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><span>我的收藏</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); if(app.checkAuth()) app.openNotificationModal(); else app.openAuthModal();"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>通知</span><span class="chat-nav-badge" id="sidebar-notify-badge" style="display:none;">0</span></a></li>
+                    <li id="nav-admin" style="display:none;"><a href="#" class="nav-link" onclick="event.preventDefault(); app.goAdmin();"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>管理后台</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- 中间主内容区 -->
+        <main class="main-content">
+            <div class="navbar">
+                <button class="btn-icon" onclick="location.assign(window.HUBLOG_PAGE_BASE + '/circles')">←</button>
+                <div class="title" id="circle-title">圈子</div>
+                <div class="actions"></div>
+            </div>
+
+            <!-- 圈子 Hero -->
+            <div class="circle-hero" id="circle-hero">
+                <div class="circle-hero-cover" id="circle-cover">圈</div>
+                <div class="circle-hero-body">
+                    <h1 class="circle-hero-name" id="circle-name">加载中...</h1>
+                    <p class="circle-hero-desc" id="circle-desc"></p>
+                    <div class="circle-hero-meta">
+                        <span id="circle-meta-members">0 成员</span>
+                        <span id="circle-meta-posts">0 动态</span>
+                    </div>
+                    <div class="circle-info-bar" id="circle-info-bar"></div>
+                    <div class="circle-hero-actions" id="circle-actions"></div>
+                    <div class="circle-owner-card" id="circle-owner-card" style="display:none;"></div>
+                    <div class="circle-members-preview" id="circle-members-preview" style="display:none;">
+                        <h4>成员预览</h4>
+                        <div class="circle-members-stack" id="circle-members-stack"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs：动态 / 成员 -->
+            <div class="circle-tabs">
+                <div class="circle-tab active" data-tab="posts" onclick="switchCircleTab('posts')">动态</div>
+                <div class="circle-tab" data-tab="members" onclick="switchCircleTab('members')">成员</div>
+            </div>
+
+            <!-- 动态列表 -->
+            <div class="circle-tab-panel active" id="circle-panel-posts">
+                <div class="moments-list" id="moments-list"></div>
+                <div class="load-more" id="load-more" style="display:none;">没有更多了</div>
+            </div>
+
+            <!-- 成员列表 -->
+            <div class="circle-members-panel" id="circle-panel-members"></div>
+
+            <!-- 图片查看器 -->
+            <div class="image-viewer" id="image-viewer">
+                <button class="close-viewer" onclick="app.closeViewer()">✕</button>
+                <button class="viewer-nav viewer-prev" id="viewer-prev" onclick="app.prevImage(event)">‹</button>
+                <img src="" id="viewer-img" alt="" onclick="event.stopPropagation()">
+                <button class="viewer-nav viewer-next" id="viewer-next" onclick="app.nextImage(event)">›</button>
+            </div>
+
+            <!-- 评论输入栏 -->
+            <div class="comment-input-bar" id="comment-input-bar">
+                <button class="btn-emoji-toggle" id="btn-comment-emoji" onmousedown="event.preventDefault()" onclick="app.toggleEmojiPicker('comment-input', this)" title="表情">😊</button>
+                <button class="btn-comment-image" id="btn-comment-image" onmousedown="event.preventDefault()" onclick="document.getElementById('comment-image-upload').click()" title="图片">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                </button>
+                <input type="file" id="comment-image-upload" accept="image/*" style="display:none" onchange="app.handleCommentImage(this.files[0])">
+                <div class="comment-image-preview" id="comment-image-preview"></div>
+                <input type="text" id="comment-input" placeholder="写评论...">
+                <button class="btn btn-primary" id="btn-send-comment">发送</button>
+            </div>
+
+            <!-- 登录注册模态框 -->
+            <div class="modal-overlay" id="auth-modal">
+                <div class="modal-content" style="max-width:400px;">
+                    <div class="modal-header">
+                        <h3>欢迎来到 woquan</h3>
+                        <button class="btn-icon" onclick="document.getElementById('auth-modal').classList.remove('active')">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="display:flex;gap:16px;margin-bottom:20px;border-bottom:1px solid var(--border);">
+                            <button class="auth-tab active" id="tab-login" style="flex:1;padding:12px;background:none;border:none;border-bottom:2px solid var(--primary);font-size:15px;cursor:pointer;" onclick="app.switchAuthTab('login')">登录</button>
+                            <button class="auth-tab" id="tab-register" style="flex:1;padding:12px;background:none;border:none;border-bottom:2px solid transparent;font-size:15px;cursor:pointer;" onclick="app.switchAuthTab('register')">注册</button>
+                        </div>
+                        <div class="auth-form" id="login-form">
+                            <div class="form-group"><label>用户名/邮箱</label><input type="text" class="form-input" id="login-username" placeholder="请输入用户名或邮箱"></div>
+                            <div class="form-group"><label>密码</label><input type="password" class="form-input" id="login-password" placeholder="请输入密码"></div>
+                            <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="app.login()">登录</button>
+                        </div>
+                        <div class="auth-form" id="register-form" style="display:none;">
+                            <div class="form-group"><label>用户名</label><input type="text" class="form-input" id="reg-username" placeholder="3-20位字母数字" pattern="[a-zA-Z0-9]{3,20}" title="3-20位字母或数字" onblur="app.checkRegisterField('username')"><div class="field-hint" id="reg-username-hint"></div></div>
+                            <div class="form-group"><label>邮箱</label><input type="email" class="form-input" id="reg-email" placeholder="请输入邮箱" onblur="app.checkRegisterField('email')"><div class="field-hint" id="reg-email-hint"></div></div>
+                            <div class="form-group"><label>密码</label><input type="password" class="form-input" id="reg-password" placeholder="至少6位"></div>
+                            <div class="form-group"><label>确认密码</label><input type="password" class="form-input" id="reg-password-confirm" placeholder="请再次输入密码"></div>
+                            <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="app.register()">注册</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toast -->
+            <div class="toast" id="toast"></div>
+        </main>
+
+        <!-- 右栏 (仅 PC 端显示) -->
+        <aside class="sidebar-right">
+            <div class="sidebar-card stats-card">
+                <h4 class="sidebar-title"><svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>动态统计</h4>
+                <div class="stats-grid">
+                    <div class="stats-item"><div class="stats-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div class="stats-info"><div class="stats-value" id="stats-total-posts">0</div><div class="stats-label">全部动态</div></div></div>
+                    <div class="stats-item"><div class="stats-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div class="stats-info"><div class="stats-value" id="stats-total-comments">0</div><div class="stats-label">评论总数</div></div></div>
+                    <div class="stats-item"><div class="stats-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div><div class="stats-info"><div class="stats-value" id="stats-total-likes">0</div><div class="stats-label">点赞总数</div></div></div>
+                    <div class="stats-item"><div class="stats-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="stats-info"><div class="stats-value" id="stats-total-users">0</div><div class="stats-label">注册用户</div></div></div>
+                </div>
+            </div>
+            <div class="sidebar-card friends-card">
+                <h4 class="sidebar-title"><svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>友情链接</h4>
+                <ul class="friends-list" id="sidebar-friends"><li>加载中...</li></ul>
+            </div>
+        </aside>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="bottom-nav" id="bottom-nav"></div>
+</div>
+
+<script type="module" src="assets/js/app.js?v=20261117.1"></script>
+<script>
+let circleId = 0;
+let circleData = null;
+let postsPage = 1;
+let postsHasMore = true;
+let postsLoading = false;
+let membersPage = 1;
+let membersHasMore = true;
+let membersLoading = false;
+let activeTab = 'posts';
+
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.style.opacity = 1; setTimeout(() => t.style.opacity = 0, 2000); }
+
+function switchCircleTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.circle-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    document.getElementById('circle-panel-posts').classList.toggle('active', tab === 'posts');
+    document.getElementById('circle-panel-members').classList.toggle('active', tab === 'members');
+    if (tab === 'members' && !membersLoading && membersPage === 1) loadCircleMembers(true);
+}
+
+async function loadCircleDetail() {
+    try {
+        const data = await app.request('/circles/detail?id=' + circleId);
+        circleData = data;
+        renderCircleHero(data);
+    } catch (e) {
+        document.getElementById('circle-name').textContent = '加载失败';
+        showToast(e.message);
+    }
+}
+
+function renderCircleHero(c) {
+    document.title = (c.name || '圈子') + ' - ' + document.title;
+    document.getElementById('circle-title').textContent = c.name || '圈子';
+    document.getElementById('circle-name').textContent = c.name || '';
+    document.getElementById('circle-desc').textContent = c.description || '暂无简介';
+    document.getElementById('circle-meta-members').textContent = (c.member_count || 0) + ' 成员';
+    document.getElementById('circle-meta-posts').textContent = (c.post_count || 0) + ' 动态';
+
+    const cover = document.getElementById('circle-cover');
+    if (c.cover) {
+        cover.innerHTML = '<img src="' + app.escapeHtml(c.cover) + '" alt="" onerror="this.parentNode.textContent=\'' + app.escapeHtml((c.name || '圈').slice(0,1)) + '\'">';
+    } else {
+        cover.textContent = (c.name || '圈').slice(0, 1);
+    }
+
+    // V50：权限信息条
+    const infoBar = document.getElementById('circle-info-bar');
+    if (infoBar) {
+        const joinModeText = { free: '自由加入', approval: '需审核', invite: '仅邀请' };
+        const postPermText = { all: '所有成员可发', admin: '仅管理员可发', owner: '仅圈主可发' };
+        const visText = { public: '公开', protected: '受保护（内容仅成员）', private: '私密' };
+        infoBar.innerHTML = `
+            <span class="circle-info-item">加入方式：<strong>${joinModeText[c.join_mode] || '自由'}</strong></span>
+            <span class="circle-info-item">发帖权限：<strong>${postPermText[c.post_permission] || '所有成员'}</strong></span>
+            <span class="circle-info-item">可见性：<strong>${visText[c.visibility] || '公开'}</strong></span>`;
+    }
+
+    // 操作按钮
+    const actions = document.getElementById('circle-actions');
+    actions.innerHTML = '';
+    const joinMode = c.join_mode || 'free';
+    if (c.is_owner) {
+        // 圈主显示编辑入口（前端暂只展示提示，编辑功能在 admin 后台）
+        const btn = document.createElement('button');
+        btn.className = 'circle-hero-btn default';
+        btn.textContent = '我创建的';
+        btn.onclick = () => showToast('请在管理后台编辑圈子');
+        actions.appendChild(btn);
+    } else if (c.is_member) {
+        const btn = document.createElement('button');
+        btn.className = 'circle-hero-btn joined';
+        btn.textContent = '已加入';
+        btn.onclick = async () => {
+            if (!confirm('确定退出该圈子？')) return;
+            try { await app.request('/circles/leave?id=' + c.id, { method: 'POST' }); showToast('已退出'); loadCircleDetail(); } catch (e) { showToast(e.message); }
+        };
+        actions.appendChild(btn);
+    } else if (joinMode === 'invite') {
+        const btn = document.createElement('button');
+        btn.className = 'circle-hero-btn default';
+        btn.textContent = '仅邀请加入';
+        btn.disabled = true;
+        actions.appendChild(btn);
+    } else {
+        const btn = document.createElement('button');
+        btn.className = 'circle-hero-btn primary';
+        btn.textContent = joinMode === 'approval' ? '申请加入' : '加入圈子';
+        btn.onclick = async () => {
+            if (!app.checkAuth()) { app.openAuthModal(); return; }
+            try {
+                await app.request('/circles/join?id=' + c.id, { method: 'POST' });
+                showToast(joinMode === 'approval' ? '申请已提交，等待审核' : '已加入');
+                loadCircleDetail();
+            } catch (e) { showToast(e.message); }
+        };
+        actions.appendChild(btn);
+    }
+
+    // 圈主卡片
+    if (c.owner) {
+        const ownerCard = document.getElementById('circle-owner-card');
+        ownerCard.style.display = 'flex';
+        const ownerAvatar = c.owner.avatar || 'assets/images/default-avatar.svg';
+        ownerCard.innerHTML = `
+            <img src="${app.escapeHtml(ownerAvatar)}" alt="" onerror="this.src='assets/images/default-avatar.svg'">
+            <div class="circle-owner-info">
+                <div class="circle-owner-name">${app.escapeHtml(c.owner.nickname || c.owner.username || '圈主')}</div>
+                <div class="circle-owner-role">圈主</div>
+            </div>`;
+        ownerCard.onclick = () => { if (c.owner.username) app.goUser(c.owner.username); };
+    }
+
+    // 成员预览
+    loadMembersPreview();
+}
+
+async function loadMembersPreview() {
+    try {
+        const data = await app.request('/circles/members?id=' + circleId + '&page=1&limit=8');
+        const list = data.list || [];
+        if (list.length === 0) return;
+        const preview = document.getElementById('circle-members-preview');
+        preview.style.display = 'block';
+        const stack = document.getElementById('circle-members-stack');
+        stack.innerHTML = '';
+        list.slice(0, 6).forEach(m => {
+            const img = document.createElement('img');
+            img.src = m.avatar || 'assets/images/default-avatar.svg';
+            img.alt = '';
+            img.onerror = function() { this.src = 'assets/images/default-avatar.svg'; };
+            img.title = m.nickname || m.username || '';
+            stack.appendChild(img);
+        });
+        const total = data.total || 0;
+        if (total > 6) {
+            const more = document.createElement('span');
+            more.className = 'circle-members-more';
+            more.textContent = '共 ' + total + ' 人';
+            stack.appendChild(more);
+        }
+        stack.onclick = () => switchCircleTab('members');
+    } catch (e) {}
+}
+
+async function loadCirclePosts(reset) {
+    if (postsLoading) return;
+    if (reset) { postsPage = 1; postsHasMore = true; document.getElementById('moments-list').innerHTML = ''; }
+    if (!postsHasMore) return;
+    postsLoading = true;
+    const loadMore = document.getElementById('load-more');
+    loadMore.style.display = 'block';
+    loadMore.textContent = '加载中...';
+    try {
+        const data = await app.request('/circles/posts?id=' + circleId + '&page=' + postsPage + '&limit=10');
+        const list = data.list || [];
+        const pagination = data.pagination || {};
+        postsHasMore = (pagination.page || postsPage) < (pagination.pages || 0);
+        const ml = document.getElementById('moments-list');
+        if (list.length === 0 && postsPage === 1) {
+            ml.innerHTML = '<div class="empty-state"><div class="icon">📝</div><div>该圈子暂无动态</div></div>';
+        } else {
+            list.forEach(p => ml.appendChild(app.createPostElement(p)));
+        }
+        postsPage++;
+        loadMore.textContent = postsHasMore ? '滚动加载更多' : '没有更多了';
+        if (!postsHasMore) loadMore.style.display = 'none';
+    } catch (e) {
+        // V50：protected/private 圈子非成员访问被拒时给出友好提示
+        const ml = document.getElementById('moments-list');
+        if (ml && postsPage === 1) {
+            ml.innerHTML = '<div class="empty-state"><div class="icon">🔒</div><div>' + app.escapeHtml(e.message || '加入后可见') + '</div><div style="margin-top:8px;font-size:13px;color:var(--text-secondary);">加入圈子后即可查看圈内动态</div></div>';
+        }
+        loadMore.style.display = 'none';
+    } finally {
+        postsLoading = false;
+    }
+}
+
+async function loadCircleMembers(reset) {
+    if (membersLoading) return;
+    if (reset) { membersPage = 1; membersHasMore = true; document.getElementById('circle-panel-members').innerHTML = ''; }
+    if (!membersHasMore) return;
+    membersLoading = true;
+    const panel = document.getElementById('circle-panel-members');
+    if (membersPage === 1) panel.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary);">加载中...</div>';
+    try {
+        const data = await app.request('/circles/members?id=' + circleId + '&page=' + membersPage + '&limit=50');
+        const list = data.list || [];
+        const pagination = data.pagination || {};
+        membersHasMore = (pagination.page || membersPage) < (pagination.pages || 0);
+        if (membersPage === 1) panel.innerHTML = '';
+        list.forEach(m => {
+            const row = document.createElement('div');
+            row.className = 'circle-member-row';
+            const avatar = m.avatar || 'assets/images/default-avatar.svg';
+            const roleClass = m.role || 'member';
+            const roleText = { owner: '圈主', admin: '管理员', member: '成员' }[roleClass] || '成员';
+            row.innerHTML = `
+                <img src="${app.escapeHtml(avatar)}" alt="" onerror="this.src='assets/images/default-avatar.svg'">
+                <div class="circle-member-info">
+                    <div class="circle-member-name">${app.escapeHtml(m.nickname || m.username || '用户')}<span class="badge-role ${roleClass}">${roleText}</span></div>
+                    <div class="circle-member-meta">@${app.escapeHtml(m.username || '')} · 加入于 ${app.escapeHtml((m.joined_at || '').split(' ')[0])}</div>
+                </div>`;
+            row.onclick = () => { if (m.username) app.goUser(m.username); };
+            panel.appendChild(row);
+        });
+        if (list.length === 0 && membersPage === 1) {
+            panel.innerHTML = '<div class="empty-state"><div class="icon">👥</div><div>暂无成员</div></div>';
+        }
+        membersPage++;
+    } catch (e) {
+        document.getElementById('circle-panel-members').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div>加载失败：' + app.escapeHtml(e.message) + '</div></div>';
+    } finally {
+        membersLoading = false;
+    }
+}
+
+// app.js 为 type="module"（延迟执行）：内联脚本解析即执行时 window.app 还不存在，
+// 直接调用 app.init() 会抛 ReferenceError 导致整页数据不加载，必须等 DOMContentLoaded。
+document.addEventListener('DOMContentLoaded', async () => {
+    await app.fetchCsrf();
+    await app.fetchUser();
+    await app.loadSiteConfig();
+    // 从 URL 解析圈子ID
+    const m = window.location.pathname.match(/\/circle\/(\d+)/);
+    circleId = m ? parseInt(m[1], 10) : 0;
+    if (!circleId) {
+        document.getElementById('circle-name').textContent = '圈子ID缺失';
+        return;
+    }
+    loadCircleDetail();
+    loadCirclePosts(true);
+    // 滚动加载
+    window.addEventListener('scroll', () => {
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+            if (activeTab === 'posts') loadCirclePosts(false);
+            else loadCircleMembers(false);
+        }
+    });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我圈 管理后台</title>
+    <script src="./js/theme-boot.js?v=202611211"></script>
+    <link rel="stylesheet" href="./css/admin.css?v=202611211">
+    <link rel="stylesheet" href="./vendor/vditor/dist/index.css">
+</head>
+<body>
+<div class="admin-layout">
+    <div class="mobile-header">
+        <h3 id="mobile-title">我圈 后台</h3>
+        <button class="mobile-menu-btn" data-action="toggle-mobile-menu" aria-label="菜单">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+    <div class="sidebar-overlay" id="sidebar-overlay" data-action="close-mobile-menu"></div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <span class="brand-mark"><i data-icon="sparkles"></i></span>
+            <div>
+                <h2>我圈 控制台</h2>
+                <span class="brand-sub">Control Center</span>
+            </div>
+        </div>
+        <div class="nav-group" id="nav-overview">
+            <button class="nav-group-header" data-action="toggle-nav-group" data-group="overview">概览与数据 <span class="group-arrow"><i data-icon="chevron"></i></span></button>
+            <div class="nav-group-body">
+                <button class="nav-item active" data-page="dashboard" data-action="show-page"><i data-icon="dashboard"></i>数据概览</button>
+                <button class="nav-item" data-page="stats" data-action="show-page"><i data-icon="chart"></i>数据统计</button>
+                <button class="nav-item" data-page="export" data-action="show-page"><i data-icon="download"></i>数据导出</button>
+                <button class="nav-item" data-page="pages" data-action="show-page"><i data-icon="file-text"></i>单页管理</button>
+            </div>
+        </div>
+        <div class="nav-group collapsed" id="nav-content">
+            <button class="nav-group-header" data-action="toggle-nav-group" data-group="content">内容与社区 <span class="group-arrow"><i data-icon="chevron"></i></span></button>
+            <div class="nav-group-body">
+                <button class="nav-item" data-page="posts" data-action="show-page"><i data-icon="file-text"></i>内容管理</button>
+                <button class="nav-item" data-page="categories" data-action="show-page"><i data-icon="tag"></i>分类管理</button>
+                <button class="nav-item" data-page="topics" data-module="topics" data-action="show-page"><i data-icon="hash"></i>话题管理</button>
+                <button class="nav-item" data-page="featured" data-module="featured" data-action="show-page"><i data-icon="star"></i>精华管理</button>
+                <button class="nav-item" data-page="attachments" data-action="show-page"><i data-icon="folder"></i>附件管理</button>
+                <button class="nav-item" data-page="friend-links" data-module="friend_links" data-action="show-page"><i data-icon="link"></i>友情链接</button>
+                <button class="nav-item" data-page="circles" data-module="circles" data-action="show-page"><i data-icon="circle-dot"></i>圈子管理</button>
+                <button class="nav-item" data-page="activities" data-module="activities" data-action="show-page"><i data-icon="target"></i>活动管理</button>
+            </div>
+        </div>
+        <div class="nav-group collapsed" id="nav-user">
+            <button class="nav-group-header" data-action="toggle-nav-group" data-group="user">用户 <span class="group-arrow"><i data-icon="chevron"></i></span></button>
+            <div class="nav-group-body">
+                <button class="nav-item" data-page="users" data-action="show-page"><i data-icon="users"></i>用户管理</button>
+                <button class="nav-item" data-page="badges" data-module="badges" data-action="show-page"><i data-icon="medal"></i>徽章管理</button>
+                <button class="nav-item" data-page="realname" data-module="realname" data-action="show-page"><i data-icon="shield-check"></i>实名认证</button>
+            </div>
+        </div>
+        <div class="nav-group collapsed" id="nav-safety">
+            <button class="nav-group-header" data-action="toggle-nav-group" data-group="safety">互动与安全 <span class="group-arrow"><i data-icon="chevron"></i></span></button>
+            <div class="nav-group-body">
+                <button class="nav-item" data-page="comments" data-module="comments" data-action="show-page"><i data-icon="comment"></i>评论管理</button>
+                <button class="nav-item" data-page="chat" data-module="chat" data-action="show-page"><i data-icon="message"></i>私信管理</button>
+                <button class="nav-item" data-page="reports" data-module="reports" data-action="show-page"><i data-icon="flag"></i>举报管理</button>
+                <button class="nav-item" data-page="appeals" data-module="appeals" data-action="show-page"><i data-icon="inbox"></i>申诉管理</button>
+                <button class="nav-item" data-page="sensitive-words" data-module="safety_filter" data-action="show-page"><i data-icon="shield"></i>敏感词库</button>
+                <button class="nav-item" data-page="filter-logs" data-module="safety_filter" data-action="show-page"><i data-icon="list"></i>命中记录</button>
+            </div>
+        </div>
+        <div class="nav-group collapsed" id="nav-commerce">
+            <button class="nav-group-header" data-action="toggle-nav-group" data-group="commerce">商业与财务 <span class="group-arrow"><i data-icon="chevron"></i></span></button>
+            <div class="nav-group-body">
+                <button class="nav-item" data-page="shop" data-module="shop" data-action="show-page"><i data-icon="shopping-bag"></i>商城管理</button>
+                <button class="nav-item" data-page="finance" data-module="finance" data-action="show-page"><i data-icon="credit-card"></i>财务会员</button>
+                <button class="nav-item" data-page="content-pay" data-module="contentpay" data-action="show-page"><i data-icon="file-text"></i>内容付费</button>
+            </div>
+        </div>
+        <div class="nav-group collapsed" id="nav-system">
+            <button class="nav-group-header" data-action="toggle-nav-group" data-group="system">系统与运维 <span class="group-arrow"><i data-icon="chevron"></i></span></button>
+            <div class="nav-group-body">
+                <button class="nav-item" data-page="settings" data-action="show-page"><i data-icon="settings"></i>系统设置</button>
+                <button class="nav-item" data-page="plugins" data-action="show-page"><i data-icon="puzzle"></i>扩展管理</button>
+                <button class="nav-item" data-page="app-center" data-action="show-page" title="在线安装主题与插件"><i data-icon="external"></i>应用中心</button>
+                <button class="nav-item" data-page="license" data-action="show-page"><i data-icon="key"></i>授权管理</button>
+                <button class="nav-item" data-page="upgrade" data-action="show-page"><i data-icon="rocket"></i>系统升级</button>
+                <button class="nav-item" data-page="app-versions" data-action="show-page"><i data-icon="package"></i>版本管理</button>
+                <button class="nav-item" data-page="crash-logs" data-action="show-page"><i data-icon="bug"></i>客户端异常</button>
+            </div>
+        </div>
+        <button class="nav-item" data-action="goto-home"><i data-icon="home"></i>返回前台</button>
+        <div class="sidebar-foot"><i data-icon="activity"></i>我圈 管理控制台<br><span id="sidebar-module-count">28 个功能模块已就绪</span></div>
+    </aside>
+
+    <main class="main">
+        <header class="header">
+            <div class="header-left">
+                <span class="header-badge"><i data-icon="activity"></i></span>
+                <div>
+                    <h1 id="page-title">数据概览</h1>
+                    <div class="header-sub">我圈 控制台 · <span id="header-subtitle">全站运行概览</span></div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span class="admin-badge"><i data-icon="shield-check"></i><span id="admin-user">管理员</span></span>
+                <button class="theme-toggle" data-action="toggle-theme" title="切换深色 / 浅色模式"><i data-icon="contrast"></i><span id="theme-label">浅色</span></button>
+            </div>
+        </header>
+
+        <!-- 仪表盘（唯一常驻骨架页，其余 27 页由 showPage 按需 fetch 挂载到 #page-host） -->
+        <div id="page-dashboard">
+            <div class="stats-grid" id="stats-grid"></div>
+            <div class="card" id="dashboard-version-info" style="margin-top:20px;">
+                <div class="card-head">
+                    <h3><i data-icon="rocket"></i>程序版本</h3>
+                    <div class="card-head-actions"><span id="version-tip" style="font-size:12px;"></span></div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:13.5px;">
+                    <div>
+                        <div>当前版本：<span id="version-current" style="font-weight:600;">-</span></div>
+                        <div style="margin-top:4px;color:var(--text-muted);">最新版本：<span id="version-latest">-</span></div>
+                    </div>
+                    <a id="version-link" class="btn btn-primary" href="https://gitee.com/aiwoquan/hubloggaidewoquanjiapp/releases" target="_blank" style="text-decoration:none;display:none;"><i data-icon="external"></i>前往升级</a>
+                </div>
+            </div>
+            <div class="card" id="server-info" style="margin-top:20px;">
+                <h3><i data-icon="cpu"></i>服务器信息</h3>
+                <div id="server-info-grid" class="server-info-grid">
+                    <div><strong>PHP 版本</strong><div id="server-php"></div></div>
+                    <div><strong>操作系统</strong><div id="server-os"></div></div>
+                    <div><strong>Web 服务器</strong><div id="server-software"></div></div>
+                    <div><strong>MySQL 版本</strong><div id="server-mysql"></div></div>
+                    <div><strong>上传限制</strong><div id="server-upload"></div></div>
+                    <div><strong>POST 限制</strong><div id="server-post"></div></div>
+                    <div><strong>执行时间</strong><div id="server-execution"></div></div>
+                    <div><strong>内存限制</strong><div id="server-memory"></div></div>
+                    <div><strong>剩余空间</strong><div id="server-disk"></div></div>
+                </div>
+            </div>
+            <div class="card" id="integration-status" style="margin-top:20px;">
+                <h3>外部依赖状态</h3>
+                <div id="integration-status-grid" class="server-info-grid"></div>
+            </div>
+        </div>
+        <!-- 插件设置页片段入口：./pages/plugin-settings.html 由 nav-ui.js 的
+             showPage('plugin-settings') 按需 fetch 挂载到 #page-host；菜单来自
+             GET /api/admin/plugin-admin-config（管理员鉴权后注入，无 data-module）。 -->
+        <div id="page-host"></div>
+    </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="./vendor/vditor/dist/index.min.js"></script>
+<script type="module" src="./js/main.js?v=202611211"></script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" role="img" aria-label="赛博博客主题预览">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#060c17"/>
+      <stop offset=".55" stop-color="#0a1424"/>
+      <stop offset="1" stop-color="#0d1b2e"/>
+    </linearGradient>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f2438"/>
+      <stop offset="1" stop-color="#102b3a"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2dd4bf"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
+      <path d="M28 0H0V28" fill="none" stroke="#123047" stroke-width="1" opacity=".35"/>
+    </pattern>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="800" height="500" fill="url(#bg)"/>
+  <rect width="800" height="500" fill="url(#grid)"/>
+  <circle cx="700" cy="80" r="150" fill="#2dd4bf" opacity=".08"/>
+  <circle cx="90" cy="430" r="160" fill="#f472b6" opacity=".06"/>
+
+  <!-- topbar -->
+  <rect x="0" y="0" width="800" height="46" fill="#081120" opacity=".95"/>
+  <line x1="0" y1="46" x2="800" y2="46" stroke="#1c3a4d"/>
+  <g transform="translate(24,11)">
+    <path d="M12 1 22 7v12L12 25 2 19V7L12 1z" fill="none" stroke="#2dd4bf" stroke-width="1.6"/>
+    <path d="M7.5 11 5 13l2.5 2M16.5 11 19 13l-2.5 2M14 10l-4 6" fill="none" stroke="#22d3ee" stroke-width="1.4" stroke-linecap="round"/>
+  </g>
+  <text x="52" y="24" fill="#e6f1ff" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700">赛博博客</text>
+  <text x="52" y="35" fill="#5f7f96" font-family="Consolas, monospace" font-size="6.5" letter-spacing="1.6">SHAIBOBLOG</text>
+  <g fill="#8aa4b8" font-family="Segoe UI, sans-serif" font-size="9">
+    <text x="190" y="27">首页</text><text x="226" y="27">文章</text><text x="262" y="27">分类</text><text x="298" y="27">标签</text><text x="334" y="27">关于</text>
+  </g>
+  <rect x="390" y="12" width="170" height="22" rx="11" fill="#0c1a2b" stroke="#1c3a4d"/>
+  <circle cx="403" cy="23" r="4" fill="none" stroke="#5f7f96" stroke-width="1.4"/>
+  <line x1="406" y1="26" x2="409" y2="29" stroke="#5f7f96" stroke-width="1.4"/>
+  <text x="416" y="26" fill="#527086" font-family="Segoe UI, sans-serif" font-size="8">搜索文章…</text>
+  <rect x="580" y="11" width="66" height="24" rx="6" fill="#2dd4bf"/>
+  <text x="597" y="27" fill="#04221f" font-family="Segoe UI, sans-serif" font-size="9" font-weight="700">写文章</text>
+  <circle cx="682" cy="23" r="11" fill="#11314a" stroke="#2dd4bf" stroke-width="1.2"/>
+  <circle cx="682" cy="20" r="3.2" fill="#2dd4bf"/><path d="M676 29c1.4-3 3.6-4.4 6-4.4s4.6 1.4 6 4.4" fill="#2dd4bf"/>
+
+  <!-- hero -->
+  <rect x="24" y="66" width="752" height="116" rx="14" fill="url(#hero)" stroke="#1d4a56"/>
+  <text x="46" y="94" fill="#2dd4bf" font-family="Consolas, monospace" font-size="8" letter-spacing="1.4">// PERSONAL BLOG · EST.2026</text>
+  <text x="46" y="119" fill="#f2f8ff" font-family="Segoe UI, sans-serif" font-size="19" font-weight="700">在代码与文字之间，记录每一次思考</text>
+  <text x="46" y="139" fill="#8fb0c4" font-family="Segoe UI, sans-serif" font-size="8.5">记录路亚、夜钓与装备心得，偶尔写点技术笔记。</text>
+  <g font-family="Consolas, monospace">
+    <text x="46" y="166" fill="#2dd4bf" font-size="13" font-weight="700">128</text><text x="74" y="166" fill="#648399" font-size="7">篇文章</text>
+    <text x="112" y="166" fill="#2dd4bf" font-size="13" font-weight="700">12</text><text x="132" y="166" fill="#648399" font-size="7">个分类</text>
+    <text x="170" y="166" fill="#2dd4bf" font-size="13" font-weight="700">46</text><text x="190" y="166" fill="#648399" font-size="7">个标签</text>
+  </g>
+  <rect x="520" y="80" width="236" height="88" rx="10" fill="#081320" stroke="#1d4a56"/>
+  <circle cx="534" cy="92" r="2.4" fill="#f87171"/><circle cx="542" cy="92" r="2.4" fill="#fbbf24"/><circle cx="550" cy="92" r="2.4" fill="#34d399"/>
+  <g font-family="Consolas, monospace" font-size="7.5" fill="#7fae9e">
+    <text x="534" y="112">$ whoami</text>
+    <text x="534" y="124" fill="#9fd8c9">&gt; shaibo — writer &amp; angler</text>
+    <text x="534" y="136">$ cat manifesto.md</text>
+    <text x="534" y="148" fill="#f0a6c8">&gt; 把每一次抛投写进档案</text>
+    <text x="534" y="160" fill="#2dd4bf">$ _</text>
+  </g>
+
+  <!-- left sidebar -->
+  <rect x="24" y="198" width="164" height="150" rx="10" fill="#0b1626" stroke="#173448"/>
+  <rect x="38" y="212" width="3" height="10" rx="1.5" fill="#2dd4bf"/>
+  <text x="48" y="221" fill="#dceaf6" font-family="Segoe UI, sans-serif" font-size="8.5" font-weight="700">文章分类</text>
+  <text x="174" y="221" fill="#2c4a5e" font-family="Consolas, monospace" font-size="7" text-anchor="end">//</text>
+  <g font-family="Segoe UI, sans-serif" font-size="7.8">
+    <text x="38" y="243" fill="#8fb0c4">路亚技巧</text><text x="174" y="243" fill="#2dd4bf" font-size="7" text-anchor="end">12</text>
+    <text x="38" y="262" fill="#8fb0c4">夜钓实录</text><text x="174" y="262" fill="#2dd4bf" font-size="7" text-anchor="end">9</text>
+    <text x="38" y="281" fill="#8fb0c4">装备评测</text><text x="174" y="281" fill="#2dd4bf" font-size="7" text-anchor="end">15</text>
+    <text x="38" y="300" fill="#8fb0c4">技术笔记</text><text x="174" y="300" fill="#2dd4bf" font-size="7" text-anchor="end">7</text>
+  </g>
+  <rect x="24" y="360" width="164" height="84" rx="10" fill="#0b1626" stroke="#173448"/>
+  <rect x="38" y="374" width="3" height="10" rx="1.5" fill="#2dd4bf"/>
+  <text x="48" y="383" fill="#dceaf6" font-family="Segoe UI, sans-serif" font-size="8.5" font-weight="700">文章归档</text>
+  <g font-family="Consolas, monospace" font-size="7.4" fill="#7f9ab0">
+    <text x="38" y="405">2026-11</text><text x="174" y="405" text-anchor="end" fill="#2dd4bf">8</text>
+    <text x="38" y="422">2026-10</text><text x="174" y="422" text-anchor="end" fill="#2dd4bf">6</text>
+    <text x="38" y="439">2026-09</text><text x="174" y="439" text-anchor="end" fill="#2dd4bf">5</text>
+  </g>
+
+  <!-- center posts -->
+  <g>
+    <rect x="202" y="198" width="352" height="98" rx="10" fill="#0b1626" stroke="#173448"/>
+    <rect x="216" y="212" width="42" height="14" rx="4" fill="#0e2c33"/>
+    <text x="222" y="222" fill="#2dd4bf" font-family="Segoe UI, sans-serif" font-size="7">路亚技巧</text>
+    <text x="268" y="223" fill="#e6f1ff" font-family="Segoe UI, sans-serif" font-size="10.5" font-weight="700">夜钓翘嘴的三种控饵节奏</text>
+    <text x="268" y="238" fill="#7593ab" font-family="Segoe UI, sans-serif" font-size="7">从抛投落点到收线速度，拆解夜间翘嘴的追击窗口。</text>
+    <text x="268" y="252" fill="#7c5cff" font-family="Segoe UI, sans-serif" font-size="6.6">#夜钓  #翘嘴  #控饵</text>
+    <text x="216" y="276" fill="#587588" font-family="Segoe UI, sans-serif" font-size="6.8">shaibo · 2026-11-12 · 阅读 1.2k · 评论 23</text>
+    <rect x="474" y="212" width="64" height="46" rx="6" fill="#10283c"/>
+    <path d="M480 248l14-18 10 12 8-8 12 14z" fill="#1e4a5e"/>
+    <circle cx="494" cy="224" r="4" fill="#2dd4bf" opacity=".7"/>
+  </g>
+  <g>
+    <rect x="202" y="306" width="352" height="98" rx="10" fill="#0b1626" stroke="#173448"/>
+    <rect x="216" y="320" width="42" height="14" rx="4" fill="#2b1b2e"/>
+    <text x="222" y="330" fill="#f472b6" font-family="Segoe UI, sans-serif" font-size="7">装备评测</text>
+    <text x="268" y="331" fill="#e6f1ff" font-family="Segoe UI, sans-serif" font-size="10.5" font-weight="700">一根竿走天下？泛用竿的边界</text>
+    <text x="268" y="346" fill="#7593ab" font-family="Segoe UI, sans-serif" font-size="7">调性、长度与抛投克重，泛用竿的真实适用范围。</text>
+    <text x="268" y="360" fill="#7c5cff" font-family="Segoe UI, sans-serif" font-size="6.6">#装备  #钓竿</text>
+    <text x="216" y="384" fill="#587588" font-family="Segoe UI, sans-serif" font-size="6.8">shaibo · 2026-11-08 · 阅读 986 · 评论 14</text>
+    <rect x="474" y="320" width="64" height="46" rx="6" fill="#1b2436"/>
+    <path d="M480 356l14-18 10 12 8-8 12 14z" fill="#2a4a6a"/>
+    <circle cx="494" cy="332" r="4" fill="#f472b6" opacity=".7"/>
+  </g>
+  <rect x="202" y="416" width="352" height="28" rx="8" fill="#0b1626" stroke="#173448"/>
+  <text x="378" y="434" fill="#5c7c91" font-family="Segoe UI, sans-serif" font-size="7.5" text-anchor="middle">上滑加载更多</text>
+
+  <!-- right sidebar -->
+  <rect x="570" y="198" width="206" height="108" rx="10" fill="#0b1626" stroke="#173448"/>
+  <circle cx="673" cy="226" r="14" fill="#11314a" stroke="#2dd4bf" stroke-width="1.2"/>
+  <circle cx="673" cy="222" r="4" fill="#2dd4bf"/><path d="M664 235c1.8-4 5-6 9-6s7.2 2 9 6" fill="#2dd4bf"/>
+  <text x="673" y="252" fill="#e6f1ff" font-family="Segoe UI, sans-serif" font-size="8.5" font-weight="700" text-anchor="middle">关于我</text>
+  <text x="588" y="266" fill="#7593ab" font-family="Segoe UI, sans-serif" font-size="7">记录路亚、夜钓与装备心得，</text>
+  <text x="588" y="278" fill="#7593ab" font-family="Segoe UI, sans-serif" font-size="7">偶尔写点技术笔记。</text>
+  <rect x="588" y="288" width="80" height="12" rx="3" fill="#0e2c33"/>
+  <text x="628" y="297" fill="#2dd4bf" font-family="Segoe UI, sans-serif" font-size="6.5" text-anchor="middle">开始写作</text>
+  <rect x="570" y="318" width="206" height="102" rx="10" fill="#0b1626" stroke="#173448"/>
+  <text x="584" y="338" fill="#dceaf6" font-family="Segoe UI, sans-serif" font-size="8.5" font-weight="700">最新文章</text>
+  <g font-family="Segoe UI, sans-serif" font-size="6.8" fill="#8fb0c4">
+    <text x="584" y="356">01  夜钓翘嘴的三种控饵节奏</text>
+    <text x="584" y="372">02  一根竿走天下？泛用竿的边界</text>
+    <text x="584" y="388">03  溪流微物：轻量化的尽头</text>
+    <text x="584" y="404">04  从空军到爆护的复盘笔记</text>
+  </g>
+  <rect x="570" y="432" width="206" height="12" rx="0" fill="none"/>
+  <g font-family="Segoe UI, sans-serif" font-size="6.4" fill="#8fb0c4">
+    <rect x="570" y="432" width="34" height="14" rx="4" fill="#0e2c33"/><text x="577" y="442" fill="#2dd4bf">#夜钓</text>
+    <rect x="610" y="432" width="34" height="14" rx="4" fill="#0e2c33"/><text x="617" y="442" fill="#2dd4bf">#路亚</text>
+    <rect x="650" y="432" width="44" height="14" rx="4" fill="#0e2c33"/><text x="657" y="442" fill="#2dd4bf">#装备</text>
+  </g>
+
+  <!-- footer -->
+  <line x1="24" y1="470" x2="776" y2="470" stroke="#173448"/>
+  <text x="24" y="486" fill="#4d6b80" font-family="Segoe UI, sans-serif" font-size="6.6">© 2026 赛博博客 · 由 woquan 强力驱动</text>
+  <text x="776" y="486" fill="#4d6b80" font-family="Consolas, monospace" font-size="6.6" text-anchor="end">// POWERED BY CODE &amp; WATER</text>
+</svg>

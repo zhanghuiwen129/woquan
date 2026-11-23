@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="{{PAGE_DESCRIPTION}}">
+    <meta name="keywords" content="{{PAGE_KEYWORDS}}">
+    <title>{{PAGE_TITLE}}</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <script>
+        window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/';
+        window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+    </script>
+</head>
+<body>
+    <h1 class="sr-only">资讯频道</h1>
+
+<!-- ===== 顶部导航 ===== -->
+<!-- @include partials/topbar.html -->
+
+<div class="wrap">
+    <main>
+        <!-- 频道头 -->
+        {{SSR_CATHEAD}}
+
+        <!-- 子频道 + 排序 -->
+        <section class="filter-bar">
+            <div class="sub-chips" id="subChips">
+                <button class="chip active" data-sub="">全部</button>
+            </div>
+            <div class="sort-group" id="sortGroup">
+                <button class="sort active" data-sort="latest">最新</button>
+                <button class="sort" data-sort="hot">最热</button>
+                <button class="sort" data-sort="comment">最多评论</button>
+            </div>
+        </section>
+
+        <section class="feed" id="feed">{{SSR_FEED}}</section>
+        <div class="load-more" id="load-more">上滑加载更多</div>
+    </main>
+
+    <!-- 侧栏 -->
+    <aside class="aside">
+        <section class="panel">
+            <div class="panel-title">频道热文</div>
+            <div class="rank-list" id="rankList">{{SSR_SIDE}}</div>
+        </section>
+        <section class="panel">
+            <div class="panel-title">推荐作者</div>
+            <div id="asideAuthors"></div>
+        </section>
+    </aside>
+</div>
+
+<!-- 移动端底部 Tab -->
+<!-- @include partials/tabbar.html -->
+
+<!-- @include partials/page-tail.html -->
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+        <div id="page-topics" class="hidden">
+            <div class="card">
+                <div class="card-head">
+                    <h3>话题列表</h3>
+                    <button class="btn btn-primary" data-action="open-topic-form"><i data-icon="plus"></i>添加话题</button>
+                </div>
+                <table>
+                    <thead><tr><th>ID</th><th>名称</th><th>描述</th><th>动态数</th><th>状态</th><th>操作</th></tr></thead>
+                    <tbody id="topics-table"></tbody>
+                </table>
+                <div id="topic-form" class="hidden" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+                    <h3 style="font-size:16px;margin-bottom:16px;" id="topic-form-title">添加话题</h3>
+                    <input type="hidden" id="topic-id">
+                    <div class="form-group">
+                        <label>话题名称</label>
+                        <input type="text" class="form-input" id="topic-name" placeholder="例如：技术分享">
+                    </div>
+                    <div class="form-group">
+                        <label>描述</label>
+                        <textarea class="form-input" id="topic-description" placeholder="话题描述..." style="min-height:80px;resize:vertical;"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label><input type="checkbox" id="topic-status" checked> 启用</label>
+                    </div>
+                    <div style="display:flex;gap:12px;">
+                        <button class="btn btn-primary" data-action="save-topic">保存</button>
+                        <button class="btn btn-default" data-action="close-topic-form">取消</button>
+                    </div>
+                </div>
+            </div>
+        </div>

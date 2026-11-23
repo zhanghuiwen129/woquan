@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>热榜 · 一根竿</title>
+<style>
+  :root{
+    --bg:#F3F5F4;--card:#FFF;--ink:#17211E;--sub:#66726E;--line:#E6EAE8;
+    --brand:#0E7C6B;--brand-soft:#E3F1EE;--accent:#E8833A;--radius:12px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+  button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
+  img{display:block;width:100%;height:100%;object-fit:cover}
+
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topbar-inner{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:14px}
+  .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:19px}
+  .logo-mark{width:30px;height:30px;border-radius:8px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center}
+  .logo-mark svg{width:18px;height:18px}
+  .search{flex:1;max-width:420px;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:7px 14px;color:var(--sub)}
+  .search svg{width:16px;height:16px;flex:none}
+  .search input{border:none;background:none;outline:none;flex:1;font-size:14px;min-width:0}
+  .topbar-right{margin-left:auto}
+  .btn-login{background:var(--brand);color:#fff;font-size:14px;padding:8px 18px;border-radius:20px}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:16px 16px 96px;display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:960px){.wrap{grid-template-columns:minmax(0,1fr) 320px;gap:20px}}
+
+  /* 榜单 Tab */
+  .board-tabs{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);display:flex;gap:4px;padding:6px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none}
+  .board-tabs::-webkit-scrollbar{display:none}
+  .board-tab{flex:none;font-size:14px;color:var(--sub);padding:8px 16px;border-radius:9px}
+  .board-tab.active{background:var(--brand-soft);color:var(--brand);font-weight:600}
+
+  /* 榜单卡片 */
+  .board{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .board-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .board-head h2{font-size:17px;font-weight:700}
+  .board-head .time{font-size:12px;color:var(--sub)}
+  .rank-item{display:flex;gap:14px;padding:15px 18px;border-bottom:1px solid var(--line);cursor:pointer;align-items:center}
+  .rank-item:last-child{border-bottom:none}
+  .rank-no{flex:none;width:26px;font-size:18px;font-weight:700;color:#B7C0BC;text-align:center}
+  .rank-item:nth-child(1) .rank-no{color:var(--accent)}
+  .rank-item:nth-child(2) .rank-no{color:#E0A25A}
+  .rank-item:nth-child(3) .rank-no{color:#D9B87A}
+  .rank-main{flex:1;min-width:0}
+  .rank-title{font-size:15px;font-weight:600;line-height:1.5;margin-bottom:4px}
+  .rank-sub{font-size:12px;color:var(--sub);display:flex;gap:12px}
+  .rank-thumb{flex:none;width:104px;border-radius:8px;overflow:hidden;aspect-ratio:16/10}
+  @media(max-width:600px){.rank-thumb{width:84px}}
+  .trend{font-size:12px;color:var(--accent)}
+  .trend.down{color:var(--brand)}
+
+  /* 侧栏 */
+  .aside{display:none;flex-direction:column;gap:16px}
+  @media(min-width:960px){.aside{display:flex}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .panel-title{font-size:16px;font-weight:700;margin-bottom:14px}
+  .rise-list{display:flex;flex-direction:column;gap:13px}
+  .rise-item{display:flex;gap:10px;align-items:center;cursor:pointer}
+  .rise-no{flex:none;width:20px;height:20px;border-radius:5px;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--sub);background:var(--bg)}
+  .rise-text{flex:1;font-size:14px;line-height:1.4}
+  .rise-num{font-size:12px;color:var(--accent)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-size:13px;background:var(--bg);border-radius:16px;padding:6px 12px;cursor:pointer}
+
+  .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;border-top:1px solid var(--line);display:flex}
+  .tabbar-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;font-size:11px;color:var(--sub)}
+  .tabbar-item svg{width:22px;height:22px}
+  .tabbar-item.active{color:var(--brand)}
+  @media(min-width:960px){.tabbar{display:none}}
+
+  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:rgba(23,33,30,.88);color:#fff;font-size:14px;padding:10px 18px;border-radius:20px;z-index:100;opacity:0;pointer-events:none;transition:opacity .25s}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="logo" href="javascript:;" data-toast="一根竿 · 首页"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 20C8 14 12 10 20 5"/><circle cx="6" cy="18" r="1.6" fill="#fff" stroke="none"/></svg></span>一根竿</a>
+    <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="text" placeholder="搜钓点、鱼种、装备攻略"></label>
+    <div class="topbar-right"><button class="btn-login" data-toast="登录（演示）">登录</button></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <main>
+    <div class="board-tabs" id="boardTabs">
+      <button class="board-tab active" data-board="all">全站热榜</button>
+      <button class="board-tab" data-board="wild">野钓</button>
+      <button class="board-tab" data-board="lure">路亚</button>
+      <button class="board-tab" data-board="gear">装备</button>
+      <button class="board-tab" data-board="video">视频</button>
+    </div>
+
+    <section class="board">
+      <div class="board-head"><h2 id="boardTitle">全站热榜</h2><span class="time">每小时更新 · 截至 21:30</span></div>
+      <div id="boardList"></div>
+    </section>
+  </main>
+
+  <aside class="aside">
+    <section class="panel">
+      <div class="panel-title">24 小时飙升</div>
+      <div class="rise-list" id="riseList"></div>
+    </section>
+    <section class="panel">
+      <div class="panel-title">热议话题</div>
+      <div class="chips" id="topicChips"></div>
+    </section>
+  </aside>
+</div>
+
+<nav class="tabbar">
+  <button class="tabbar-item active" data-toast="首页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>首页</button>
+  <button class="tabbar-item" data-toast="视频（演示）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5l5 2.5-5 2.5z" fill="currentColor" stroke="none"/></svg>视频</button>
+  <button class="tabbar-item" data-toast="消息（演示）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/></svg>消息</button>
+  <button class="tabbar-item" data-toast="我的（演示）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></svg>我的</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const IMG={
+  carp:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/Y2wfbpb1aoFE5nxCtB5cX9nJnjb",
+  calm:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/DYjQb0CJCoiJCvxnv9Fc5WwIn6f",
+  reed:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/JapFbukAYoUn0fxuqbccorXVnDg",
+  purple:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/Cew1bGDkLo5Kt5xpc2Icf5gUnGd",
+  lure:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/X9HqbJndjoT1cBxADttc6sdznKf",
+  three:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/AC5kbXKWZoVmI5xnlNPcgzBInHd"
+};
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+let t;function toast(m){const el=$("#toast");el.textContent=m;el.classList.add("show");clearTimeout(t);t=setTimeout(()=>el.classList.remove("show"),1600)}
+
+const BOARDS={
+  all:[
+    {title:"降温后鲫鱼开口变差？饵料味型这样调",sub:"野钓 · 1.2万讨论",hot:"3.2万",trend:"up",img:IMG.carp},
+    {title:"今年秋冬季禁渔期公布，这些水域严禁垂钓",sub:"公告 · 9860讨论",hot:"2.8万",trend:"up",img:IMG.calm},
+    {title:"实拍：清晨路亚翘嘴，三本钩中鱼瞬间拉力拉满",sub:"视频 · 8640讨论",hot:"2.1万",trend:"up",img:IMG.purple},
+    {title:"抄网选购避坑：尺寸、网眼、支架怎么挑",sub:"装备 · 6520讨论",hot:"1.7万",trend:"down",img:IMG.lure},
+    {title:"芦苇荡里藏大鱼：秋季找湾子、读草缝技巧",sub:"野钓 · 5430讨论",hot:"1.5万",trend:"up",img:IMG.reed},
+    {title:"野钓遇到走水，铅坠和调漂的应急办法",sub:"台钓 · 4120讨论",hot:"1.2万",trend:"down",img:IMG.three},
+    {title:"鲤鱼窝料配方：酒米、玉米、菜籽饼实测对比",sub:"野钓 · 3890讨论",hot:"9860",trend:"up",img:IMG.carp},
+    {title:"新手路亚套装怎么选：竿轮饵线一次讲清",sub:"装备 · 2760讨论",hot:"8740",trend:"down",img:IMG.lure}
+  ],
+  wild:[
+    {title:"降温后鲫鱼开口变差？饵料味型这样调",sub:"1.2万讨论",hot:"3.2万",trend:"up",img:IMG.carp},
+    {title:"芦苇荡里藏大鱼：秋季找湾子、读草缝技巧",sub:"5430讨论",hot:"1.5万",trend:"up",img:IMG.reed},
+    {title:"鲤鱼窝料配方：酒米、玉米、菜籽饼实测对比",sub:"3890讨论",hot:"9860",trend:"up",img:IMG.carp},
+    {title:"野钓遇到走水，铅坠和调漂的应急办法",sub:"4120讨论",hot:"1.2万",trend:"down",img:IMG.three}
+  ],
+  lure:[
+    {title:"实拍：清晨路亚翘嘴，三本钩中鱼瞬间拉力拉满",sub:"8640讨论",hot:"2.1万",trend:"up",img:IMG.purple},
+    {title:"新手路亚套装怎么选：竿轮饵线一次讲清",sub:"2760讨论",hot:"8740",trend:"down",img:IMG.lure}
+  ],
+  gear:[
+    {title:"抄网选购避坑：尺寸、网眼、支架怎么挑",sub:"6520讨论",hot:"1.7万",trend:"down",img:IMG.lure},
+    {title:"新手路亚套装怎么选：竿轮饵线一次讲清",sub:"2760讨论",hot:"8740",trend:"up",img:IMG.lure}
+  ],
+  video:[
+    {title:"实拍：清晨路亚翘嘴，三本钩中鱼瞬间拉力拉满",sub:"8640讨论",hot:"2.1万",trend:"up",img:IMG.purple}
+  ]
+};
+const TITLES={all:"全站热榜",wild:"野钓热榜",lure:"路亚热榜",gear:"装备热榜",video:"视频热榜"};
+
+function renderBoard(key){
+  const list=BOARDS[key];
+  $("#boardTitle").textContent=TITLES[key];
+  $("#boardList").innerHTML=list.map((r,i)=>`
+    <div class="rank-item">
+      <span class="rank-no">${i+1}</span>
+      <div class="rank-main">
+        <div class="rank-title">${r.title}</div>
+        <div class="rank-sub"><span>${r.sub}</span><span class="trend ${r.trend==="down"?"down":""}">${r.trend==="up"?"▲ 上升":"▼ 下降"}</span><span>热度 ${r.hot}</span></div>
+      </div>
+      <div class="rank-thumb"><img src="${r.img}" alt="${r.title}" loading="lazy"></div>
+    </div>`).join("");
+}
+renderBoard("all");
+
+$("#boardTabs").addEventListener("click",e=>{
+  const tab=e.target.closest(".board-tab");if(!tab)return;
+  $$(".board-tab").forEach(x=>x.classList.remove("active"));tab.classList.add("active");
+  renderBoard(tab.dataset.board);
+});
+
+const RISE=[
+  {t:"冬季大棚钓鲫鱼线号搭配",num:"+38"},
+  {t:"白条闹窝严重怎么留鱼",num:"+26"},
+  {t:"黑坑偷驴正钓区别",num:"+19"},
+  {t:"酒米窝料自制配方",num:"+12"},
+  {t:"矶竿滑漂远投技巧",num:"+8"}
+];
+$("#riseList").innerHTML=RISE.map((r,i)=>`
+  <div class="rise-item"><span class="rise-no">${i+1}</span><span class="rise-text">${r.t}</span><span class="rise-num">${r.num}</span></div>`).join("");
+
+const TOPICS=["#深秋野钓攻略","#大板鲫","#路亚入门","#钓位选择","#渔获分享","#冬季作钓"];
+$("#topicChips").innerHTML=TOPICS.map(t=>`<span class="chip" data-toast="演示：进入话题 ${t}">${t}</span>`).join("");
+
+document.addEventListener("click",e=>{const el=e.target.closest("[data-toast]");if(el){e.stopPropagation();toast(el.dataset.toast);}});
+</script>
+</body>
+</html>

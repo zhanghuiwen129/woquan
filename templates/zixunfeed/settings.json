@@ -1,0 +1,105 @@
+{
+  "fields": [
+    {
+      "key": "brand_color",
+      "type": "color",
+      "label": "品牌主色",
+      "desc": "顶栏 Logo、关注按钮、频道激活下划线的主色（资讯流品牌色，默认青绿）",
+      "default": "#0E7C6B",
+      "cssVar": "--brand"
+    },
+    {
+      "key": "accent_color",
+      "type": "color",
+      "label": "强调色（热榜 / 快讯）",
+      "desc": "热榜序号、快讯标签、强调点缀使用的暖色（默认橙）",
+      "default": "#E8833A",
+      "cssVar": "--accent"
+    },
+    {
+      "key": "bg_color",
+      "type": "color",
+      "label": "页面背景色",
+      "desc": "整页底色，资讯流以浅灰衬托白色信息卡",
+      "default": "#F3F5F4",
+      "cssVar": "--bg"
+    },
+    {
+      "key": "card_color",
+      "type": "color",
+      "label": "卡片背景色",
+      "desc": "信息卡、侧栏面板的底色",
+      "default": "#FFFFFF",
+      "cssVar": "--card"
+    },
+    {
+      "key": "text_color",
+      "type": "color",
+      "label": "正文主色",
+      "desc": "标题与正文文字颜色",
+      "default": "#17211E",
+      "cssVar": "--ink"
+    },
+    {
+      "key": "card_radius",
+      "type": "select",
+      "label": "卡片圆角",
+      "desc": "信息卡与按钮的圆角大小",
+      "default": "12",
+      "options": [
+        { "value": "8", "label": "小巧 8px" },
+        { "value": "12", "label": "标准 12px" },
+        { "value": "16", "label": "圆润 16px" }
+      ]
+    },
+    {
+      "key": "content_width",
+      "type": "select",
+      "label": "内容最大宽度",
+      "desc": "主内容区（信息流 + 侧栏）的最大宽度",
+      "default": "1180",
+      "options": [
+        { "value": "1080", "label": "紧凑 1080px" },
+        { "value": "1180", "label": "标准 1180px" },
+        { "value": "1280", "label": "宽屏 1280px" }
+      ],
+      "cssVar": "--maxw",
+      "cssUnit": "px"
+    },
+    {
+      "key": "dark_mode",
+      "type": "switch",
+      "label": "默认深色模式",
+      "desc": "进入站点即使用深色配色（客户端仍可手动切换）",
+      "default": false
+    },
+    {
+      "key": "show_hero",
+      "type": "switch",
+      "label": "头条轮播",
+      "desc": "首页顶部轮播头条位",
+      "default": true
+    },
+    {
+      "key": "show_flash",
+      "type": "switch",
+      "label": "快讯条",
+      "desc": "首页头条下方的滚动快讯条",
+      "default": true
+    },
+    {
+      "key": "show_sidebar",
+      "type": "switch",
+      "label": "侧边栏（热榜 / 话题 / 作者）",
+      "desc": "PC 端右侧热榜、热门话题、关注作者栏",
+      "default": true
+    },
+    {
+      "key": "brand_name",
+      "type": "text",
+      "label": "站点品牌名",
+      "desc": "顶栏与移动端显示的站点名称",
+      "default": "woquan"
+    }
+  ]
+}

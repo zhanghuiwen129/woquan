@@ -1,0 +1,15 @@
+<!-- 演示扩展设置页：纯 HTML，无内联 script。 -->
+<!-- 带 data-config-key 的控件由 admin/js/plugin-settings.js 自动回填并保存到 plugin_configs。 -->
+<section class="demo-extension-settings">
+    <h3>演示扩展设置</h3>
+    <p>本页用于演示插件设置机制：控件的 <code>data-config-key</code> 由后台通用脚本自动读取与保存，配置落在插件独立命名空间，不进入核心设置白名单。</p>
+
+    <div class="form-row">
+        <label for="demo-post-hook-enabled">发帖钩子记录开关</label>
+        <select id="demo-post-hook-enabled" data-config-key="post_hook_enabled">
+            <option value="1">开启（post_created 写入一条演示记录）</option>
+            <option value="0">关闭（钩子不做记录）</option>
+        </select>
+        <p class="hint">配置键：<code>post_hook_enabled</code>；作用域：<code>DemoExtension</code>。默认值在插件安装时初始化。</p>
+    </div>
+</section>

@@ -1,0 +1,17 @@
+{
+  "id": "zixunfeed",
+  "name": "沉浸式资讯流",
+  "version": "1.0.0",
+  "author": "woquan",
+  "description": "今日头条风格的沉浸式资讯信息流主题：固定顶栏 + 频道 Tab + 轮播头条 + 快讯条 + 混合卡片流，PC 右侧热榜/话题/作者栏，移动端底部 Tab。11 个预览页全部按预览落地：首页、文章详情、频道聚合、搜索结果、个人主页、消息通知、话题聚合、写文章、视频专区、热榜排行、登录注册，均对接真实后端（信息流/搜索/分类/用户资料/通知/话题/榜单/视频/发布/登录注册/点赞关注收藏）。其余后台型页面沿用同设计语言的结构壳。品牌名与频道从后端配置动态读取，通用资讯占位。",
+  "preview": "preview.svg",
+  "contract": "1.0",
+  "inherits_js": "zixunfeed",
+  "content_format": "html",
+  "inline_media": true,
+  "skin": {
+    "variables": ["--brand", "--brand-soft", "--accent", "--accent-soft", "--bg", "--card", "--ink", "--body", "--sub", "--line", "--radius", "--shadow"],
+    "dark_mode": true,
+    "custom_color": true
+  }
+}

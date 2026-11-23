@@ -1,0 +1,46 @@
+{
+  "fields": [
+    { "key": "brand_name", "group": "基础", "type": "text", "label": "博客名称", "desc": "顶栏、登录页、页脚与浏览器标题使用的站点名", "default": "赛博博客" },
+    { "key": "brand_sub", "group": "基础", "type": "text", "label": "博客副标题", "desc": "顶栏名称下方的英文标识，建议 6-16 个字符", "default": "SHAIBOBLOG" },
+
+    { "key": "hero_kicker", "group": "首页横幅", "type": "text", "label": "横幅眉题", "desc": "首页横幅大标题上方的小字标识（终端风格）", "default": "// PERSONAL BLOG · EST.2026" },
+    { "key": "hero_title", "group": "首页横幅", "type": "text", "label": "首页大标题", "desc": "首页横幅主标题，建议一句话表明博客主题", "default": "在代码与文字之间，记录每一次思考" },
+    { "key": "hero_desc", "group": "首页横幅", "type": "textarea", "label": "首页简介", "desc": "首页横幅标题下方的介绍文字", "default": "记录路亚、夜钓与装备心得，偶尔写点技术笔记。文章按分类与归档沉淀下来，方便日后检索与回看。" },
+    { "key": "hero_term_title", "group": "终端卡片", "type": "text", "label": "终端卡片：窗口标题", "desc": "终端窗口顶栏显示的文件路径，例如 ~/blog", "default": "~/blog" },
+    { "key": "hero_term_cmd_user", "group": "终端卡片", "type": "text", "label": "终端卡片：命令1", "desc": "第一行命令提示符，可自定义命令名", "default": "$ whoami" },
+    { "key": "hero_term_user", "group": "终端卡片", "type": "text", "label": "终端卡片：whoami 输出", "desc": "横幅右侧终端卡片中 whoami 的返回内容；选择「极简文字 / 居中聚光」版式时不显示该卡片", "default": "shaibo —— writer & angler" },
+    { "key": "hero_term_cmd_file", "group": "终端卡片", "type": "text", "label": "终端卡片：命令2", "desc": "第二行命令提示符，可自定义文件名", "default": "$ cat manifesto.md" },
+    { "key": "hero_term_manifesto", "group": "终端卡片", "type": "textarea", "label": "终端卡片：博客宣言", "desc": "第二行命令的输出内容，支持多行，每行会自动加上终端提示符", "default": "把每一次抛投、每一段代码，\n都写进可检索的档案。" },
+    { "key": "hero_term_prompt", "group": "终端卡片", "type": "text", "label": "终端卡片：末尾光标", "desc": "终端最后一行待输入的命令提示符", "default": "$ _" },
+    { "key": "hero_style", "group": "首页横幅", "type": "select", "label": "横幅版式", "desc": "终端卡片：右侧代码窗口；极简文字：隐藏终端；居中聚光：文字居中放大", "default": "terminal",
+      "options": [ { "value": "terminal", "label": "终端卡片" }, { "value": "minimal", "label": "极简文字" }, { "value": "spotlight", "label": "居中聚光" } ] },
+    { "key": "show_hero", "group": "首页横幅", "type": "switch", "label": "显示首页横幅", "desc": "关闭后首页直接从文章列表开始", "default": true },
+    { "key": "show_hero_stats", "group": "首页横幅", "type": "switch", "label": "横幅数据统计", "desc": "在横幅中显示文章数、分类数、标签数", "default": true },
+
+    { "key": "about_text", "group": "侧栏与关于", "type": "textarea", "label": "关于我", "desc": "侧栏「关于我」卡片的自我介绍，也是博客的个性签名", "default": "记录路亚、夜钓与装备心得，偶尔写点技术笔记。文章按分类与归档沉淀下来，方便日后检索与回看。" },
+    { "key": "about_avatar", "group": "侧栏与关于", "type": "image", "label": "博主头像", "desc": "侧栏「关于我」卡片头像，留空使用默认头像", "default": "" },
+
+    { "key": "side_about", "group": "侧栏与关于", "type": "switch", "label": "侧栏模块：关于我", "default": true },
+    { "key": "side_categories", "group": "侧栏与关于", "type": "switch", "label": "侧栏模块：文章分类", "default": true },
+    { "key": "side_archive", "group": "侧栏与关于", "type": "switch", "label": "侧栏模块：文章归档", "default": true },
+    { "key": "side_latest", "group": "侧栏与关于", "type": "switch", "label": "侧栏模块：最新文章", "default": true },
+    { "key": "side_tags", "group": "侧栏与关于", "type": "switch", "label": "侧栏模块：标签云", "default": true },
+    { "key": "show_sidebar", "group": "侧栏与关于", "type": "switch", "label": "显示左右侧栏", "desc": "关闭后正文居中单栏显示，适合沉浸阅读", "default": true },
+
+    { "key": "primary_color", "group": "配色与布局", "type": "color", "label": "主色（青绿霓虹）", "desc": "链接、按钮、分类与横幅高亮的主色", "default": "#2dd4bf", "cssVar": "--brand" },
+    { "key": "accent_color", "group": "配色与布局", "type": "color", "label": "强调色（霓虹粉）", "desc": "标签、徽标与局部点缀的强调色", "default": "#f472b6", "cssVar": "--accent" },
+    { "key": "bg_color", "group": "配色与布局", "type": "color", "label": "页面背景", "desc": "博客底色，默认深空蓝黑配网格暗纹", "default": "#060c17", "cssVar": "--bg" },
+    { "key": "card_color", "group": "配色与布局", "type": "color", "label": "卡片背景", "desc": "文章卡片、侧栏面板的底色", "default": "#0b1626", "cssVar": "--card" },
+    { "key": "text_color", "group": "配色与布局", "type": "color", "label": "正文颜色", "desc": "标题与正文的主文字颜色", "default": "#e6f1ff", "cssVar": "--ink" },
+    { "key": "content_width", "group": "配色与布局", "type": "select", "label": "内容宽度", "desc": "三栏博客布局的整体最大宽度", "default": "1240", "cssVar": "--maxw", "cssUnit": "px",
+      "options": [ { "value": "1120", "label": "紧凑" }, { "value": "1240", "label": "标准" }, { "value": "1360", "label": "宽屏" } ] },
+
+    { "key": "bg_effect", "group": "特效", "type": "select", "label": "背景特效", "desc": "全屏背景氛围动效，纯装饰不影响正文；移动端与减动偏好自动降级", "default": "aurora",
+      "options": [ { "value": "none", "label": "关闭" }, { "value": "grid", "label": "网格脉冲" }, { "value": "aurora", "label": "极光流动" }, { "value": "stars", "label": "星尘漂浮" }, { "value": "stream", "label": "数据流" } ] },
+    { "key": "cursor_effect", "group": "特效", "type": "select", "label": "鼠标特效", "desc": "鼠标移动反馈；光晕跟随 / 霓虹拖尾 / 激光准星，触屏设备自动跳过", "default": "glow",
+      "options": [ { "value": "none", "label": "关闭" }, { "value": "glow", "label": "霓虹光晕" }, { "value": "trail", "label": "霓虹拖尾" }, { "value": "laser", "label": "激光准星" } ] },
+
+    { "key": "footer_text", "group": "页脚", "type": "text", "label": "页脚签名", "desc": "页脚博客名称下方的一句话", "default": "在代码与文字之间，记录每一次思考。" },
+    { "key": "icp_text", "group": "页脚", "type": "text", "label": "备案 / 版权信息", "desc": "显示在页脚版权行末尾，例如 粤ICP备xxxxxxxx号；留空则不显示", "default": "" }
+  ]
+}

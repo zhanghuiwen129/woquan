@@ -1,0 +1,124 @@
+        <div id="page-circles" class="hidden">
+            <div class="card">
+                <div class="card-head">
+                    <h3>圈子列表</h3>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <input type="text" class="form-input" id="circles-search-input" placeholder="搜索圈子名称/简介..." style="width:220px;" data-keydown="enter-circles">
+                        <button class="btn btn-default" data-action="load-circles" data-page="1">搜索</button>
+                        <button class="btn btn-primary" data-action="open-circle-form"><i data-icon="plus"></i>添加圈子</button>
+                    </div>
+                </div>
+                <table>
+                    <thead><tr><th>ID</th><th>封面</th><th>名称</th><th>圈主</th><th>简介</th><th>可见性</th><th>加入方式</th><th>付费</th><th>成员</th><th>动态</th><th>状态</th><th>操作</th></tr></thead>
+                    <tbody id="circles-table"></tbody>
+                </table>
+                <div id="circles-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;"></div>
+            </div>
+
+            <!-- 圈子表单 -->
+            <div id="circle-form" class="hidden" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+                <h3 style="font-size:16px;margin-bottom:16px;" id="circle-form-title">添加圈子</h3>
+                <input type="hidden" id="circle-id">
+                <div class="form-group">
+                    <label>圈子名称</label>
+                    <input type="text" class="form-input" id="circle-name" placeholder="例如：技术分享圈" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>简介（最多 500 字）</label>
+                    <textarea class="form-input" id="circle-description" placeholder="圈子简介..." style="min-height:80px;resize:vertical;" maxlength="500"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>封面图 URL（可选）</label>
+                    <input type="text" class="form-input" id="circle-cover" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>圈主用户 ID</label>
+                    <input type="number" class="form-input" id="circle-owner-id" placeholder="输入用户ID">
+                </div>
+                <div class="form-group">
+                    <label>加入方式</label>
+                    <select class="form-input" id="circle-join-mode">
+                        <option value="free">自由加入</option>
+                        <option value="approval">需审核</option>
+                        <option value="invite">仅邀请</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>发帖权限</label>
+                    <select class="form-input" id="circle-post-permission">
+                        <option value="all">所有成员可发</option>
+                        <option value="admin">仅管理员可发</option>
+                        <option value="owner">仅圈主可发</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>可见性</label>
+                    <select class="form-input" id="circle-visibility">
+                        <option value="public">公开（列表可见）</option>
+                        <option value="protected">受保护（列表可见，内容仅成员）</option>
+                        <option value="private">私密（不公开列表）</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>V67 付费方式</label>
+                    <select class="form-input" id="circle-pay-type" data-change="circle-pay-type-change">
+                        <option value="0">免费</option>
+                        <option value="1">会员等级门槛</option>
+                        <option value="2">付费订阅（走钱包扣款）</option>
+                    </select>
+                    <div id="circle-pay-vip-box" style="display:none;margin-top:8px;">
+                        <label>要求的会员等级</label>
+                        <select class="form-input" id="circle-pay-vip-level">
+                            <option value="1">Lv1 月度会员</option>
+                            <option value="2">Lv2 季度会员</option>
+                            <option value="3">Lv3 年度会员</option>
+                        </select>
+                        <p class="text-muted" style="font-size:12px;margin-top:4px;">已达该等级的会员直接放行，无需额外付费。</p>
+                    </div>
+                    <div id="circle-pay-amount-box" style="display:none;margin-top:8px;">
+                        <label>订阅价格（元）</label>
+                        <input type="number" class="form-input" id="circle-pay-amount" min="0" step="0.01" value="0">
+                        <p class="text-muted" style="font-size:12px;margin-top:4px;">订阅价格，到期可续费。余额不足时前端会提示。</p>
+                        <label style="margin-top:8px;">订阅天数</label>
+                        <input type="number" class="form-input" id="circle-pay-days" min="0" max="3650" step="1" value="0" placeholder="0=跟随全局（当前365天）">
+                        <p class="text-muted" style="font-size:12px;margin-top:4px;">0 = 跟随全局配置；1-3650 天 = 本圈独立周期。</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="circle-status" checked> 启用</label>
+                </div>
+                <div style="display:flex;gap:12px;">
+                    <button class="btn btn-primary" data-action="save-circle">保存</button>
+                    <button class="btn btn-default" data-action="close-circle-form">取消</button>
+                </div>
+            </div>
+
+            <!-- 成员管理子页 -->
+            <div id="circle-members-panel" class="hidden" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+                <div class="card-head">
+                    <h3>成员管理：<span id="members-circle-name"></span></h3>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-default" data-action="open-circle-pending-requests">查看待审申请</button>
+                        <button class="btn btn-default" data-action="close-circle-members-panel">返回</button>
+                    </div>
+                </div>
+                <table>
+                    <thead><tr><th>用户ID</th><th>头像</th><th>昵称</th><th>用户名</th><th>角色</th><th>加入时间</th><th>操作</th></tr></thead>
+                    <tbody id="circle-members-table"></tbody>
+                </table>
+                <div id="members-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;"></div>
+            </div>
+
+            <!-- 待审申请子页 -->
+            <div id="circle-requests-panel" class="hidden" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+                <div class="card-head">
+                    <h3>待审申请：<span id="requests-circle-name"></span></h3>
+                    <button class="btn btn-default" data-action="close-circle-requests-panel">返回</button>
+                </div>
+                <table>
+                    <thead><tr><th>用户ID</th><th>头像</th><th>昵称</th><th>用户名</th><th>申请留言</th><th>申请时间</th><th>操作</th></tr></thead>
+                    <tbody id="circle-requests-table"></tbody>
+                </table>
+                <div id="requests-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;"></div>
+            </div>
+        </div>

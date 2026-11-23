@@ -1,0 +1,17 @@
+{
+  "id": "shaiboblog",
+  "name": "赛博博客",
+  "version": "1.0.0",
+  "author": "shaiboblog",
+  "description": "赛博朋克风个人博客主题：三栏布局、分类/归档/标签侧栏、Markdown 写作与文章置顶收藏。",
+  "preview": "preview.svg",
+  "contract": "1.0",
+  "inherits_js": "shaiboblog",
+  "content_format": "markdown",
+  "inline_media": true,
+  "skin": {
+    "variables": ["--brand", "--accent", "--bg", "--card", "--ink", "--maxw"],
+    "dark_mode": true,
+    "custom_color": true
+  }
+}

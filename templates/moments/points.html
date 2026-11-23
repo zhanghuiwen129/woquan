@@ -1,0 +1,265 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>积分中心 - {{SITE_NAME}}</title>
+    <link rel="stylesheet" href="assets/css/style.css?v=20261117.1">
+    <script>
+        window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/'; window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+    </script>
+</head>
+<body data-page="favorites">
+<div class="app-container">
+    <!-- PC 端左中右三栏布局容器 -->
+    <div class="pc-layout">
+
+        <!-- 左栏 (仅 PC 端显示) -->
+        <aside class="sidebar-left">
+            <div class="sidebar-card user-card">
+                <div class="user-card-avatar">
+                    <img src="assets/images/default-avatar.svg" alt="avatar" id="sidebar-avatar">
+                </div>
+                <div class="user-card-info">
+                    <h3 id="sidebar-nickname">woquan 用户</h3>
+                    <p class="user-bio" id="sidebar-bio">这个人很懒，什么都没留下~</p>
+                </div>
+                <div class="user-card-stats" id="sidebar-stats">
+                    <div class="stat-item">
+                        <span class="stat-num" id="sidebar-stat-posts">0</span>
+                        <span class="stat-label">动态</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num" id="sidebar-stat-following">0</span>
+                        <span class="stat-label">关注</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num" id="sidebar-stat-followers">0</span>
+                        <span class="stat-label">粉丝</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="if(app.checkAuth() && app.user) app.goUser(app.user.username); else app.openAuthModal();">查看主页</button>
+            </div>
+
+            <div class="sidebar-card nav-card">
+                <h4 class="sidebar-title">功能菜单</h4>
+                <ul class="nav-list">
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); location.assign(window.HUBLOG_PAGE_BASE + '/');"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>首页</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); location.assign(window.HUBLOG_PAGE_BASE + '/search');"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>发现</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); if(app.checkAuth()) { location.assign(window.HUBLOG_PAGE_BASE + '/chat'); } else { app.openAuthModal(); }"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>私信</span><span class="chat-nav-badge" id="chat-unread-badge" style="display:none;">0</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); if(app.checkAuth() && app.user) app.goUser(app.user.username); else app.openAuthModal();"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的主页</span></a></li>
+                    <li><a href="#" class="nav-link active" onclick="event.preventDefault(); if(app.checkAuth()) { location.assign(window.HUBLOG_PAGE_BASE + '/favorites'); } else { app.openAuthModal(); }"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><span>我的收藏</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); if(app.checkAuth()) app.openNotificationModal(); else app.openAuthModal();"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>通知</span><span class="chat-nav-badge" id="sidebar-notify-badge" style="display:none;">0</span></a></li>
+                    <li id="nav-admin" style="display:none;"><a href="#" class="nav-link" onclick="event.preventDefault(); app.goAdmin();"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>管理后台</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- 中间主内容区 -->
+        <main class="main-content">
+
+            <!-- 积分中心（V68）：月签到 / 任务 / 流水 -->
+            <div class="pt-wrap">
+                <div class="pt-hero">
+                    <div class="pt-hero-line">
+                        <span class="pt-hero-label">我的积分</span>
+                        <span class="pt-hero-num"><b id="pt-points">0</b></span>
+                    </div>
+                    <div class="pt-hero-sub">当前可抵扣 ¥<b id="pt-yuan">0</b>　·　汇率 $<b id="pt-rate">10</b> 积分 = ¥1</div>
+                    <button class="pt-signin-btn" id="pt-signin-btn" onclick="ptSignin()">今日签到</button>
+                </div>
+
+                <div class="pt-row">
+                    <div class="pt-col">
+                        <div class="pt-card">
+                            <div class="pt-card-t">本月签到</div>
+                            <div class="pt-cal-head">
+                                <span id="pt-cal-title">—</span>
+                                <span id="pt-cal-sum" class="pt-muted">—</span>
+                            </div>
+                            <div class="pt-cal-head pt-cal-week">
+                                <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+                            </div>
+                            <div class="pt-cal" id="pt-cal"></div>
+                            <div class="pt-tip" id="pt-streak">连续签到 —</div>
+                        </div>
+
+                        <div class="pt-card">
+                            <div class="pt-card-t">最近积分记录</div>
+                            <div id="pt-logs" class="pt-logs"><div class="pt-empty">加载中…</div></div>
+                        </div>
+                    </div>
+
+                    <div class="pt-card">
+                        <div class="pt-card-t">积分任务</div>
+                        <div id="pt-tasks" class="pt-tasks"><div class="pt-empty">加载中…</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <style>
+            .pt-wrap{display:flex;flex-direction:column;gap:14px;}
+            .pt-hero{background:linear-gradient(135deg,#ff9f43,#f97316);color:#fff;border-radius:12px;padding:16px 18px;}
+            .pt-hero-line{display:flex;justify-content:space-between;align-items:baseline;}
+            .pt-hero-label{font-size:13px;opacity:.9;}
+            .pt-hero-num b{font-size:26px;}
+            .pt-hero-sub{font-size:12px;opacity:.9;margin-top:4px;}
+            .pt-signin-btn{margin-top:10px;background:#fff;color:#f97316;border:none;border-radius:18px;padding:7px 20px;font-size:14px;font-weight:600;cursor:pointer;}
+            .pt-card{background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
+            .pt-card-t{font-size:15px;font-weight:600;margin-bottom:10px;}
+            .pt-cal-head{display:flex;justify-content:space-between;font-size:13px;color:#555;margin-bottom:6px;}
+            .pt-muted{color:#8e8e93;}
+            .pt-cal-week{color:#9a9a9a;font-size:12px;margin-top:0;}
+            .pt-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+            .pt-day{height:44px;border-radius:8px;background:#f5f5f5;color:#555;font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;}
+            .pt-day small{font-size:10px;opacity:.7;}
+            .pt-day.signed{background:#fff4e6;color:#f97316;}
+            .pt-day.today{background:#fff1e6;border:2px solid #f97316;color:#f97316;font-weight:600;}
+            .pt-day.miss{background:#fafafa;color:#bbbbbb;}
+            .pt-day.future{background:#fcfcfc;color:#cccccc;}
+            .pt-tip{font-size:12px;color:#8e8e93;margin-top:8px;}
+            .pt-task{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f5f5f5;}
+            .pt-task:last-child{border-bottom:none;}
+            .pt-task-t{font-size:14px;font-weight:500;}
+            .pt-task-d{font-size:12px;color:#8e8e93;margin-top:2px;}
+            .pt-task-p{font-size:13px;color:#f97316;font-weight:600;white-space:nowrap;margin-left:8px;}
+            .pt-btn{border:1px solid #f97316;color:#f97316;background:#fff;border-radius:14px;padding:4px 14px;font-size:12px;cursor:pointer;white-space:nowrap;}
+            .pt-btn:disabled{border-color:#ddd;color:#bbb;background:#fafafa;cursor:default;}
+            .pt-log{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid #f5f5f5;}
+            .pt-log:last-child{border-bottom:none;}
+            .pt-log span:last-child{font-weight:600;}
+            .pt-log.minus span:last-child{color:#e5533d;}
+            .pt-log.plus span:last-child{color:#2fb86a;}
+            .pt-empty{font-size:13px;color:#9a9a9a;padding:6px 0;}
+            /* PC 端：签到日历与任务并排，压缩页面纵向长度 */
+            .pt-col{display:flex;flex-direction:column;gap:14px;}
+            @media (min-width: 1024px) {
+                .pt-row{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:14px;align-items:start;}
+                .pt-cal{max-width:420px;}
+            }
+            @media (max-width: 768px) { .pt-wrap{padding:12px;} }
+            </style>
+    </div>
+    <!-- 结束 pc-layout -->
+
+    <!-- 底部导航 -->
+
+<script>
+
+const PT = { home: null, tasks: [], logs: [] };
+
+function ptText(el, v) { const n = document.getElementById(el); if (n) n.textContent = v; }
+
+function ptRenderCalendar() {
+    const box = document.getElementById('pt-cal');
+    if (!box || !PT.home) return;
+    const cal = PT.home.calendar || {};
+    ptText('pt-cal-title', cal.year + ' 年 ' + cal.month + ' 月');
+    ptText('pt-cal-sum', '已签 ' + (PT.home.month_signed || 0) + ' 天 / 本月 ' + (PT.home.month_points || 0) + ' 分');
+    ptText('pt-streak', '连续签到 ' + (PT.home.streak || 0) + ' 天' +
+        (PT.home.today_signed ? '（今天已签，+' + PT.home.today_points + '）' : '（今天还没签）'));
+
+    // 日历按周（周日起）分行，缺的那几天补空白格
+    const days = cal.days || [];
+    const firstDay = days.length ? new Date(days[0].date + 'T00:00:00').getDay() : 0;
+    let html = '';
+    for (let i = 0; i < firstDay; i++) html += '<div class="pt-day future"></div>';
+    days.forEach((d) => {
+        const cls = d.status === 'today' ? 'today' : (d.got ? 'signed' : (d.status === 'miss' ? 'miss' : 'future'));
+        html += '<div class="pt-day ' + cls + '" title="' + d.date + (d.got ? ' 已签到 +' + d.points : ' 未签到') + '">' +
+            '<span>' + d.day + '</span><small>' + (d.got ? '+' + d.points : '') + '</small></div>';
+    });
+    box.innerHTML = html;
+
+    const btn = document.getElementById('pt-signin-btn');
+    if (btn) btn.textContent = PT.home.today_signed ? '今天已签到' : ('签到 +' + (PT.home.today_points || 0));
+    btn.disabled = !!PT.home.today_signed;
+}
+
+function ptRenderTasks() {
+    const box = document.getElementById('pt-tasks');
+    if (!box) return;
+    const list = PT.tasks || [];
+    if (!list.length) { box.innerHTML = '<div class="pt-empty">暂无任务</div>'; return; }
+    box.innerHTML = list.map((t) => {
+        const can = t.done && !t.claimed;
+        const label = t.claimed ? '已领取' : (t.done ? '领取 +' + t.points : (t.current || 0) + '/' + t.target);
+        return '<div class="pt-task"><div><div class="pt-task-t">' + t.title + '</div>' +
+            '<div class="pt-task-d">' + (t.desc || '') + ' · ' + t.points + ' 分</div></div>' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+            '<span class="pt-task-p">' + (t.claimed ? '+' + t.points : '') + '</span>' +
+            '<button class="pt-btn"' + (can ? '' : ' disabled') + ' onclick="ptClaim(' + t.id + ')">' + label + '</button>' +
+            '</div></div>';
+    }).join('');
+}
+
+function ptRenderLogs() {
+    const box = document.getElementById('pt-logs');
+    if (!box) return;
+    const list = (PT.logs && PT.logs.list) || [];
+    if (!list.length) { box.innerHTML = '<div class="pt-empty">还没有积分记录</div>'; return; }
+    box.innerHTML = list.map((l) =>
+        '<div class="pt-log ' + (Number(l.points) >= 0 ? 'plus' : 'minus') + '">' +
+        '<span>' + (l.remark || l.type) + '<br><small style="color:#aaa;">' + l.created_at + '</small></span>' +
+        '<span>' + (Number(l.points) > 0 ? '+' : '') + l.points + '</span></div>'
+    ).join('');
+}
+
+async function ptSignin() {
+    try {
+        const r = await app.request('/points/signin', { method: 'POST', body: {} });
+        app.showToast('签到成功，+' + (r.points || 0) + ' 积分');
+        await ptReload();
+    } catch (e) {
+        app.showToast(e.message || '签到失败');
+    }
+}
+
+async function ptClaim(taskId) {
+    try {
+        await app.request('/points/claim', { method: 'POST', body: { task_id: taskId } });
+        app.showToast('领取成功');
+        await ptReload();
+    } catch (e) {
+        app.showToast(e.message || '领取失败');
+    }
+}
+
+async function ptReload() {
+    try {
+        PT.home = await app.request('/points/home');
+        PT.tasks = PT.home.tasks || [];
+    } catch (e) {
+        if (!PT.home) PT.tasks = await app.request('/points/tasks').catch(() => []);
+    }
+    ptText('pt-points', PT.home ? PT.home.points : 0);
+    ptText('pt-rate', PT.home ? PT.home.rate : 10);
+    ptText('pt-yuan', PT.home ? Math.floor(PT.home.points / (PT.home.rate || 10)) : 0);
+    ptRenderCalendar();
+    ptRenderTasks();
+    try {
+        PT.logs = await app.request('/points/logs?limit=20');
+    } catch (e) { PT.logs = { list: [] }; }
+    ptRenderLogs();
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const wait = async () => { for (let i = 0; i < 50; i++) { if (window.app && app.siteConfig !== null) return; await new Promise((r) => setTimeout(r, 100)); } };
+    await wait();
+    if (!window.app) return;
+    if (app.authed === false) {
+        ['pt-cal', 'pt-tasks', 'pt-logs'].forEach((id) => {
+            const n = document.getElementById(id);
+            if (n) n.innerHTML = '<div class="pt-empty">请先登录后再使用积分中心</div>';
+        });
+        const btn = document.getElementById('pt-signin-btn');
+        if (btn) { btn.textContent = '请先登录'; btn.disabled = true; }
+        return;
+    }
+    await ptReload();
+});
+</script>
+
+<script type="module" src="assets/js/app.js?v=20261117.1"></script>
+</body>
+</html>

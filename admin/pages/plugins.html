@@ -1,0 +1,41 @@
+        <div id="page-plugins" class="hidden">
+            <div class="card">
+                <div class="tab-bar">
+                    <button class="ext-tab active" data-ext-tab="themes" data-action="switch-ext-tab"><i data-icon="palette"></i> 外观主题</button>
+                    <button class="ext-tab" data-ext-tab="plugins" data-action="switch-ext-tab"><i data-icon="puzzle"></i> 功能插件</button>
+                </div>
+
+                <div id="ext-tab-themes">
+                    <div style="margin-bottom:16px;padding:12px;background:var(--notice-bg);border-radius:6px;font-size:13px;color:var(--text-secondary);line-height:1.7;">
+                        <strong><i data-icon="palette"></i> 前台主题</strong><br>
+                        点击卡片选中主题，再点下方「保存主题」立即对全站网页前台生效（不影响 App / 后台）。<br>
+                        契约校验不完整的主题会被置灰禁止启用，避免半成品主题上线后静默丢功能。
+                    </div>
+                    <input type="hidden" id="ext-active_theme" value="">
+                    <div id="theme-cards" style="display:flex;flex-wrap:wrap;gap:14px;margin-top:4px;">
+                        <div style="font-size:13px;color:var(--text-muted,#888);">主题列表加载中…</div>
+                    </div>
+                    <div id="theme-cards-note" style="font-size:12px;color:var(--text-muted,#888);margin-top:8px;line-height:1.6;"></div>
+                    <div style="margin-top:16px;">
+                        <button class="btn btn-primary" data-action="save-theme">保存主题</button>
+                    </div>
+
+                    <div id="theme-options-panel" class="hidden" style="margin-top:20px;border-top:1px solid var(--border);padding-top:18px;">
+                        <h3 style="font-size:15px;margin:0 0 4px;">外观设置</h3>
+                        <p style="font-size:12px;color:var(--text-secondary);margin:0 0 14px;">仅作用于当前启用主题<span id="theme-options-theme"></span>；各主题选项分别保存，切换主题不会丢失已有配置。</p>
+                        <div id="theme-options-body"></div>
+                        <div style="margin-top:16px;display:flex;gap:10px;">
+                            <button class="btn btn-primary" data-action="save-theme-options">保存外观设置</button>
+                            <button class="btn" data-action="reset-theme-options">恢复默认</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ext-tab-plugins" class="hidden">
+                    <table>
+                        <thead><tr><th>插件名称</th><th>描述</th><th>状态</th><th>版本</th><th>操作</th></tr></thead>
+                        <tbody id="plugins-table"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>

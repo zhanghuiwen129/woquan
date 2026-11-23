@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="{{PAGE_DESCRIPTION}}">
+<meta name="keywords" content="{{PAGE_KEYWORDS}}">
+<title>{{PAGE_TITLE}}</title>
+<link rel="stylesheet" href="assets/css/style.css?v=20261116.16">
+<link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+<script>
+window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/';
+window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+</script>
+</head>
+<body class="page-search">
+<h1 class="sr-only">站内搜索</h1>
+
+<!-- @include partials/topbar.html -->
+
+<main class="page-main">
+  <section class="page-head search-head">
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="{{PAGE_BASE}}/" data-home>首页</a><span>/</span><span>搜索</span>
+    </nav>
+    <span class="page-kicker">// SEARCH</span>
+    <h1>搜索全站文章</h1>
+    <p>输入关键词，查找文章、话题与作者。</p>
+
+    <form class="hero-search" id="heroSearchForm" role="search">
+      <svg class="hero-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+      </svg>
+      <input type="search" id="heroSearchInput" placeholder="搜索文章、话题、作者…" autocomplete="off" enterkeyhint="search" aria-label="搜索关键词">
+      <button type="button" class="hero-search-clear" id="heroSearchClear" aria-label="清空关键词" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <button type="submit" class="hero-search-submit">搜索</button>
+    </form>
+
+    <div class="search-hot" id="searchHotBox">
+      <span class="search-hot-label">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>
+        热门搜索
+      </span>
+      <div class="search-hot-words" id="searchHotWords">{{SSR_HOTWORDS}}</div>
+    </div>
+  </section>
+
+  <div class="blog-layout">
+    <aside class="side side-left">
+      <!-- @include partials/side-left.html -->
+    </aside>
+
+    <section class="content-col">
+      <div class="result-meta" id="resultMeta"></div>
+      <div class="tabs search-tabs" id="tabs">
+        <button class="tab active" data-tab="综合" type="button">综合</button>
+        <button class="tab" data-tab="最新" type="button">最新</button>
+        <button class="tab" data-tab="最热" type="button">最热</button>
+        <button class="tab" data-tab="用户" type="button">用户</button>
+      </div>
+
+      <section class="post-list" id="searchFeed">{{SSR_FEED}}</section>
+
+      <div id="emptyState" style="display:none">
+        <div class="empty search-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/><path d="M8.5 11h5"/></svg>
+          <p id="emptyText">输入关键词，搜索全站文章</p>
+          <div class="empty-words" id="emptyWords"></div>
+          <button class="empty-btn" id="emptyAll" type="button">查看全部内容</button>
+        </div>
+      </div>
+
+      <div class="load-more" id="load-more">上滑加载更多</div>
+    </section>
+
+    <aside class="side side-right">
+      <section class="side-card">
+        <div class="side-head"><h3>相关搜索</h3><span class="side-mark">//</span></div>
+        <div class="hot-words" id="relatedWords"></div>
+      </section>
+      <section class="side-card">
+        <div class="side-head"><h3>大家都在搜</h3><span class="side-mark">//</span></div>
+        <div class="rank-list" id="rankList">{{SSR_SIDE}}</div>
+      </section>
+      <!-- @include partials/side-right.html -->
+    </aside>
+  </div>
+</main>
+
+<!-- @include partials/footer.html -->
+
+<!-- @include partials/tabbar.html -->
+
+<!-- @include partials/page-tail.html -->
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

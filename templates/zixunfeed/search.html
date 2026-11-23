@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="{{PAGE_DESCRIPTION}}">
+    <meta name="keywords" content="{{PAGE_KEYWORDS}}">
+    <title>{{PAGE_TITLE}}</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <script>
+        window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/';
+        window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+    </script>
+</head>
+<body class="page-search">
+
+<!-- ===== 顶部导航（与其他页面共用，保证一致性） ===== -->
+<!-- @include partials/topbar.html -->
+
+<div class="wrap">
+    <main>
+        <!-- 搜索主入口：全页视觉重心 -->
+        <section class="search-hero" aria-labelledby="searchHeroTitle">
+            <h1 class="search-hero-title" id="searchHeroTitle">搜索全站内容</h1>
+            <p class="search-hero-sub">输入关键词，查找资讯、视频、话题与作者</p>
+
+            <form class="hero-search" id="heroSearchForm" role="search">
+                <svg class="hero-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+                </svg>
+                <input type="search" id="heroSearchInput" placeholder="搜索资讯、话题、作者" autocomplete="off" enterkeyhint="search" aria-label="搜索关键词">
+                <button type="button" class="hero-search-clear" id="heroSearchClear" aria-label="清空关键词" hidden>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+                <button type="submit" class="hero-search-submit">搜索</button>
+            </form>
+
+            <div class="search-hot" id="searchHotBox">
+                <span class="search-hot-label">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>
+                    热门搜索
+                </span>
+                <div class="search-hot-words" id="searchHotWords">{{SSR_HOTWORDS}}</div>
+            </div>
+        </section>
+
+        <div class="result-meta" id="resultMeta">{{SSR_META}}</div>
+
+        <div class="tabs" id="tabs">
+            <button class="tab active" data-tab="综合">综合</button>
+            <button class="tab" data-tab="最新">最新</button>
+            <button class="tab" data-tab="最热">最热</button>
+            <button class="tab" data-tab="视频">视频</button>
+            <button class="tab" data-tab="用户">用户</button>
+        </div>
+
+        <section class="feed" id="searchFeed">{{SSR_FEED}}</section>
+
+        <div id="emptyState" style="display:none">
+            <div class="empty search-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/><path d="M8.5 11h5"/></svg>
+                <p id="emptyText">输入关键词，搜索全站资讯</p>
+                <div class="empty-words" id="emptyWords"></div>
+                <button class="empty-btn" id="emptyAll">查看全部内容</button>
+            </div>
+        </div>
+
+        <div class="load-more" id="load-more">上滑加载更多</div>
+    </main>
+
+    <aside class="aside">
+        <section class="panel">
+            <div class="panel-title">相关搜索</div>
+            <div class="hot-words" id="relatedWords"></div>
+        </section>
+        <section class="panel">
+            <div class="panel-title">大家都在搜</div>
+            <div class="rank-list" id="rankList">{{SSR_SIDE}}</div>
+        </section>
+    </aside>
+</div>
+
+<!-- 移动端底部 Tab -->
+<!-- @include partials/tabbar.html -->
+
+<!-- @include partials/page-tail.html -->
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

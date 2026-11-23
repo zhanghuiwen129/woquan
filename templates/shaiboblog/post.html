@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="{{PAGE_DESCRIPTION}}">
+<meta name="keywords" content="{{PAGE_KEYWORDS}}">
+<title>{{PAGE_TITLE}}</title>
+<link rel="stylesheet" href="assets/css/style.css?v=20261116.16">
+<link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+<!-- 正文 Markdown 渲染：marked 与 DOMPurify 必须成对加载，缺一即退化为纯文本 -->
+<script src="assets/vendor/markdown/marked.umd.js"></script>
+<script src="assets/vendor/markdown/purify.min.js"></script>
+<script>
+window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/';
+window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+window.__HUBLOG_POST_ID__ = '{{POST_ID}}';
+</script>
+</head>
+<body class="page-post">
+<h1 class="sr-only">文章详情</h1>
+
+<!-- @include partials/topbar.html -->
+
+<main class="page-main">
+  <div class="article-layout">
+    <article class="article-card" id="articleHost">
+      <nav class="breadcrumb" aria-label="面包屑">
+        <a href="{{PAGE_BASE}}/" data-home>首页</a><span>/</span>
+        <span>文章</span>
+      </nav>
+      <h1 class="title">{{POST_TITLE}}</h1>
+      <div class="content">{{POST_CONTENT_TEXT}}</div>
+    </article>
+
+    <aside class="side side-right article-side">
+      <section class="side-card">
+        <div class="side-head"><h3>热门阅读</h3><span class="side-mark">//</span></div>
+        <div class="rank-list" id="rankList">{{SSR_SIDE}}</div>
+      </section>
+      <section class="side-card">
+        <div class="side-head"><h3>相关推荐</h3><span class="side-mark">//</span></div>
+        <div class="rel-grid" id="relGrid"></div>
+      </section>
+      <!-- @include partials/side-right.html -->
+    </aside>
+  </div>
+</main>
+
+<!-- @include partials/footer.html -->
+
+<!-- @include partials/tabbar.html -->
+
+<!-- @include partials/page-tail.html -->
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

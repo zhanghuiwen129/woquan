@@ -1,0 +1,112 @@
+        <div id="page-license" class="hidden">
+            <!-- Tab 切换 -->
+            <div class="card license-tabs-wrap">
+                <div class="tab-bar">
+                    <button class="setting-tab active" data-tab="license-overview" data-action="license-switch-tab"><i data-icon="chart"></i> 授权状态与激活</button>
+                    <button class="setting-tab" data-tab="license-advanced" data-action="license-switch-tab"><i data-icon="lock"></i> 验签配置（进阶）</button>
+                </div>
+            </div>
+
+            <!-- Tab 1：状态与激活 -->
+            <div id="license-tab-overview">
+                <!-- 授权状态卡片 -->
+                <div class="card" id="license-status-card">
+                    <h3 class="license-card-title"><i data-icon="key"></i> 授权状态</h3>
+                    <div id="license-status-content" class="license-status-body">
+                        <div class="license-loading">加载中...</div>
+                    </div>
+                </div>
+
+                <!-- 已授权 / 未授权 功能对照表 -->
+                <div class="card">
+                    <h3 class="license-card-title"><i data-icon="clipboard"></i> 授权 / 未授权 功能对照</h3>
+                    <div class="license-hint license-hint-info">
+                        <i data-icon="book"></i> <strong>本表为只读展示</strong>：未授权时按<strong>限量试用</strong>运行，额度按自然日 0 点自动重置，用完后才拦截并提示授权。<br>
+                        <i data-icon="lock"></i> 额度与功能开放范围由授权策略统一规定，后台不提供调整入口，下表数值即为当前实际生效的取值；如需提升额度或开通更多功能，请联系官方获取对应授权。
+                    </div>
+                    <table>
+                        <thead><tr><th>功能</th><th>已授权</th><th>未授权（试用）</th></tr></thead>
+                        <tbody id="license-matrix-table">
+                            <tr><td colspan="3" style="text-align:center;color:var(--text-muted);">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                    <div id="license-usage-box" style="margin-top:12px;font-size:13px;color:var(--text-secondary);"></div>
+                </div>
+
+                <!-- 激活授权 -->
+                <div class="card">
+                    <h3 class="license-card-title"><i data-icon="check-circle"></i> 激活授权码</h3>
+                    <div class="license-hint license-hint-info">
+                        <i data-icon="bulb"></i> 粘贴从官方渠道获取的授权码，即可解锁全部高级功能。
+                    </div>
+                    <div class="form-group">
+                        <label>授权码</label>
+                        <textarea class="form-input license-key-input" id="license-key-input" rows="4" placeholder="请粘贴您的授权码..."></textarea>
+                    </div>
+                    <div class="license-btn-row">
+                        <button class="btn btn-primary" data-action="license-activate">立即激活</button>
+                        <button class="btn btn-default" data-action="load-license-status">刷新状态</button>
+                        <button class="btn btn-default btn-sm" data-action="license-refresh-hashes"><i data-icon="refresh"></i> 重算核心文件哈希</button>
+                        <button class="btn btn-danger" data-action="license-deactivate" id="btn-license-deactivate" style="display:none;">取消当前授权</button>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">
+                        授权由授权码自动判定：已激活则全功能可用，未激活自动进入限制版。
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2：验签配置（进阶） -->
+            <div id="license-tab-advanced" class="hidden">
+                <div class="card">
+                    <h3 class="license-card-title"><i data-icon="lock"></i> 验签模式</h3>
+                    <div class="form-group">
+                        <label>验证模式</label>
+                        <select class="form-input" id="license-setting-verify_mode" data-change="toggle-license-verify-mode">
+                            <option value="local">本地验证（用本站公钥离线校验授权码）</option>
+                            <option value="remote">远程验证（向官方授权服务器实时校验）</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>RSA 公钥（PEM 格式）</label>
+                        <textarea class="form-input license-pem-input" id="license-setting-public_key" rows="6" placeholder="-----BEGIN PUBLIC KEY-----&#10;...&#10;-----END PUBLIC KEY-----"></textarea>
+                    </div>
+
+                    <!-- 远程验签（默认隐藏） -->
+                    <div id="license-remote-settings" class="hidden">
+                        <hr class="license-divider">
+                        <div class="form-group">
+                            <label>远程授权服务器 URL</label>
+                            <input type="text" class="form-input" id="license-setting-remote_url" placeholder="https://license.example.com/license_system/remote_verify.php">
+                        </div>
+                        <div class="form-group">
+                            <label>远程服务器公钥（推荐配置，防 DNS 劫持）</label>
+                            <textarea class="form-input license-pem-input" id="license-setting-remote_pubkey" rows="4" placeholder="-----BEGIN PUBLIC KEY-----&#10;从授权签发系统复制公钥粘贴&#10;-----END PUBLIC KEY-----"></textarea>
+                        </div>
+                        <div class="stats-two-col">
+                            <div class="form-group">
+                                <label>请求超时（秒）</label>
+                                <input type="number" class="form-input" id="license-setting-remote_timeout" min="3" max="60" value="8">
+                            </div>
+                            <div class="form-group license-check-inline">
+                                <label><input type="checkbox" id="license-setting-remote_ssl_verify" checked> 严格验证 SSL 证书（推荐）</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <button type="button" class="btn btn-default btn-sm" data-action="license-test-remote"><i data-icon="flask"></i> 测试远程连接（无需保存）</button>
+                            <button type="button" class="btn btn-default btn-sm" data-action="do-license-sync-revoked" style="margin-left:8px;"><i data-icon="refresh"></i> 同步官方吊销清单</button>
+                        </div>
+                        <div id="license-remote-test-result" class="collapse hidden"></div>
+                        <div id="license-revoked-sync-result" class="collapse hidden" style="margin-top:10px;padding:10px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;font-size:13px;white-space:pre-wrap;word-break:break-all;"></div>
+                    </div>
+
+                    <div id="license-remote-last-error" class="hidden license-error-box">
+                        <div class="license-error-title"><i data-icon="bug"></i> 最近一次远程验证错误</div>
+                        <div id="license-remote-last-error-body" class="license-error-body"></div>
+                    </div>
+                </div>
+
+                <div class="license-btn-row">
+                    <button class="btn btn-primary" data-action="license-save-settings">保存验签配置</button>
+                </div>
+            </div>
+        </div>

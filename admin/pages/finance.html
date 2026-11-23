@@ -1,0 +1,293 @@
+        <div id="page-finance" class="hidden">
+            <div class="notice"><i data-icon="info"></i><div>财务与会员统一归口到这里：高频的会员订单 / 钱包流水 / 积分查询排前面，支付配置与人工调整在后面的标签里。</div></div>
+            <div class="card">
+                <div class="tab-bar">
+                    <button class="finance-tab active" data-action="finance-tab" data-value="vip"><i data-icon="clipboard"></i>会员订单</button>
+                    <button class="finance-tab" data-action="finance-tab" data-value="wallet"><i data-icon="wallet"></i>钱包流水</button>
+                    <button class="finance-tab" data-action="finance-tab" data-value="points"><i data-icon="target"></i>积分</button>
+                    <button class="finance-tab" data-action="finance-tab" data-value="pay"><i data-icon="credit-card"></i>支付配置</button>
+                    <button class="finance-tab" data-action="finance-tab" data-value="ops"><i data-icon="wrench"></i>人工调整</button>
+                    <button class="btn btn-primary" id="finance-refresh-btn" data-action="load-finance" data-refresh="1" style="margin-left:auto;flex-shrink:0;"><i data-icon="refresh"></i>刷新</button>
+                </div>
+
+                <!-- 会员订单 -->
+                <div id="panel-finance-vip">
+                    <p style="font-size:13px;color:var(--text-muted,#888);margin:0 0 12px;">买会员 / 订阅付费圈子的订单在这里生成流水；用户在线充值的订单配置见「支付配置」标签，手动调整余额见「人工调整」标签。</p>
+                    <table>
+                        <thead><tr><th>ID</th><th>用户</th><th>等级</th><th>天数</th><th>金额</th><th>订单号</th><th>生效</th><th>到期</th><th>下单时间</th></tr></thead>
+                        <tbody id="vip-orders-table"></tbody>
+                    </table>
+                    <div id="finance-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;"></div>
+                </div>
+
+                <!-- 钱包流水 -->
+                <div id="panel-finance-wallet" class="hidden">
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+                        <select class="form-input" id="wallet-log-type" style="width:auto;" data-change="load-finance" data-refresh="1">
+                            <option value="">全部类型</option>
+                            <option value="recharge">充值</option>
+                            <option value="consume">消费</option>
+                            <option value="adjust">后台调整</option>
+                            <option value="income">收入</option>
+                        </select>
+                        <input type="text" class="form-input" id="wallet-keyword" placeholder="用户名 / 备注" style="width:180px;" data-keydown="enter-finance">
+                        <button class="btn btn-primary" data-action="load-finance" data-refresh="1">搜索</button>
+                    </div>
+                    <table>
+                        <thead><tr><th>ID</th><th>用户</th><th>变动</th><th>类型</th><th>业务</th><th>变动后余额</th><th>备注</th><th>时间</th></tr></thead>
+                        <tbody id="wallet-logs-table"></tbody>
+                    </table>
+                    <div id="wallet-logs-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;"></div>
+                </div>
+
+                <!-- 积分 -->
+                <div id="panel-finance-points" class="hidden">
+                    <h3 style="font-size:16px;margin:0 0 12px;">积分任务配置</h3>
+                    <div class="card-head">
+                        <p style="font-size:13px;color:var(--text-muted,#888);margin:0;">积分是站内的流通货币：签到 / 任务产出，买会员与订阅付费圈子时可抵扣（默认 10 积分 = ¥1，抵扣上限 50%）。</p>
+                        <button class="btn btn-primary" data-action="open-point-task-form"><i data-icon="plus"></i>新增任务</button>
+                    </div>
+                    <table>
+                        <thead><tr><th>ID</th><th>任务</th><th>类型</th><th>达标</th><th>周期</th><th>奖励积分</th><th>排序</th><th>状态</th><th>操作</th></tr></thead>
+                        <tbody id="point-tasks-table"></tbody>
+                    </table>
+
+                    <h3 style="font-size:16px;margin:24px 0 14px;">手动加减积分（补偿漏发 / 刷分处罚）</h3>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+                        <div class="form-group" style="margin:0;">
+                            <label>用户 ID</label>
+                            <input type="number" class="form-input" id="points-user-id" placeholder="例如 2" style="width:150px;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label>积分（正=增加 负=扣除）</label>
+                            <input type="number" class="form-input" id="points-delta" value="0" style="width:150px;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label>备注</label>
+                            <input type="text" class="form-input" id="points-remark" placeholder="签到漏发补偿" style="width:220px;">
+                        </div>
+                        <button class="btn btn-primary" data-action="do-points-adjust">确认调整</button>
+                    </div>
+
+                    <h3 style="font-size:16px;margin:24px 0 12px;">积分流水</h3>
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+                        <select class="form-input" id="points-log-type" style="width:auto;" data-change="load-finance" data-refresh="1">
+                            <option value="">全部类型</option>
+                            <option value="signin">签到</option>
+                            <option value="task">任务</option>
+                            <option value="spend">消耗</option>
+                            <option value="adjust">后台调整</option>
+                        </select>
+                        <input type="text" class="form-input" id="points-keyword" placeholder="用户名 / 备注" style="width:180px;" data-keydown="enter-finance">
+                        <button class="btn btn-primary" data-action="load-finance" data-refresh="1">搜索</button>
+                    </div>
+                    <table>
+                        <thead><tr><th>ID</th><th>用户</th><th>积分</th><th>类型</th><th>业务</th><th>变动后</th><th>备注</th><th>时间</th></tr></thead>
+                        <tbody id="points-logs-table"></tbody>
+                    </table>
+                    <div id="points-logs-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;"></div>
+                </div>
+
+                <!-- 支付配置：会员定价 + 积分汇率 + 在线充值（原三张卡片合并为一个面板） -->
+                <div id="panel-finance-pay" class="hidden">
+                    <h3 style="font-size:16px;margin:0 0 6px;">会员定价</h3>
+                    <p style="font-size:13px;color:var(--text-muted,#888);margin:0 0 14px;line-height:1.7;">会员档位价格（元）。不填则用默认 20 / 50 / 180。改完点底部「保存支付配置」才会写入。</p>
+                    <div class="form-group">
+                        <label style="font-weight:600;">会员定价（元）</label>
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                            <label style="flex:1;min-width:150px;">Lv1 月度（30 天）
+                                <input type="number" class="form-input" id="setting-vip_price_1" min="0" step="1" placeholder="20">
+                            </label>
+                            <label style="flex:1;min-width:150px;">Lv2 季度（90 天）
+                                <input type="number" class="form-input" id="setting-vip_price_2" min="0" step="1" placeholder="50">
+                            </label>
+                            <label style="flex:1;min-width:150px;">Lv3 年度（365 天）
+                                <input type="number" class="form-input" id="setting-vip_price_3" min="0" step="1" placeholder="180">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="border-top:1px solid var(--border);margin:20px 0;"></div>
+                    <h3 style="font-size:16px;margin:0 0 6px;">付费圈子订阅周期</h3>
+                    <p style="font-size:13px;color:var(--text-muted,#888);margin:0 0 14px;line-height:1.7;">全局默认值（1-3650 天）；单个圈子可在「圈子管理」里单独设置，填 0 表示跟随这里。到期提醒 0 = 关闭。</p>
+                    <div class="form-group">
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                            <label style="flex:1;min-width:180px;">订阅天数（默认 365）
+                                <input type="number" class="form-input" id="setting-circle_subscribe_days" min="1" max="3650" step="1" placeholder="365">
+                            </label>
+                            <label style="flex:1;min-width:180px;">到期前提醒（天，0=关闭）
+                                <input type="number" class="form-input" id="setting-circle_expire_remind_days" min="0" max="365" step="1" placeholder="7">
+                            </label>
+                        </div>
+                        <label style="display:block;margin-top:10px;"><input type="checkbox" id="setting-circle_sub_auto_cleanup"> 到期后自动移出圈子（仅普通成员，不影响圈主/圈管）</label>
+                    </div>
+
+                    <div style="border-top:1px solid var(--border);margin:20px 0;"></div>
+                    <h3 style="font-size:16px;margin:0 0 6px;">积分汇率</h3>
+                    <p style="font-size:13px;color:var(--text-muted,#888);margin:0 0 14px;line-height:1.7;">积分是站内主要流通货币，这个值决定积分值多少钱。默认 10 积分 = ¥1；单笔消费最多用积分抵扣订单金额的 50%。改小汇率＝积分更值钱。</p>
+                    <div class="form-group">
+                        <label style="font-weight:600;">每多少积分抵 1 元</label>
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                            <label style="flex:1;min-width:200px;">积分汇率
+                                <input type="number" class="form-input" id="setting-point_rate" min="1" step="1" placeholder="10">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="border-top:1px solid var(--border);margin:20px 0;"></div>
+                    <h3 style="font-size:16px;margin:0 0 6px;">在线充值配置（微信 / 支付宝官方支付）</h3>
+                    <p style="font-size:13px;color:var(--text-muted,#888);margin:0 0 14px;line-height:1.7;">私钥属敏感信息，仅在此后台读写，不会下发到 App / 网站前端。</p>
+                    <div class="form-group">
+                        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+                            <label><input type="checkbox" id="setting-pay_enabled"> 开启在线充值</label>
+                            <label><input type="checkbox" id="setting-pay_wxpay_enabled"> 微信支付</label>
+                            <label><input type="checkbox" id="setting-pay_alipay_enabled"> 支付宝</label>
+                        </div>
+                    </div>
+                    <div class="form-group" style="padding-top:16px;border-top:1px solid var(--border);">
+                        <label style="font-weight:600;">微信支付</label>
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                            <label style="flex:1;min-width:200px;">微信 AppID（开放平台移动应用）
+                                <input type="text" class="form-input" id="setting-wxpay_appid" placeholder="wx 开头">
+                            </label>
+                            <label style="flex:1;min-width:200px;">微信商户号
+                                <input type="text" class="form-input" id="setting-wxpay_mchid" placeholder="商户号">
+                            </label>
+                        </div>
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;">
+                            <label style="flex:1;min-width:200px;">商户 API 证书序列号
+                                <input type="text" class="form-input" id="setting-wxpay_serial_no">
+                            </label>
+                            <label style="flex:1;min-width:200px;">APIv3 密钥（32 位，解密回调用）
+                                <input type="text" class="form-input" id="setting-wxpay_api_v3_key">
+                            </label>
+                        </div>
+                        <label style="display:block;margin-top:8px;">商户 API 私钥（apiclient_key.pem 全文）
+                            <textarea class="form-input" id="setting-wxpay_private_key" rows="4" placeholder="-----BEGIN PRIVATE KEY-----  ...  -----END PRIVATE KEY-----"></textarea>
+                        </label>
+                        <p style="font-size:12px;color:var(--text-muted,#888);margin-top:6px;">微信走「主动查单」确认到账（不用下载平台证书）。</p>
+                    </div>
+                    <div class="form-group" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+                        <label style="font-weight:600;">支付宝</label>
+                        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                            <label style="flex:1;min-width:200px;">支付宝 AppID
+                                <input type="text" class="form-input" id="setting-alipay_appid">
+                            </label>
+                        </div>
+                        <label style="display:block;margin-top:8px;">支付宝应用私钥（PKCS8）
+                            <textarea class="form-input" id="setting-alipay_private_key" rows="4" placeholder="-----BEGIN PRIVATE KEY-----  ..."></textarea>
+                        </label>
+                        <label style="display:block;margin-top:8px;">支付宝公钥（验回调用）
+                            <textarea class="form-input" id="setting-alipay_public_key" rows="4" placeholder="-----BEGIN PUBLIC KEY-----  ..."></textarea>
+                        </label>
+                        <p style="font-size:12px;color:var(--text-muted,#888);margin-top:6px;">
+                            回调地址固定为 <code>/api/pay/notify/wxpay</code> 与 <code>/api/pay/notify/alipay</code>，需分别配到微信商户平台与支付宝开放平台。任一项没填，该渠道在 App 端就不会出现。
+                        </p>
+                    </div>
+                    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                        <button class="btn btn-primary" data-action="save-pay-settings">保存支付配置</button>
+                        <button class="btn btn-default" data-action="load-pay-config">重新读取</button>
+                        <span style="font-size:12px;color:var(--text-muted,#888);">支付配置独立保存，不影响「系统设置」页的内容。</span>
+                    </div>
+                </div>
+
+                <!-- 人工调整：手动余额 + 开通会员（原两张卡片合并为一个面板） -->
+                <div id="panel-finance-ops" class="hidden">
+                    <h3 style="font-size:16px;margin:0 0 14px;">手动调整余额（充值 / 扣款 / 补偿）</h3>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+                        <div class="form-group" style="margin:0;">
+                            <label>用户 ID</label>
+                            <input type="number" class="form-input" id="wallet-user-id" placeholder="例如 2" style="width:150px;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label>金额（正=充值 负=扣款）</label>
+                            <input type="number" class="form-input" id="wallet-amount" step="0.01" value="0" style="width:150px;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label>备注</label>
+                            <input type="text" class="form-input" id="wallet-remark" placeholder="微信充值 100" style="width:220px;">
+                        </div>
+                        <button class="btn btn-primary" data-action="do-wallet-adjust">确认调整</button>
+                    </div>
+
+                    <div style="border-top:1px solid var(--border);margin:20px 0;"></div>
+                    <h3 style="font-size:16px;margin:0 0 14px;">后台开通会员（人工 / 补偿）</h3>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+                        <div class="form-group" style="margin:0;">
+                            <label>用户 ID</label>
+                            <input type="number" class="form-input" id="grant-user-id" placeholder="例如 2" style="width:150px;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label>等级</label>
+                            <select class="form-input" id="grant-level" style="width:160px;">
+                                <option value="1">Lv1 月度</option>
+                                <option value="2">Lv2 季度</option>
+                                <option value="3">Lv3 年度</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label>天数</label>
+                            <input type="number" class="form-input" id="grant-days" value="30" style="width:120px;">
+                        </div>
+                        <button class="btn btn-primary" data-action="do-grant-vip">开通</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 积分任务编辑弹窗 -->
+        <div id="point-task-form" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;">
+            <div style="background:var(--surface-solid);border-radius:12px;padding:24px;width:520px;max-width:92vw;max-height:88vh;overflow:auto;">
+                <h4 style="margin:0 0 16px;font-size:16px;">积分任务</h4>
+                <div class="form-group">
+                    <label>任务标题</label>
+                    <input type="text" class="form-input" id="pt-title" placeholder="例如：发布 3 条动态">
+                </div>
+                <div class="form-group">
+                    <label>任务说明</label>
+                    <input type="text" class="form-input" id="pt-desc" placeholder="每天发满 3 条动态">
+                </div>
+                <div class="form-group">
+                    <label>奖励积分</label>
+                    <input type="number" class="form-input" id="pt-points" value="100" step="10">
+                </div>
+                <div class="form-group">
+                    <label>任务类型（决定达标怎么算）</label>
+                    <select class="form-input" id="pt-type">
+                        <option value="post">post 发动态</option>
+                        <option value="comment">comment 发评论</option>
+                        <option value="like">like 点赞</option>
+                        <option value="circle_join">circle_join 加入圈子</option>
+                        <option value="follow">follow 关注好友</option>
+                        <option value="profile">profile 完善资料</option>
+                        <option value="signin_days">signin_days 本月签到天数</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>达标次数</label>
+                    <input type="number" class="form-input" id="pt-target" value="1" min="1">
+                </div>
+                <div class="form-group">
+                    <label>周期</label>
+                    <select class="form-input" id="pt-period">
+                        <option value="daily">daily 每日重置（每天可领 1 次）</option>
+                        <option value="once">once 仅一次</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>排序（越小越靠前）</label>
+                    <input type="number" class="form-input" id="pt-sort" value="90">
+                </div>
+                <div class="form-group">
+                    <label>状态</label>
+                    <select class="form-input" id="pt-status">
+                        <option value="1">开启</option>
+                        <option value="0">关闭</option>
+                    </select>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:8px;">
+                    <button class="btn btn-default" data-action="close-point-task-form">取消</button>
+                    <button class="btn btn-primary" data-action="do-point-task-save">保存</button>
+                </div>
+            </div>
+        </div>

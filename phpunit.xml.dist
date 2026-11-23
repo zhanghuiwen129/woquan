@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PHPUnit 配置（提交到仓库；本机可用 phpunit.xml 覆盖，该文件已被 .gitignore 忽略）
+
+  运行方式见 composer.json 的 scripts：composer test / composer test:behavior /
+  composer test:integration。CI 统一入口是 php scripts/ci.php。
+
+  套件划分（三层，按「真实性」递进）：
+    unit         结构性断言（源码文本 / 反射），不需要数据库，CI 门禁执行
+    behavior     行为级测试，真实调用业务类并用 SQLite 内存库验证副作用，CI 门禁执行
+    integration  真实 MySQL 迁移测试，默认不进门禁，需 HUBLOG_DB_TEST=1
+                 且 config.php 的库名以 _test 结尾才会真正执行
+
+  behavior 套件使用 api/tests/Behavior/BehaviorTestCase.php 反射注入内存库，
+  物理上无法连接到任何外部数据库，因此无需凭据也不需要 CI 准备 MySQL 服务。
+
+  注意：XML 注释内不可出现连续双连字符，完整命令行参数请查 composer scripts。
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="api/tests/bootstrap.php"
+         colors="true"
+         cacheDirectory=".phpunit.cache"
+         stopOnFailure="false"
+         failOnRisky="false"
+         failOnWarning="false">
+    <testsuites>
+        <testsuite name="unit">
+            <directory>api/tests</directory>
+            <exclude>api/tests/Behavior</exclude>
+            <exclude>api/tests/MigrationDatabaseTest.php</exclude>
+        </testsuite>
+        <testsuite name="behavior">
+            <directory>api/tests/Behavior</directory>
+            <exclude>api/tests/Behavior/fixtures</exclude>
+        </testsuite>
+        <testsuite name="integration">
+            <file>api/tests/MigrationDatabaseTest.php</file>
+        </testsuite>
+    </testsuites>
+</phpunit>

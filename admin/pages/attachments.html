@@ -1,0 +1,41 @@
+        <div id="page-attachments" class="hidden">
+            <div class="card">
+                <div class="card-head"><h3><i data-icon="folder"></i>附件列表</h3></div>
+                <div class="search-bar">
+                    <input type="text" id="attachment-search" placeholder="搜索文件名/用户名..." data-keydown="enter-attachments">
+                    <button class="btn btn-primary" data-action="load-attachments">搜索</button>
+                </div>
+                <div class="tab-bar">
+                    <button class="setting-tab attachment-tab active" data-type="all" data-action="switch-attachment-tab">全部</button>
+                    <button class="setting-tab attachment-tab" data-type="image" data-action="switch-attachment-tab">图片</button>
+                    <button class="setting-tab attachment-tab" data-type="attachment" data-action="switch-attachment-tab">普通附件</button>
+                </div>
+                <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:12px 16px;margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;">
+                    <span style="font-size:14px;"><i data-icon="broom"></i> 清理动态孤儿文件：</span>
+                    <label style="font-size:13px;color:var(--text-secondary);">超过
+                        <input type="number" id="post-orphan-hours" value="24" min="1" max="720" style="width:64px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;">
+                        小时仍未发布绑定
+                    </label>
+                    <button class="btn btn-danger" data-action="cleanup-post-orphan-uploads"><i data-icon="search"></i> 扫描并清理</button>
+                    <span id="post-orphan-result" style="font-size:13px;color:var(--text-secondary);"></span>
+                </div>
+                <div class="table-scroll">
+                <table class="table-attachments">
+                    <colgroup>
+                        <col style="width:56px">
+                        <col style="width:64px">
+                        <col>
+                        <col style="width:84px">
+                        <col>
+                        <col style="width:84px">
+                        <col style="width:64px">
+                        <col style="width:150px">
+                        <col style="width:118px">
+                    </colgroup>
+                    <thead><tr><th>ID</th><th>类型</th><th>文件名</th><th>用户</th><th>所属动态</th><th>大小</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+                    <tbody id="attachments-table"></tbody>
+                </table>
+                </div>
+                <div class="pagination" id="attachments-pagination"></div>
+            </div>
+        </div>

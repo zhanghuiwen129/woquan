@@ -1,0 +1,76 @@
+        <div id="page-sensitive-words" class="hidden">
+            <div class="card">
+                <div class="card-head">
+                    <h3>敏感词列表</h3>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <input type="text" class="form-input" id="sw-search" placeholder="搜索敏感词..." style="width:180px;" data-keydown="enter-sensitive">
+                        <button class="btn btn-default" data-action="load-sensitive-words">搜索</button>
+                        <button class="btn btn-primary" data-action="open-word-form"><i data-icon="plus"></i>添加敏感词</button>
+                        <button class="btn btn-default" data-action="toggle-import-box">批量导入</button>
+                    </div>
+                </div>
+
+                <div id="sw-import" class="hidden" style="margin-bottom:20px;padding:16px;border:1px solid var(--border);border-radius:8px;">
+                    <h3 style="font-size:15px;margin-bottom:12px;">批量导入（一行一个词）</h3>
+                    <textarea class="form-input" id="sw-import-text" placeholder="每行一个敏感词，重复的词会自动跳过" style="min-height:120px;resize:vertical;"></textarea>
+                    <div style="display:flex;gap:12px;align-items:flex-end;margin-top:12px;flex-wrap:wrap;">
+                        <div class="form-group" style="margin:0;">
+                            <label>处理级别</label>
+                            <select class="form-input" id="sw-import-level" style="width:140px;">
+                                <option value="replace">替换（打码）</option>
+                                <option value="block">拦截（禁止提交）</option>
+                                <option value="review">转人工审核</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label>替换文本</label>
+                            <input type="text" class="form-input" id="sw-import-replacement" value="***" style="width:110px;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label>生效场景（留空=全部）</label>
+                            <input type="text" class="form-input" id="sw-import-scene" placeholder="post,comment" style="width:170px;">
+                        </div>
+                        <button class="btn btn-primary" data-action="import-words">导入</button>
+                    </div>
+                    <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">场景可选：post（动态）/ comment（评论）/ chat（私信）/ profile（资料）/ circle（圈子），多个用英文逗号分隔</p>
+                </div>
+
+                <table>
+                    <thead><tr><th>ID</th><th>敏感词</th><th>处理级别</th><th>替换为</th><th>生效场景</th><th>命中次数</th><th>状态</th><th>操作</th></tr></thead>
+                    <tbody id="sw-table"></tbody>
+                </table>
+                <div id="sw-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;"></div>
+            </div>
+
+            <div id="sw-form" class="card hidden" style="margin-top:20px;">
+                <h3 style="font-size:16px;margin-bottom:16px;" id="sw-form-title">添加敏感词</h3>
+                <input type="hidden" id="sw-id">
+                <div class="form-group">
+                    <label>敏感词</label>
+                    <input type="text" class="form-input" id="sw-word" placeholder="要拦截的词">
+                </div>
+                <div class="form-group">
+                    <label>处理级别</label>
+                    <select class="form-input" id="sw-level">
+                        <option value="replace">替换（打码后照常发布）</option>
+                        <option value="block">拦截（直接禁止提交）</option>
+                        <option value="review">转人工审核（发布但不进信息流）</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>替换为（仅「替换」级别生效）</label>
+                    <input type="text" class="form-input" id="sw-replacement" value="***">
+                </div>
+                <div class="form-group">
+                    <label>生效场景（留空=全部场景）</label>
+                    <input type="text" class="form-input" id="sw-scene" placeholder="例如：post,comment">
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="sw-status" checked> 启用</label>
+                </div>
+                <div style="display:flex;gap:12px;">
+                    <button class="btn btn-primary" data-action="save-word">保存</button>
+                    <button class="btn btn-default" data-action="close-word-form">取消</button>
+                </div>
+            </div>
+        </div>

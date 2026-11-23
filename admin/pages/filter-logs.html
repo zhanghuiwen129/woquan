@@ -1,0 +1,23 @@
+        <div id="page-filter-logs" class="hidden">
+            <div class="card">
+                <div class="card-head">
+                    <h3><i data-icon="clipboard"></i>敏感词命中记录</h3>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <select class="form-input" id="fl-scene" style="width:150px;" data-change="load-filter-logs">
+                            <option value="">全部场景</option>
+                            <option value="post">动态</option>
+                            <option value="comment">评论</option>
+                            <option value="chat">私信</option>
+                            <option value="profile">资料</option>
+                            <option value="circle">圈子</option>
+                        </select>
+                        <button class="btn btn-default" data-action="load-filter-logs">刷新</button>
+                    </div>
+                </div>
+                <table>
+                    <thead><tr><th>ID</th><th>用户</th><th>场景</th><th>处理</th><th>命中词</th><th>原文片段</th><th>时间</th></tr></thead>
+                    <tbody id="fl-table"></tbody>
+                </table>
+                <div id="fl-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;"></div>
+            </div>
+        </div>

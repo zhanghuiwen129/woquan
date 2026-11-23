@@ -1,0 +1,68 @@
+        <div id="page-crash-logs" class="hidden">
+            <div class="card">
+                <div class="card-head">
+                    <h3><i data-icon="filter"></i>筛选</h3>
+                    <div id="crash-today-box" style="font-size:13px;"></div>
+                </div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+                    <div class="form-group" style="margin:0;">
+                        <label>类型</label>
+                        <select class="form-input" id="crash-filter-event">
+                            <option value="">全部</option>
+                            <option value="error">崩溃 / 未捕获异常</option>
+                            <option value="api_error">接口异常</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>平台</label>
+                        <select class="form-input" id="crash-filter-platform">
+                            <option value="">全部</option>
+                            <option value="android">Android</option>
+                            <option value="ios">iOS</option>
+                            <option value="h5">H5</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>日期</label>
+                        <input type="date" class="form-input" id="crash-filter-date">
+                    </div>
+                    <div class="form-group" style="margin:0;flex:1;min-width:180px;">
+                        <label>关键字（摘要 / 路由 / 接口 / 堆栈）</label>
+                        <input type="text" class="form-input" id="crash-filter-keyword" placeholder="如：login、/api/posts、TypeError">
+                    </div>
+                    <button class="btn btn-primary" data-action="load-crash-logs" data-page="1">查询</button>
+                    <button class="btn btn-default" data-action="reset-crash-filters">重置</button>
+                </div>
+            </div>
+
+            <!-- Top N 聚合：同一类故障按出现次数排序，快速定位高频问题 -->
+            <div class="card" style="margin-top:16px;">
+                <h3 style="font-size:16px;margin-bottom:12px;"><i data-icon="bug"></i>高频异常 Top 20（按错误摘要聚合）</h3>
+                <table>
+                    <thead><tr><th>类型</th><th>错误摘要</th><th>次数</th><th>最近发生</th></tr></thead>
+                    <tbody id="crash-top-table"></tbody>
+                </table>
+            </div>
+
+            <div class="card" style="margin-top:16px;">
+                <div class="card-head">
+                    <h3 style="font-size:16px;margin:0;"><i data-icon="bug"></i>异常明细</h3>
+                    <div id="crash-pager" style="font-size:13px;display:flex;gap:8px;align-items:center;"></div>
+                </div>
+                <table>
+                    <thead><tr><th>时间</th><th>类型</th><th>平台</th><th>用户</th><th>路由 / 接口</th><th>错误摘要</th><th>操作</th></tr></thead>
+                    <tbody id="crash-logs-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 客户端异常详情弹窗 -->
+        <div id="crash-detail-mask" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;" data-action="close-crash-detail-mask">
+            <div style="background:var(--bg,#fff);max-width:680px;width:92%;max-height:82vh;overflow:auto;border-radius:10px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.25);">
+                <div class="card-head">
+                    <h3 style="font-size:16px;margin:0;" id="crash-detail-title"><i data-icon="bug"></i>异常详情</h3>
+                    <button class="btn btn-default" data-action="close-crash-detail">关闭</button>
+                </div>
+                <div id="crash-detail-body" style="font-size:13px;line-height:1.7;"></div>
+            </div>
+        </div>

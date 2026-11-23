@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="{{PAGE_DESCRIPTION}}">
+    <meta name="keywords" content="{{PAGE_KEYWORDS}}">
+    <title>{{PAGE_TITLE}}</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <!-- Markdown 渲染依赖：路径相对 index.php 注入的 base 标签（当前主题目录）解析，
+         根目录 / 子目录部署均可用，不再写死 /assets 绝对路径。
+         marked 与 DOMPurify 必须成对加载：只加载 marked 时，用户正文中的原始 HTML
+         会被原样写入页面，形成存储型 XSS。 -->
+    <script src="../../assets/vendor/markdown/marked.umd.js"></script>
+    <script src="../../assets/vendor/markdown/purify.min.js"></script>
+    <script>
+        window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/';
+        window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+    </script>
+</head>
+<body>
+
+<!-- ===== 顶部导航 ===== -->
+<!-- @include partials/topbar.html -->
+
+<div class="crumb">
+    <a href="/" data-home>首页</a>
+    <span>/</span><span>正文</span>
+</div>
+
+<div class="wrap-detail">
+    <!-- ===== 阅读栏 ===== -->
+    <!-- 服务端首屏：即使不执行 JS，爬虫也能读到标题、作者与正文；
+         JS 渲染完成后会整体替换这里的内容 -->
+    <article class="article" id="articleHost">
+        <div class="tags"></div>
+        <h1 class="title">{{POST_TITLE}}</h1>
+        <div class="author-row">
+            <div class="author-info">
+                <div class="author-name">{{POST_AUTHOR}}</div>
+                <div class="author-meta">{{POST_TIME}}</div>
+            </div>
+        </div>
+        {{POST_COVER}}
+        <div class="content">{{POST_CONTENT_TEXT}}</div>
+        <!-- V97 内容付费墙：SSR 注入试读购买卡；登录态/解锁状态由 article.js 重渲染 -->
+        <div id="paywallHost">{{PAYWALL_HTML}}</div>
+    </article>
+
+    <!-- ===== 右侧栏（热门阅读） ===== -->
+    <aside class="aside-detail">
+        <section class="panel">
+            <div class="panel-title">热门阅读</div>
+            <div class="rank-list" id="rankList"></div>
+        </section>
+        <section class="panel related">
+            <div class="panel-title">相关推荐</div>
+            <div class="related-grid" id="relGrid"></div>
+        </section>
+    </aside>
+</div>
+
+<!-- ===== 移动端底部互动栏（文章页占位，交互由详情 JS 接管） ===== -->
+<!-- @include partials/tabbar.html -->
+
+<!-- @include partials/page-tail.html -->
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

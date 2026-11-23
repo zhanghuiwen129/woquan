@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="{{PAGE_DESCRIPTION}}">
+<meta name="keywords" content="{{PAGE_KEYWORDS}}">
+<title>{{PAGE_TITLE}}</title>
+<link rel="stylesheet" href="assets/css/style.css?v=20261116.16">
+<link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+<script>
+window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/';
+window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+</script>
+</head>
+<body class="page-index">
+<h1 class="sr-only">赛博博客首页</h1>
+
+<!-- @include partials/topbar.html -->
+
+<main class="page-main">
+  <section class="hero" id="hero">
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <span class="hero-kicker" id="heroKicker">// PERSONAL BLOG · EST.2026</span>
+        <h2 id="heroTitle">在代码与文字之间，记录每一次思考</h2>
+        <p id="heroDesc">记录路亚、夜钓与装备心得，偶尔写点技术笔记。文章按分类与归档沉淀下来，方便日后检索与回看。</p>
+        <div class="hero-stats">
+          <div><b id="heroPostCount">—</b><span>篇文章</span></div>
+          <div><b id="heroCatCount">—</b><span>个分类</span></div>
+          <div><b id="heroTagCount">—</b><span>个标签</span></div>
+        </div>
+      </div>
+      <div class="hero-term" aria-hidden="true">
+        <div class="term-bar"><span></span><span></span><span></span><em id="heroTermTitle">~/blog</em></div>
+        <pre><code id="heroTermCode">$ whoami
+&gt; shaibo —— writer &amp; angler
+$ cat manifesto.md
+&gt; 把每一次抛投、每一段代码，
+&gt; 都写进可检索的档案。
+$ _</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <div class="blog-layout" id="articleList">
+    <aside class="side side-left">
+      <!-- @include partials/side-left.html -->
+    </aside>
+
+    <section class="content-col">
+      <div class="list-head">
+        <h2>最新文章</h2>
+        <span class="list-sub">// LATEST POSTS</span>
+      </div>
+      <section class="post-list" id="feed">{{SSR_FEED}}</section>
+      <div class="load-more" id="load-more">上滑加载更多</div>
+
+      <!-- 桌面端整页不滚动，页脚随中栏一起滚动 -->
+      <!-- @include partials/footer.html -->
+    </section>
+
+    <aside class="side side-right">
+      <!-- @include partials/side-right.html -->
+    </aside>
+  </div>
+</main>
+
+<!-- @include partials/tabbar.html -->
+
+<!-- @include partials/page-tail.html -->
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

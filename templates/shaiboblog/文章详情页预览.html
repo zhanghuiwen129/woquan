@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>秋季傍晚的湖畔，一口黑鲈咬钩了 · 赛博博客</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2300e5ff' d='M12 2l8.66 5v10L12 22l-8.66-5V7z'/%3E%3C/svg%3E">
+<style>
+:root{
+  --primary:#00e5ff; --primary-dark:#00b8d4; --primary-light:#66f0ff;
+  --bg:#0d1321; --card-bg:#131c2e; --panel:#101827; --text:#e6f1ff; --text-secondary:#8aa0bf;
+  --border:#24334d; --link:#5ee7ff; --danger:#ff4d6d; --magenta:#ff2d95;
+  --grid:rgba(0,229,255,.055); --glow:0 0 14px rgba(0,229,255,.22);
+  --font-mono:'JetBrains Mono','SF Mono',Consolas,'Courier New',monospace; --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',Helvetica,Arial,sans-serif;background-color:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:42px 42px;background-attachment:fixed;color:var(--text);line-height:1.6;min-height:100vh}
+::selection{background:rgba(0,229,255,.32);color:#fff}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,229,255,.25);border-radius:8px}
+a{color:var(--link);text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+svg{display:block}
+
+.topbar{position:sticky;top:0;z-index:50;background:rgba(13,19,33,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:20px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-mark{width:30px;height:30px;flex-shrink:0}
+.brand-name{font-weight:700;font-size:17px;letter-spacing:.5px;white-space:nowrap}
+.brand-name em{font-style:normal;color:var(--primary);font-family:var(--font-mono);font-size:12px;margin-left:6px}
+.main-nav{display:flex;gap:4px;margin-left:auto}
+.main-nav a{padding:8px 12px;border-radius:9px;color:var(--text-secondary);font-size:14px}
+.main-nav a.active,.main-nav a:hover{color:var(--primary);background:rgba(0,229,255,.08)}
+.nav-search{display:none}
+.nav-search input{width:180px;padding:9px 12px;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;outline:none}
+@media(min-width:900px){.nav-search{display:block}}
+
+.layout{max-width:1280px;margin:0 auto;padding:24px 20px;display:grid;gap:28px;grid-template-columns:1fr}
+.article-col{min-width:0}
+.side-right{display:none}
+@media(min-width:1024px){.layout{grid-template-columns:1fr 264px}.side-right{display:block}}
+
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.card-title{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12px;letter-spacing:1.6px;color:var(--text-secondary);margin-bottom:12px}
+.card-title .icon{width:17px;height:17px;color:var(--primary)}
+.about-text{font-size:13px;color:var(--text-secondary)}
+.recent-item{display:block;padding:9px 0;border-bottom:1px solid var(--border)}
+.recent-item:last-child{border-bottom:none}
+.recent-item .t{font-size:14px;color:var(--text);display:block;margin-bottom:3px}
+.recent-item .t:hover{color:var(--link)}
+.recent-item .d{font-family:var(--font-mono);font-size:11px;color:var(--text-secondary)}
+.tag-cloud{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;font-family:var(--font-mono);font-size:12px;color:var(--primary);background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.22);padding:4px 10px;border-radius:8px}
+
+.breadcrumb{font-size:13px;color:var(--text-secondary);margin:18px 0 14px}
+.breadcrumb a:hover{color:var(--primary)}
+.article-head{margin-bottom:18px}
+.cat-chip{font-family:var(--font-mono);font-size:11px;letter-spacing:.5px;color:var(--primary);background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.25);padding:2px 9px;border-radius:6px}
+.article-head h1{font-size:30px;line-height:1.35;margin:14px 0 12px}
+.byline{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.byline-avatar{width:40px;height:40px;border-radius:10px;border:1px solid var(--border)}
+.byline-name{font-weight:600;font-size:14px}
+.byline-meta{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.byline .meta-spacer{margin-left:auto}
+
+.article-cover{border-radius:14px;overflow:hidden;border:1px solid var(--border);margin-bottom:22px}
+.article-cover img{width:100%;display:block}
+
+.article-body{font-size:15px;color:var(--text)}
+.article-body p{margin-bottom:14px;color:#cdd9ec}
+.article-body h2{font-size:19px;margin:28px 0 12px;padding-left:10px;border-left:3px solid var(--primary)}
+.article-body ul,.article-body ol{margin:0 0 14px 20px}
+.article-body li{margin-bottom:6px;color:#cdd9ec}
+.article-body blockquote{margin:18px 0;padding:14px 16px;border-left:3px solid var(--magenta);background:rgba(255,45,149,.06);border-radius:0 10px 10px 0}
+.article-body code{font-family:var(--font-mono);font-size:13px;background:rgba(0,229,255,.1);color:var(--link);padding:2px 6px;border-radius:5px}
+.code-block{font-family:var(--font-mono);font-size:13px;background:#080d18;border:1px solid var(--border);border-radius:12px;padding:16px;margin:14px 0;overflow-x:auto;color:#cfe6ff;line-height:1.7}
+.body-figure{margin:16px 0;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.body-figure img{width:100%;display:block}
+.body-figure figcaption{font-size:12px;color:var(--text-secondary);padding:10px 14px}
+
+.article-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:16px;margin-top:24px}
+.foot-tags{display:flex;gap:8px;flex-wrap:wrap;margin-right:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:0 16px;border-radius:10px;font-size:14px;font-weight:500;border:1px solid transparent}
+.btn-ghost{background:rgba(255,255,255,.05);color:var(--text);border-color:var(--border)}
+.btn-ghost:hover{border-color:rgba(0,229,255,.35);color:var(--primary)}
+.btn-outline{background:rgba(0,229,255,.06);color:var(--primary);border-color:rgba(0,229,255,.3)}
+.btn-outline.liked{background:rgba(255,77,109,.12);color:var(--danger);border-color:rgba(255,77,109,.35)}
+
+.prevnext{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}
+.pn-card{border:1px solid var(--border);border-radius:12px;padding:14px;transition:border-color .2s}
+.pn-card:hover{border-color:rgba(0,229,255,.35)}
+.pn-label{font-size:12px;color:var(--text-secondary)}
+.pn-title{font-size:14px;margin-top:4px;color:var(--text)}
+
+/* 评论 */
+.comments{margin-top:32px}
+.comments h3{font-size:17px;margin-bottom:16px}
+.comment{display:flex;gap:12px;padding:16px 0;border-bottom:1px solid var(--border)}
+.comment-avatar{width:38px;height:38px;border-radius:10px;border:1px solid var(--border);flex-shrink:0}
+.comment-name{font-weight:600;font-size:14px}
+.comment-time{font-size:12px;color:var(--text-secondary)}
+.comment-text{font-size:14px;margin-top:4px;color:#cdd9ec}
+.reply-btn{background:none;border:none;color:var(--text-secondary);font-size:12px;margin-top:6px;padding:0}
+.reply-btn:hover{color:var(--primary)}
+.comment-bar{display:flex;gap:10px;margin-top:18px}
+.comment-bar input{flex:1;min-width:0;padding:11px 14px;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none}
+.comment-bar input::placeholder{color:var(--text-secondary)}
+.comment-bar input:focus{border-color:var(--primary)}
+
+.site-footer{border-top:1px solid var(--border);margin-top:32px;padding:24px 20px;text-align:center;color:var(--text-secondary);font-family:var(--font-mono);font-size:11px;letter-spacing:.4px}
+.site-footer .links{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin-bottom:10px}
+.toast{position:fixed;left:50%;bottom:64px;transform:translateX(-50%) translateY(8px);background:var(--card-bg);border:1px solid var(--primary);color:var(--text);padding:10px 16px;border-radius:10px;font-size:13px;box-shadow:var(--glow);opacity:0;pointer-events:none;transition:all .25s;z-index:100}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:767px){
+  .layout{padding:16px 12px;gap:16px}
+  .article-head h1{font-size:23px}
+  .topbar-inner{flex-wrap:wrap;gap:10px}
+  .main-nav{order:3;width:100%;overflow-x:auto;gap:2px;margin-left:0}
+  .main-nav a{white-space:nowrap;flex-shrink:0;padding:8px 10px;font-size:13px}
+  .prevnext{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="1.6" stroke-linejoin="round">
+        <path d="M12 2l8.66 5v10L12 22l-8.66-5V7z" fill="rgba(0,229,255,.12)"/>
+        <circle cx="12" cy="12" r="3" fill="#00e5ff"/>
+      </svg>
+      <div class="brand-name">赛博博客<em>SHAIBOBLOG</em></div>
+    </div>
+    <nav class="main-nav" aria-label="主导航">
+      <a href="赛博博客主题预览.html">首页</a>
+      <a href="javascript:void(0)">文章</a>
+      <a href="javascript:void(0)">分类</a>
+      <a href="javascript:void(0)">标签</a>
+      <a href="javascript:void(0)">关于</a>
+    </nav>
+    <div class="nav-search"><input type="search" placeholder="搜索文章…" aria-label="搜索文章"></div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- 正文 -->
+  <main class="article-col">
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="赛博博客主题预览.html">首页</a> / <a href="javascript:void(0)">路亚随笔</a> / 秋季傍晚的湖畔，一口黑鲈咬钩了
+    </nav>
+
+    <article>
+      <header class="article-head">
+        <span class="cat-chip">路亚随笔</span>
+        <h1>秋季傍晚的湖畔，一口黑鲈咬钩了</h1>
+        <div class="byline">
+          <svg class="byline-avatar" viewBox="0 0 40 40"><rect width="40" height="40" rx="10" fill="#1b2740"/><circle cx="20" cy="16" r="8" fill="#5ee7ff"/><path d="M6 36a14 12 0 0 1 28 0" fill="#5ee7ff"/></svg>
+          <div>
+            <div class="byline-name">深空钓友</div>
+            <div class="byline-meta">2026-11-12 18:42 · 阅读 6 分钟 · 浏览 1,284</div>
+          </div>
+          <div class="byline-meta byline-spacer">秋季作钓 · 黑鲈</div>
+        </div>
+      </header>
+
+      <figure class="article-cover">
+        <img src="assets/cover-lake.jpg" alt="秋季傍晚的湖畔作钓场景" fetchpriority="high">
+      </figure>
+
+      <div class="article-body">
+        <p>入秋后水温回落，北岸芦苇边的标点重新成了热区。这篇记录最近三个晚口时段的作钓思路、线组搭配与装备调整，也整理了几个容易被忽略的细节，供同样在守秋季晚口的钓友参考。</p>
+
+        <h2>作钓思路</h2>
+        <p>连续三个傍晚都在同一片北岸作钓，前半小时先做远端标点，等光线压暗后再收回近岸芦苇。秋季鱼群靠岸觅食，活性比盛夏高，但开口窗口短，一旦咬口变慢就果断换点，不要死守一个位置。</p>
+        <ul>
+          <li>先远后近：先搜远处深水区边缘，再收回近岸结构</li>
+          <li>抓窗口：日落前后一小时是主要咬口时段</li>
+          <li>多标点轮换：一个点三口无口就换位，保留体力</li>
+        </ul>
+        <blockquote>晚口的关键不是抛得多远，而是标点踩得准不准。</blockquote>
+
+        <h2>线组与装备</h2>
+        <p>这次主打一根直柄竿配 1000 型纺车轮，饵用 7g 铁板和小之字狗。线组细节可以参考下面的配搭，再根据目标鱼和标点微调。主线 <code>0.8 号 PE</code> 配 <code>1.75 号碳前导</code>，前导长度 60cm。</p>
+        <div class="code-block"># 秋季晚口配搭参考
+竿: 直柄 M 调 1.98m
+轮: 1000 型纺车
+饵: 7g 铁板 / 小之字狗
+线: 0.8 PE + 1.75 碳前导</div>
+
+        <figure class="body-figure">
+          <img src="assets/thumb-night.jpg" alt="城市水岸夜钓夜景" loading="lazy">
+          <figcaption>城市水岸夜钓，灯光与站位比白天更讲究。</figcaption>
+        </figure>
+
+        <h2>几个容易忽略的细节</h2>
+        <ul>
+          <li>把饵收到芦苇边缘时放慢速度，让口有时间跟上来</li>
+          <li>傍晚风转向，注意水面浪纹变化，选择背风一侧作钓</li>
+          <li>收竿前再补一竿近岸，常有晚到的接口</li>
+        </ul>
+      </div>
+
+      <div class="article-foot">
+        <div class="foot-tags">
+          <span class="chip">路亚</span><span class="chip">黑鲈</span><span class="chip">秋季作钓</span>
+        </div>
+        <button class="btn btn-ghost" type="button" onclick="toast('已收藏（演示）')">收藏</button>
+        <button class="btn btn-ghost" type="button" onclick="toast('演示预览页，未接入分享')">分享</button>
+        <button class="btn btn-outline" type="button" data-like><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="count">128</span></button>
+      </div>
+
+      <nav class="prevnext" aria-label="上一篇下一篇">
+        <a class="pn-card" href="javascript:void(0)" onclick="toast('演示预览页')">
+          <div class="pn-label">上一篇</div>
+          <div class="pn-title">城市夜钓的灯光与站位选择</div>
+        </a>
+        <a class="pn-card" href="javascript:void(0)" onclick="toast('演示预览页')">
+          <div class="pn-label">下一篇</div>
+          <div class="pn-title">五百元预算内，新手第一根竿怎么选</div>
+        </a>
+      </nav>
+    </article>
+
+    <!-- 评论 -->
+    <section class="comments">
+      <h3>评论 · 2</h3>
+      <div class="comment">
+        <svg class="comment-avatar" viewBox="0 0 38 38"><rect width="38" height="38" rx="10" fill="#1b2740"/><circle cx="19" cy="15" r="7" fill="#00e5ff"/><path d="M6 33a12 10 0 0 1 26 0" fill="#00e5ff"/></svg>
+        <div>
+          <div class="comment-name">阿澈</div>
+          <div class="comment-time">10 分钟前</div>
+          <p class="comment-text">北岸芦苇边这个标点我上周也打了，确实傍晚口不错，请问铁板颜色怎么选？</p>
+          <button class="reply-btn" type="button" onclick="toast('演示预览页，未接入回复')">回复</button>
+        </div>
+      </div>
+      <div class="comment">
+        <svg class="comment-avatar" viewBox="0 0 38 38"><rect width="38" height="38" rx="10" fill="#1b2740"/><circle cx="19" cy="15" r="7" fill="#ff7ab8"/><path d="M6 33a12 10 0 0 1 26 0" fill="#ff7ab8"/></svg>
+        <div>
+          <div class="comment-name">临江仙</div>
+          <div class="comment-time">26 分钟前</div>
+          <p class="comment-text">收藏了，周末也去守一波晚口。</p>
+          <button class="reply-btn" type="button" onclick="toast('演示预览页，未接入回复')">回复</button>
+        </div>
+      </div>
+      <div class="comment-bar">
+        <input type="text" id="comment-input" placeholder="写下你的评论…" aria-label="评论输入">
+        <button class="btn btn-outline" type="button" id="btn-send">发送</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- 右栏 -->
+  <aside class="side-right">
+    <div class="card">
+      <h4 class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>关于本站</h4>
+      <p class="about-text">深空钓友的个人博客，记录路亚、夜钓与装备心得，偶尔写点技术笔记。文章长期沉淀，欢迎按分类与标签检索。</p>
+    </div>
+    <div class="card">
+      <h4 class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>最新文章</h4>
+      <a class="recent-item" href="javascript:void(0)" onclick="toast('演示预览页')"><span class="t">秋季傍晚的湖畔，一口黑鲈咬钩了</span><span class="d">2026-11-12</span></a>
+      <a class="recent-item" href="javascript:void(0)" onclick="toast('演示预览页')"><span class="t">五百元预算内，新手第一根竿怎么选</span><span class="d">2026-11-12</span></a>
+      <a class="recent-item" href="javascript:void(0)" onclick="toast('演示预览页')"><span class="t">城市夜钓的灯光与站位选择</span><span class="d">2026-11-11</span></a>
+    </div>
+    <div class="card">
+      <h4 class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>标签云</h4>
+      <div class="tag-cloud">
+        <span class="chip">路亚</span><span class="chip">黑鲈</span><span class="chip">夜钓</span><span class="chip">装备</span><span class="chip">新手</span><span class="chip">秋季</span><span class="chip">标点</span><span class="chip">线组</span>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<footer class="site-footer">
+  <div class="links">
+    <a href="赛博博客主题预览.html">返回首页</a>
+    <a href="javascript:void(0)">归档</a>
+    <a href="javascript:void(0)">友情链接</a>
+  </div>
+  <div>© <span id="year">2026</span> 赛博博客 SHAIBOBLOG · 主题预览稿，页面数据均为示例 · 不代表线上真实内容</div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  document.querySelectorAll('.main-nav a').forEach(function(a){
+    a.addEventListener('click', function(){
+      document.querySelectorAll('.main-nav a').forEach(function(n){ n.classList.remove('active'); });
+      a.classList.add('active');
+    });
+  });
+
+  // 点赞切换
+  var likeBtn = document.querySelector('[data-like]');
+  likeBtn.addEventListener('click', function(){
+    var count = likeBtn.querySelector('.count');
+    var liked = likeBtn.classList.toggle('liked');
+    var n = parseInt(count.textContent, 10) || 0;
+    count.textContent = liked ? n + 1 : n - 1;
+  });
+
+  // 评论发送
+  var input = document.getElementById('comment-input');
+  var send = document.getElementById('btn-send');
+  function sendComment(){
+    if (!input.value.trim()) { toast('先写点内容再发送'); return; }
+    toast('演示预览页，评论未接入真实数据');
+    input.value = '';
+  }
+  send.addEventListener('click', sendComment);
+  input.addEventListener('keydown', function(e){ if (e.key === 'Enter') sendComment(); });
+
+  var toastEl = document.getElementById('toast');
+  var timer = null;
+  window.toast = function(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(timer);
+    timer = setTimeout(function(){ toastEl.classList.remove('show'); }, 1600);
+  };
+})();
+</script>
+</body>
+</html>

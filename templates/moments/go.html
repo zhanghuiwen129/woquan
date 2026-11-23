@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>即将离开本站 - woquan</title>
+    <link rel="stylesheet" href="assets/css/style.css?v=20261117.1">
+</head>
+<body>
+<div class="app-container">
+    <!-- 导航栏 -->
+    <div class="navbar">
+        <button class="btn-icon" onclick="history.back()">←</button>
+        <div class="title">安全提示</div>
+        <div class="actions"></div>
+    </div>
+
+    <div class="go-warning">
+        <div class="go-icon">⚠️</div>
+        <h2>即将离开本站</h2>
+        <p>你即将访问外部网站，请注意账号与财产安全。</p>
+        <div class="go-url" id="go-target-url"></div>
+        <div class="go-actions">
+            <button class="btn btn-default" onclick="history.back()">取消</button>
+            <button class="btn btn-primary" id="go-confirm">继续访问</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="assets/js/app.js?v=20261117.1"></script>
+<script>
+(function () {
+    const params = new URLSearchParams(window.location.search);
+    const target = params.get('url');
+    const urlEl = document.getElementById('go-target-url');
+    const confirmBtn = document.getElementById('go-confirm');
+
+    if (!target) {
+        urlEl.textContent = '未提供目标网址';
+        confirmBtn.disabled = true;
+        return;
+    }
+
+    let safeUrl = target;
+    if (safeUrl.startsWith('www.')) safeUrl = 'https://' + safeUrl;
+    urlEl.textContent = safeUrl;
+
+    confirmBtn.addEventListener('click', () => {
+        window.location.href = safeUrl;
+    });
+})();
+</script>
+</body>
+</html>

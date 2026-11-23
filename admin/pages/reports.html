@@ -1,0 +1,16 @@
+        <div id="page-reports" class="hidden">
+            <div class="card">
+                <div class="card-head"><h3><i data-icon="flag"></i>举报处理</h3></div>
+                <div class="tab-bar">
+                    <button class="setting-tab report-tab active" data-status="-1" data-action="switch-report-tab">全部</button>
+                    <button class="setting-tab report-tab" data-status="0" data-action="switch-report-tab">待处理</button>
+                    <button class="setting-tab report-tab" data-status="1" data-action="switch-report-tab">已处理</button>
+                    <button class="setting-tab report-tab" data-status="2" data-action="switch-report-tab">已驳回</button>
+                </div>
+                <table>
+                    <thead><tr><th>ID</th><th>举报人</th><th>对象类型</th><th>对象ID</th><th>原因</th><th>补充说明</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+                    <tbody id="reports-table"></tbody>
+                </table>
+                <div class="pagination" id="reports-pagination"></div>
+            </div>
+        </div>

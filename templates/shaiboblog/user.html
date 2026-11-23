@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="{{PAGE_DESCRIPTION}}">
+    <meta name="keywords" content="{{PAGE_KEYWORDS}}">
+    <title>{{PAGE_TITLE}}</title>
+    <link rel="stylesheet" href="assets/css/style.css?v=20261116.16">
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <script>
+        window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/';
+        window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+    </script>
+</head>
+<body class="page-user">
+    <h1 class="sr-only">用户主页</h1>
+
+<header class="topbar plainbar">
+    <div class="topbar-inner">
+        <button class="back-btn" id="backBtn" aria-label="返回">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <span class="topbar-title" id="pageTitle">个人主页</span>
+        <div class="topbar-right">
+            <!-- 夜间模式 / 退出登录等账户功能统一由 nav.js::mountUserMenu 注入的顶栏用户菜单提供，
+                 本页不再自带设置按钮，避免与个人主页头像菜单里的「夜间模式 / 退出登录」重复。 -->
+        </div>
+    </div>
+</header>
+
+<div class="wrap">
+    <main>
+        <section class="profile">
+            <div class="profile-top">
+                <span class="avatar-lg" id="profileAvatar">?</span>
+                <div class="profile-info">
+                    <div class="profile-name" id="profileName">加载中…</div>
+                    <div class="profile-bio" id="profileBio"></div>
+                    <div class="profile-meta" id="profileMeta"></div>
+                </div>
+                <div class="profile-actions">
+                    <button class="btn-ghost" id="msgBtn">私信</button>
+                    <button class="btn-primary" id="followBtn" style="display:none">关注</button>
+                    <button class="btn-ghost" id="editBtn" style="display:none">编辑资料</button>
+                </div>
+            </div>
+            <div class="stats" id="stats">
+                <div class="stat" data-nav="works"><b>—</b><span>文章</span></div>
+                <div class="stat" data-nav="likes"><b>—</b><span>获赞</span></div>
+                <div class="stat" data-nav="favs"><b>—</b><span>收藏</span></div>
+                <div class="stat" data-nav="followers"><b>—</b><span>粉丝</span></div>
+                <div class="stat" data-nav="following"><b>—</b><span>关注</span></div>
+            </div>
+        </section>
+
+        <nav class="tabs" id="userTabs">
+            <button class="tab active" data-tab="works">作品</button>
+            <button class="tab" data-tab="favs">收藏</button>
+            <button class="tab" data-tab="likes">赞过</button>
+            <button class="tab" data-tab="comments">评论</button>
+        </nav>
+
+        <section class="grid" id="userGrid">{{SSR_FEED}}</section>
+        <div class="load-more" id="load-more" style="display:none">上滑加载更多</div>
+    </main>
+
+    <aside class="aside">
+        <section class="panel">
+            <div class="panel-title">简介</div>
+            <div id="aboutBox"></div>
+        </section>
+    </aside>
+</div>
+
+<!-- @include partials/tabbar.html -->
+
+<!-- @include partials/page-tail.html -->
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

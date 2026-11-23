@@ -1,0 +1,153 @@
+# ============================================================
+# Hublog Git Ignore（规范化 P0-S1）
+# ============================================================
+
+# ──────────────── 敏感配置：绝对不要提交！ ────────────────
+/.env
+/.env.local
+/config.local.php
+# config.php 含数据库账号/密码/密钥等本地敏感配置（随 P0-1 修复新增忽略，示例配置用 config.example.php 跟踪）
+/config.php
+# S8：安装锁已移到站点根目录（清缓存不会误删），绝不入库
+/.installed.lock
+
+# ──────────────── 整站备份 / 压缩包：防止凭据泄露（P0-1） ────────────────
+/*.tar.gz
+/*.tar
+/*.tgz
+/*.zip
+/*.rar
+/*.7z
+/*.bz2
+/*.xz
+/backups/*
+!/backups/.gitkeep
+
+# ──────────────── 缓存 / 日志 / 临时文件 ────────────────
+/cache/*
+!/cache/.gitkeep
+/logs/*
+!/logs/.gitkeep
+/tmp/**
+!/tmp/.gitkeep
+
+# ──────────────── 上传文件（用户上传内容） ────────────────
+/uploads/avatars/*
+!/uploads/avatars/.gitkeep
+/uploads/images/*
+!/uploads/images/.gitkeep
+/uploads/attachments/*
+!/uploads/attachments/.gitkeep
+/uploads/videos/*
+!/uploads/videos/.gitkeep
+
+# ──────────────── Composer（P1-A1 引入后） ────────────────
+/vendor/
+/composer.phar
+
+# ──────────────── Node / 前端构建（P2-P5 引入后） ────────────────
+/node_modules/
+/dist/
+/.vite/
+package-lock.json.bak
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+.pnp.*
+.yarn.lock.bak
+
+# ──────────────── 编辑器 / 操作系统 ────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ──────────────── 测试覆盖率 ────────────────
+# 本机个人配置忽略；phpunit.xml.dist 是提交进仓库的团队/CI 标准配置
+/phpunit.xml
+/phpunit.xml.bak
+/.phpunit.cache/
+/reports/
+/coverage/
+
+# ──────────────── 修复脚本（已删除，保留规则防止误提交） ────────────────
+/fix_*.php
+
+# ──────────────── 工作区记忆：memory/ 随私有仓库跨电脑同步，其余不入库 ────────────────
+# memory/（MEMORY.md 长期约定 + 每日日志）存入私有仓库，家里/公司两台机器换机不丢经验；
+# deploy-backups/（生产文件备份，git 历史可回滚）、tmp/（一次性探针）、
+# 根下散落脚本（gen_beep.py / tmp_*.php / badge_list.json）一律不入库。
+# 注意：memory 里有明文凭据（两站 FTP 密码等），只进私有仓库；
+# 同步 woquan（公开仓库）时必须排除 .workbuddy/，见 MEMORY.md「两个 Gitee 仓库」节
+/.workbuddy/*
+!/.workbuddy/memory/
+
+# ──────────────── App 客户端：构建产物 / 本地环境（P2 引入后补充） ────────────────
+/app-client/.trash/
+# 真实环境配置带站点专属地址，不入库；仅保留 .env.example 模板
+app-client/.env
+app-client/.env.development
+app-client/.env.production
+!app-client/.env.example
+# HBuilderX 本地工作目录：含安卓签名 keystore / 崩溃日志 / 编译中间资源，绝不入库
+/app-client/unpackage/
+# 微信开发者工具个人本地配置（project.config.json 已跟踪，个人偏好不入库）
+app-client/project.private.config.json
+
+# ──────────────── 构建产物 / 部署备份（非源码，禁止提交） ────────────────
+/h5/
+/.trash/
+/remote-backup-*/
+
+# ──────────────── 签名密钥 / 含明文密码的部署脚本（敏感，绝不入库） ────────────────
+*.keystore
+/ftp-*.ps1
+# 自动化部署中间产物
+/tmp/ftp-*.ps1
+/tmp/probe*.php
+
+# ──────────────── 本地临时 / 草稿 / 敏感（非源码，禁止提交）2026-10-17 整理 ────────────────
+# 独立授权管理系统：含默认密码 hublog123，离题且敏感
+/shouquan/
+# App 客户端临时目录（构建 / 探针碎片；/tmp/** 只挡仓库根 tmp，这个在 app-client 下漏网）
+/app-client/tmp/
+# 代码审查草稿报告（非项目源码）
+/app-review-report.md
+# docs 下文档导出工具乱产的嵌套草稿目录
+/docs/345/
+/docs/App_/
+# 顶层中文名草稿目录（离题）
+/文档/
+/文档docs/
+# 误跟踪的备份文件：移除跟踪并忽略
+README.md.bak-20261005
+/app-client/README.md.bak-20261005
+
+# ── 非发布内容（2026-11-11 从公开仓库彻底移除）────────────────
+# App 客户端源码只保留在私有仓库 aiwoquan/hubloggaidewoquanjiapp
+/app-client/
+# 工作记忆含部署凭据/服务器信息，绝不入库
+/.workbuddy/
+# 临时目录内容不跟踪（保留 .gitkeep）
+/tmp/*
+!/tmp/.gitkeep
+
+# ── docs/ 永不推送（用户 2026-11-11 确认）────────────────────
+# 开发日志 / 截图 / API 文档仅保留在私有仓库，部分含部署凭据
+/docs/
+
+# 本地工具目录（PHPStan 独立 phar 等二进制，不入库）
+# 安装方式：php scripts/install-phpstan.php
+/tools/
+
+# ── 本地临时扫描产物 / 编辑器缓存（不入库）──────────────────
+/.tmp_backup/
+/.tmp_p3_scan*.php
+/ps-l3b.txt
+/.trae/
+/.trae-html-share-packages/

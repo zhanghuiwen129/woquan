@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>消息 · 一根竿</title>
+<style>
+  :root{
+    --bg:#F3F5F4;--card:#FFF;--ink:#17211E;--sub:#66726E;--line:#E6EAE8;
+    --brand:#0E7C6B;--brand-soft:#E3F1EE;--accent:#E8833A;--radius:12px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+  button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
+  img{display:block;width:100%;height:100%;object-fit:cover}
+
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topbar-inner{max-width:720px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
+  .back-btn{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .back-btn svg{width:20px;height:20px}
+  .topbar-title{font-size:16px;font-weight:600}
+  .topbar-right{margin-left:auto;font-size:13px;color:var(--sub)}
+
+  .wrap{max-width:720px;margin:0 auto;padding:16px 16px 96px}
+
+  .tabs{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);display:flex;margin-bottom:12px}
+  .tab{flex:1;text-align:center;font-size:14px;color:var(--sub);padding:13px 0;position:relative}
+  .tab.active{color:var(--ink);font-weight:700}
+  .tab.active::after{content:"";position:absolute;left:25%;right:25%;bottom:-1px;height:3px;border-radius:3px;background:var(--brand)}
+  .badge{display:inline-block;min-width:17px;height:17px;border-radius:9px;background:var(--accent);color:#fff;font-size:11px;line-height:17px;padding:0 5px;margin-left:3px}
+
+  .group-label{font-size:12px;color:var(--sub);padding:10px 4px}
+  .list{display:flex;flex-direction:column;gap:10px}
+  .notice{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;display:flex;gap:12px;cursor:pointer;position:relative}
+  .notice.unread{border-left:3px solid var(--brand)}
+  .avatar{width:44px;height:44px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:700}
+  .notice-body{flex:1;min-width:0}
+  .notice-line{font-size:14px;margin-bottom:3px}
+  .notice-line b{font-weight:600}
+  .notice-text{font-size:13px;color:var(--sub);line-height:1.55;margin-bottom:6px}
+  .notice-meta{font-size:12px;color:var(--sub);display:flex;align-items:center;gap:10px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+  .notice-thumb{flex:none;width:64px;height:64px;border-radius:8px;overflow:hidden;align-self:center}
+  .notice-actions{display:flex;gap:8px;margin-top:8px}
+  .n-btn{font-size:13px;border:1px solid var(--line);border-radius:15px;padding:5px 14px;color:var(--sub)}
+  .n-btn.brand{color:var(--brand);border-color:var(--brand)}
+
+  .sys{display:flex;gap:12px}
+  .sys-icon{width:44px;height:44px;border-radius:50%;flex:none;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center}
+  .sys-icon svg{width:22px;height:22px}
+
+  .empty{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:50px 20px;text-align:center;color:var(--sub);font-size:14px}
+
+  .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;border-top:1px solid var(--line);display:flex}
+  .tabbar-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;font-size:11px;color:var(--sub)}
+  .tabbar-item svg{width:22px;height:22px}
+  .tabbar-item.active{color:var(--brand)}
+  @media(min-width:960px){.tabbar{display:none}}
+
+  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:rgba(23,33,30,.88);color:#fff;font-size:14px;padding:10px 18px;border-radius:20px;z-index:100;opacity:0;pointer-events:none;transition:opacity .25s}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <button class="back-btn" data-toast="返回上一页（演示）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <span class="topbar-title">消息通知</span>
+    <button class="topbar-right" data-toast="全部标为已读（演示）">全部已读</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="comment">评论<span class="badge">3</span></button>
+    <button class="tab" data-tab="like">点赞<span class="badge">5</span></button>
+    <button class="tab" data-tab="follow">关注</button>
+    <button class="tab" data-tab="system">系统</button>
+  </nav>
+  <div id="noticeList"></div>
+</div>
+
+<nav class="tabbar">
+  <button class="tabbar-item" data-toast="首页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>首页</button>
+  <button class="tabbar-item" data-toast="视频（演示）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5l5 2.5-5 2.5z" fill="currentColor" stroke="none"/></svg>视频</button>
+  <button class="tabbar-item active" data-toast="消息"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/></svg>消息</button>
+  <button class="tabbar-item" data-toast="我的（演示）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></svg>我的</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const IMG={
+  carp:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/Y2wfbpb1aoFE5nxCtB5cX9nJnjb",
+  calm:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/DYjQb0CJCoiJCvxnv9Fc5WwIn6f",
+  reed:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/JapFbukAYoUn0fxuqbccorXVnDg"
+};
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+let t;function toast(m){const el=$("#toast");el.textContent=m;el.classList.add("show");clearTimeout(t);t=setTimeout(()=>el.classList.remove("show"),1600)}
+
+const DATA={
+  comment:[
+    {unread:true,name:"水边的阿强",color:"#2E86AB",action:"评论了你的文章",text:"这个钓位思路很实在，周末去试试，回来反馈渔获。",time:"10分钟前",img:IMG.carp,article:"一斤半大板鲫上岸：冬季守钓浅滩的实战记录"},
+    {unread:true,name:"静水湖客",color:"#3E7C59",action:"回复了你的评论",text:"子线 0.6 碰到一斤以上鲤鱼确实要小心，建议放到 0.8。",time:"1小时前",img:IMG.calm,article:"秋季湖库钓鲤鱼的线组搭配与调漂思路"},
+    {unread:true,name:"芦苇岸边",color:"#6B8E23",action:"评论了你的文章",text:"草洞下风向这个点记下了，多谢分享。",time:"3小时前",img:IMG.reed,article:"芦苇荡里藏大鱼：秋季找湾子、读草缝技巧"},
+    {unread:false,name:"渔获日记",color:"#C26B2E",action:"评论了你的文章",text:"同一片塘口，我上周也上了两条大板鲫。",time:"昨天 19:22",img:IMG.carp,article:"一斤半大板鲫上岸：冬季守钓浅滩的实战记录"}
+  ],
+  like:[
+    {unread:true,name:"调漂研究所",color:"#B5495B",action:"赞了你的文章",text:"《秋季湖库钓鲤鱼的线组搭配与调漂思路》",time:"20分钟前",img:IMG.calm},
+    {unread:true,name:"路亚小课堂",color:"#7A5EA6",action:"赞了你的评论",text:"冬季守钓浅滩这个判断很到位。",time:"1小时前",img:IMG.reed},
+    {unread:true,name:"钓友老周",color:"#4A6FA5",action:"赞了你的文章",text:"《芦苇荡里藏大鱼：秋季找湾子、读草缝技巧》",time:"2小时前",img:IMG.reed},
+    {unread:false,name:"山间钓客",color:"#8A6D3B",action:"赞了你的渔获",text:"30 条鲫鱼这收获太羡慕了。",time:"昨天 16:40",img:IMG.carp}
+  ],
+  follow:[
+    {unread:false,name:"渔获日记",color:"#C26B2E",action:"关注了你",text:"你们有 12 个共同关注的钓手",time:"昨天 12:08",img:null},
+    {unread:false,name:"静水湖客",color:"#3E7C59",action:"关注了你",text:"欢迎互相关注交流钓点",time:"3天前",img:null}
+  ],
+  system:[
+    {unread:true,action:"内容审核通过",text:"你发布的《一斤半大板鲫上岸：冬季守钓浅滩的实战记录》已通过审核，现已上线。",time:"2小时前",sys:true},
+    {unread:true,action:"本周创作提醒",text:"你本周已发布 3 篇文章，继续保持更新可参与「周度优质创作者」评选。",time:"昨天 09:00",sys:true},
+    {unread:false,action:"账号安全提醒",text:"你的账号于 11 月 12 日在新设备登录，如非本人操作请及时修改密码。",time:"3天前",sys:true}
+  ]
+};
+
+function render(tab){
+  const list=DATA[tab],box=$("#noticeList");
+  if(!list.length){box.innerHTML=`<div class="empty">暂无通知</div>`;return;}
+  box.innerHTML=`<div class="group-label">今天</div><div class="list">`+list.map(n=>{
+    if(n.sys){
+      return `<div class="notice ${n.unread?"unread":""}">
+        <span class="sys-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg></span>
+        <div class="notice-body">
+          <div class="notice-line"><b>${n.action}</b>${n.unread?'<span class="dot" style="margin-left:6px"></span>':""}</div>
+          <div class="notice-text">${n.text}</div>
+          <div class="notice-meta"><span>${n.time}</span></div>
+        </div>
+      </div>`;
+    }
+    const follow = tab==="follow";
+    return `<div class="notice ${n.unread?"unread":""}">
+      <span class="avatar" style="background:${n.color}">${n.name[0]}</span>
+      <div class="notice-body">
+        <div class="notice-line"><b>${n.name}</b> ${n.action}${n.unread?'<span class="dot" style="margin-left:6px"></span>':""}</div>
+        <div class="notice-text">${n.text}</div>
+        ${n.article?`<div class="notice-meta"><span>原文：${n.article}</span></div>`:""}
+        <div class="notice-meta"><span>${n.time}</span></div>
+        ${follow?`<div class="notice-actions"><button class="n-btn brand" data-toast="回关（演示）">回关</button><button class="n-btn" data-toast="查看主页（演示）">主页</button></div>`:""}
+      </div>
+      ${n.img?`<div class="notice-thumb"><img src="${n.img}" alt="配图" loading="lazy"></div>`:""}
+    </div>`;
+  }).join("")+`</div>`;
+}
+render("comment");
+
+$("#tabs").addEventListener("click",e=>{
+  const tab=e.target.closest(".tab");if(!tab)return;
+  $$(".tab").forEach(x=>x.classList.remove("active"));tab.classList.add("active");
+  render(tab.dataset.tab);
+});
+
+document.addEventListener("click",e=>{const el=e.target.closest("[data-toast]");if(el){e.stopPropagation();toast(el.dataset.toast);}});
+</script>
+</body>
+</html>

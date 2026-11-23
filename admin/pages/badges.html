@@ -1,0 +1,160 @@
+        <div id="page-badges" class="hidden">
+            <div class="card">
+                <div class="card-head">
+                    <div style="display:flex;gap:8px;">
+                        <button id="bd-tab-config" class="btn btn-primary" data-action="switch-badge-tab" data-value="config">徽章配置</button>
+                        <button id="bd-tab-user" class="btn btn-default" data-action="switch-badge-tab" data-value="user">用户徽章</button>
+                        <button id="bd-tab-god" class="btn btn-default" data-action="switch-badge-tab" data-value="god">神评标记</button>
+                        <button id="bd-tab-log" class="btn btn-default" data-action="switch-badge-tab" data-value="log">操作日志</button>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <!-- 统计类徽章日常由 cron 每小时跑一次，这里是后台补救入口：点了立刻全站重算 -->
+                        <button class="btn btn-default" data-action="run-badge-scan"><i data-icon="refresh"></i> 立即扫描解锁</button>
+                        <button class="btn btn-primary" data-action="open-badge-editor" data-id="0"><i data-icon="plus"></i>新增徽章</button>
+                    </div>
+                </div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+                    「展示位」= 名字旁内联的身份/认证类徽章会在动态、评论的作者昵称旁显示（与实名徽章同一位置）；「主页横排」= 仅在个人主页徽章墙上横向排列。
+                </div>
+
+                <!-- ① 徽章配置 -->
+                <div id="bd-panel-config">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+                        <select id="bd-category" class="form-input" style="width:130px;">
+                            <option value="">全部分类</option>
+                            <option value="auth">认证</option>
+                            <option value="vip">VIP</option>
+                            <option value="role">角色</option>
+                            <option value="circle">圈子</option>
+                            <option value="creation">创作</option>
+                            <option value="comment">评论</option>
+                            <option value="social">社交</option>
+                            <option value="activity">活跃</option>
+                            <option value="event">活动</option>
+                        </select>
+                        <select id="bd-status" class="form-input" style="width:110px;">
+                            <option value="-1">全部状态</option>
+                            <option value="1">已启用</option>
+                            <option value="0">已禁用</option>
+                        </select>
+                        <input id="bd-keyword" class="form-input" style="width:180px;" placeholder="名称 / 标识" />
+                        <button class="btn btn-default" data-action="load-badges">搜索</button>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>图标</th><th>名称</th><th>标识</th><th>分类</th><th>规则</th>
+                                    <th>权重</th><th>展示位</th><th>状态</th><th>解锁/冻结</th><th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bd-table"></tbody>
+                        </table>
+                    </div>
+                    <div id="bd-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;"></div>
+                </div>
+
+                <!-- ② 用户徽章 -->
+                <div id="bd-panel-user" style="display:none;">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+                        <input id="bd-user-id" class="form-input" style="width:120px;" placeholder="用户 ID" />
+                        <select id="bd-user-state" class="form-input" style="width:120px;">
+                            <option value="-1">全部状态</option>
+                            <option value="1">已解锁</option>
+                            <option value="2">已冻结</option>
+                            <option value="3">已回收</option>
+                        </select>
+                        <button class="btn btn-default" data-action="load-user-badges">查询</button>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="table">
+                            <thead><tr><th>用户</th><th>徽章</th><th>状态</th><th>来源</th><th>解锁时间</th><th>操作</th></tr></thead>
+                            <tbody id="bd-user-table"></tbody>
+                        </table>
+                    </div>
+                    <div id="bd-user-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;"></div>
+                </div>
+
+                <!-- ②.5 神评标记台账 -->
+                <div id="bd-panel-god" style="display:none;">
+                    <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+                        神评由动态作者 / 圈子管理员 / 平台管理员在评论区标记。此处可抽查与撤销误标——
+                        撤销后系统会立即重算被评作者的「新晋神评选手 / 封神评论官」徽章。
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+                        <input id="bd-god-keyword" class="form-input" style="width:220px;" placeholder="评论作者 / 标记人 / 评论内容" />
+                        <button class="btn btn-default" data-action="load-god-marks">查询</button>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="table">
+                            <thead><tr><th>ID</th><th>评论作者</th><th>评论摘要</th><th>所属动态</th><th>标记人</th><th>时间</th><th>操作</th></tr></thead>
+                            <tbody id="bd-god-table"></tbody>
+                        </table>
+                    </div>
+                    <div id="bd-god-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;"></div>
+                </div>
+
+                <!-- ③ 操作日志 -->
+                <div id="bd-panel-log" style="display:none;">
+                    <div style="overflow-x:auto;">
+                        <table class="table">
+                            <thead><tr><th>时间</th><th>操作人</th><th>用户</th><th>徽章</th><th>动作</th><th>备注</th></tr></thead>
+                            <tbody id="bd-log-table"></tbody>
+                        </table>
+                    </div>
+                    <div id="bd-log-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;"></div>
+                </div>
+            </div>
+
+            <!-- 新增/编辑徽章弹窗 -->
+            <div id="bd-editor" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;overflow:auto;">
+                <div style="max-width:600px;margin:60px auto;background:var(--surface-solid);border-radius:12px;padding:24px;">
+                    <h3 id="bd-editor-title" style="font-size:16px;margin-bottom:16px;">新增徽章</h3>
+                    <input type="hidden" id="bd-e-id" />
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div><label style="font-size:13px;color:var(--text-secondary);">名称 *</label>
+                            <input id="bd-e-name" class="form-input" placeholder="如：原创作者" data-input="refresh-badge-icon-preview" /></div>
+                        <div><label style="font-size:13px;color:var(--text-secondary);">标识 *（小写字母/数字/下划线）</label>
+                            <input id="bd-e-key" class="form-input" placeholder="如：original_author" /></div>
+                        <div><label style="font-size:13px;color:var(--text-secondary);">图标（素材库名称，留空则用名称首字占位）</label>
+                            <input id="bd-e-icon" class="form-input" list="bd-icon-names" placeholder="award / pen / trophy ..." data-input="refresh-badge-icon-preview" />
+                            <datalist id="bd-icon-names"></datalist></div>
+                        <div><label style="font-size:13px;color:var(--text-secondary);">主色</label>
+                            <input id="bd-e-color" class="form-input" type="color" data-input="refresh-badge-icon-preview" />
+                            <div id="bd-e-icon-preview" style="margin-top:8px;display:flex;align-items:center;"></div></div>
+                        <div><label style="font-size:13px;color:var(--text-secondary);">分类</label>
+                            <select id="bd-e-category" class="form-input">
+                                <option value="auth">认证</option><option value="vip">VIP</option>
+                                <option value="role">角色</option>
+                                <option value="circle">圈子</option><option value="creation">创作</option>
+                                <option value="comment">评论</option><option value="social">社交</option>
+                                <option value="activity">活跃</option><option value="event">活动</option>
+                            </select></div>
+                        <div><label style="font-size:13px;color:var(--text-secondary);">规则类型</label>
+                            <select id="bd-e-rule" class="form-input">
+                                <option value="count">统计类</option><option value="realtime">实时类</option>
+                                <option value="timed">限时类</option><option value="manual">人工授予</option>
+                            </select></div>
+                        <div style="grid-column:1/-1;"><label style="font-size:13px;color:var(--text-secondary);">阈值 JSON（如 {"min_original":10}）</label>
+                            <input id="bd-e-threshold" class="form-input" placeholder='{"min_original":10}' /></div>
+                        <div style="grid-column:1/-1;"><label style="font-size:13px;color:var(--text-secondary);">介绍文案</label>
+                            <input id="bd-e-desc" class="form-input" /></div>
+                        <div><label style="font-size:13px;color:var(--text-secondary);">排序权重</label>
+                            <input id="bd-e-weight" class="form-input" type="number" value="0" /></div>
+                        <div><label style="font-size:13px;color:var(--text-secondary);">展示位</label>
+                            <select id="bd-e-display" class="form-input">
+                                <option value="1">名字旁内联</option>
+                                <option value="0">个人主页横排</option>
+                            </select></div>
+                    </div>
+                    <div style="margin-top:12px;font-size:13px;">
+                        <label><input type="checkbox" id="bd-e-hideable" /> 允许用户隐藏</label>
+                        &nbsp;&nbsp;<label><input type="checkbox" id="bd-e-status" checked /> 启用</label>
+                    </div>
+                    <div style="margin-top:18px;display:flex;justify-content:flex-end;gap:8px;">
+                        <button class="btn btn-default" data-action="hide-bd-editor">取消</button>
+                        <button class="btn btn-primary" data-action="save-badge">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>

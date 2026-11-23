@@ -1,0 +1,730 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>用户主页 - woquan</title>
+    <link rel="stylesheet" href="assets/css/style.css?v=20261117.1">
+    <script>
+        // 提前注入 BASE_URL 到全局，供 onclick/href 表达式使用
+        window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/'; window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+    </script>
+</head>
+<body>
+<div class="app-container user-page">
+    
+    <!-- PC 端左中右三栏布局容器 -->
+    <div class="pc-layout">
+        
+        <!-- 左栏 (仅 PC 端显示) -->
+        <aside class="sidebar-left">
+            <div class="sidebar-card user-card">
+                <div class="user-card-avatar">
+                    <img src="assets/images/default-avatar.svg" alt="avatar" id="sidebar-avatar">
+                </div>
+                <div class="user-card-info">
+                    <h3 id="sidebar-nickname">woquan 用户</h3>
+                    <p class="user-bio" id="sidebar-bio">这个人很懒，什么都没留下~</p>
+                </div>
+                <div class="user-card-stats" id="sidebar-stats">
+                    <div class="stat-item">
+                        <span class="stat-num" id="sidebar-stat-posts">0</span>
+                        <span class="stat-label">动态</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num" id="sidebar-stat-following">0</span>
+                        <span class="stat-label">关注</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num" id="sidebar-stat-followers">0</span>
+                        <span class="stat-label">粉丝</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-block" id="sidebar-action-btn" style="display:none;">编辑资料</button>
+                <button class="btn btn-default btn-block" id="sidebar-chat-btn" style="display:none;margin-top:8px;align-items:center;justify-content:center;gap:4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>发私信</button>
+                <button class="btn btn-default btn-block" id="sidebar-logout-btn" style="display:none;margin-top:8px;align-items:center;justify-content:center;gap:4px;color:#ff4d4f;border-color:#ffccc7;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>退出登录</button>
+            </div>
+
+            <div class="sidebar-card nav-card">
+                <h4 class="sidebar-title">功能菜单</h4>
+                <ul class="nav-list">
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); location.assign(window.HUBLOG_PAGE_BASE + '/');"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>首页</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); location.assign(window.HUBLOG_PAGE_BASE + '/search');"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>发现</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); if(app.checkAuth()) { location.assign(window.HUBLOG_PAGE_BASE + '/chat'); } else { app.openAuthModal(); }"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>私信</span><span class="chat-nav-badge" id="chat-unread-badge" style="display:none;">0</span></a></li>
+                    <li><a href="#" class="nav-link active" onclick="event.preventDefault(); if(app.checkAuth() && app.user) app.goUser(app.user.username); else app.openAuthModal();"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的主页</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); if(app.checkAuth()) { location.assign(window.HUBLOG_PAGE_BASE + '/favorites'); } else { app.openAuthModal(); }"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><span>我的收藏</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); if(app.checkAuth()) app.openNotificationModal(); else app.openAuthModal();"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>通知</span><span class="chat-nav-badge" id="sidebar-notify-badge" style="display:none;">0</span></a></li>
+                    <li id="nav-admin" style="display:none;"><a href="#" class="nav-link" onclick="event.preventDefault(); app.goAdmin();"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>管理后台</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- 中间主内容区 -->
+        <main class="main-content">
+            <!-- 导航栏 (移动端显示) -->
+            <div class="navbar">
+        <button class="btn-icon-back" onclick="history.back()" aria-label="返回">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="title">个人主页</div>
+        <div class="actions"></div>
+    </div>
+
+    <!-- 封面 + 头像 + 操作区 合并容器 -->
+    <div class="profile-hero">
+        <!-- 用户封面 -->
+        <div class="user-cover" id="user-cover">
+            <div class="cover-bg" id="cover-bg"></div>
+            <div class="cover-edit-btn" id="cover-upload-mask" style="display:none;" title="更换封面">
+                <label for="cover-upload" class="cover-upload-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </label>
+                <input type="file" id="cover-upload" accept="image/*,video/*,.jpg,.jpeg,.png,.gif,.bmp,.webp,.svg,.mp4,.webm,.mov,.avi,.mkv,.flv,.wmv,.m4v,.3gp,.mpg,.mpeg,.ogv" style="display:none;" onchange="app.uploadCover(this)">
+            </div>
+        </div>
+
+        <!-- 用户信息 -->
+        <div class="user-header" id="user-header">
+            <div class="avatar-wrap">
+                <img src="assets/images/default-avatar.svg" class="avatar-large" id="profile-avatar" alt="">
+                <input type="file" id="avatar-upload" accept="image/*" style="display:none;" onchange="const f=this.files[0]; if(f) app.uploadAvatar(f).then(()=>app.showToast('头像更新成功')).catch(e=>app.showToast(e.message)); this.value='';">
+            </div>
+            <div class="user-info-text">
+                <div class="user-name" id="profile-name">加载中...</div>
+                <div class="user-bio" id="profile-bio"></div>
+            </div>
+        </div>
+
+        <div class="user-stats" id="user-stats">
+            <div class="stat"><span class="stat-label">动态<span class="stat-badge" id="stat-posts">0</span></span></div>
+            <div class="stat" style="cursor:pointer;" onclick="event.preventDefault(); if (app.viewingUsername || app.user) { app.goFollowListPage('following'); }"><span class="stat-label">关注<span class="stat-badge" id="stat-following">0</span></span></div>
+            <div class="stat" style="cursor:pointer;" onclick="event.preventDefault(); if (app.viewingUsername || app.user) { app.goFollowListPage('followers'); }"><span class="stat-label">粉丝<span class="stat-badge" id="stat-followers">0</span></span></div>
+            <div class="stat"><span class="stat-label">获赞<span class="stat-badge" id="stat-likes">0</span></span></div>
+        </div>
+
+        <div id="self-actions" style="display:none;gap:10px;padding:12px 16px;justify-content:center;flex-wrap:wrap;border-top:1px solid var(--border);">
+            <button class="btn btn-primary self-action-primary" style="flex:1;min-width:100px;" onclick="app.openProfileModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:middle;margin-right:4px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                编辑资料
+            </button>
+            <button class="btn btn-default self-action-secondary" style="flex:1;min-width:100px;" onclick="document.getElementById('password-modal').classList.add('active')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:middle;margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                修改密码
+            </button>
+            <button class="btn self-action-admin" id="self-action-admin" style="flex:1;min-width:100px;display:none;" onclick="app.goAdmin()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m7.08 7.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m7.08-7.08l4.24-4.24"/></svg>
+                管理后台
+            </button>
+            <button class="btn btn-danger self-action-logout" onclick="app.logout()" style="flex:1;min-width:100px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" style="vertical-align:middle;margin-right:4px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                退出登录
+            </button>
+        </div>
+
+        <!-- 关注按钮（他人主页时显示） -->
+        <div id="follow-actions" style="display:none;gap:12px;padding:12px 16px;justify-content:center;border-top:1px solid var(--border);flex-wrap:wrap;">
+            <button class="btn-follow" id="btn-follow" onclick="app.toggleFollow(app.viewingUserId)">关注</button>
+            <button class="btn btn-default" onclick="if(app.checkAuth()){app.startPrivateChat(app.viewingUserId||app.viewingUsername)}else{app.openAuthModal()}" style="padding:8px 14px;font-size:13px;display:inline-flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>私信</button>
+            <button class="btn btn-default" id="btn-block-user" style="padding:8px 14px;font-size:13px;display:inline-flex;align-items:center;gap:4px;color:#666;" onclick="if(app.checkAuth()){app.toggleBlockUser(app.viewingUserId)}else{app.openAuthModal()}">拉黑</button>
+            <button class="btn btn-default" style="padding:8px 14px;font-size:13px;display:inline-flex;align-items:center;gap:4px;color:#ff4d4f;border-color:#ffccc7;" onclick="if(app.checkAuth()){app.openReportModal('user',(app.viewingUser&&app.viewingUser.id)?app.viewingUser.id:app.viewingUserId)}else{app.openAuthModal()}">举报</button>
+        </div>
+
+        <!-- 兼容旧版单独编辑资料按钮 -->
+        <button class="btn btn-primary" id="btn-edit-profile" style="display:none;margin:16px auto;width:calc(100% - 32px);" onclick="app.openProfileModal()">编辑资料</button>
+    </div>
+    <!-- 结束 profile-hero -->
+
+    <!-- Tab 切换栏 -->
+    <div class="profile-tabs" id="profile-tabs">
+        <button class="profile-tab active" data-tab="posts">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+            <span>动态</span>
+            <span class="tab-count" id="tab-count-posts">0</span>
+        </button>
+        <button class="profile-tab" data-tab="comments">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>评论</span>
+            <span class="tab-count" id="tab-count-comments">0</span>
+        </button>
+        <button class="profile-tab" data-tab="likes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span>点赞</span>
+            <span class="tab-count" id="tab-count-likes">0</span>
+        </button>
+        <button class="profile-tab" data-tab="favorites">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            <span>收藏</span>
+        </button>
+    </div>
+
+    <!-- 动态列表 -->
+    <div class="moments-list" id="moments-list"></div>
+    <div class="load-more" id="load-more">加载中...</div>
+
+    <!-- 评论列表容器 -->
+    <div class="profile-tab-content" id="comments-list" style="display:none;"></div>
+    <!-- 点赞列表容器 -->
+    <div class="profile-tab-content" id="likes-list" style="display:none;"></div>
+    <!-- 收藏列表容器 -->
+    <div class="profile-tab-content" id="favorites-list" style="display:none;"></div>
+
+    <!-- 图片查看器 -->
+    <div class="image-viewer" id="image-viewer">
+        <button class="close-viewer" onclick="app.closeViewer()">✕</button>
+        <button class="viewer-nav viewer-prev" id="viewer-prev" onclick="app.prevImage(event)">‹</button>
+        <img src="" id="viewer-img" alt="" onclick="event.stopPropagation()">
+        <button class="viewer-nav viewer-next" id="viewer-next" onclick="app.nextImage(event)">›</button>
+    </div>
+
+    <!-- 评论输入栏 -->
+    <div class="comment-input-bar" id="comment-input-bar">
+        <button class="btn-emoji-toggle" id="btn-comment-emoji" onmousedown="event.preventDefault()" onclick="app.toggleEmojiPicker('comment-input', this)" title="表情">😊</button>
+        <button class="btn-comment-image" id="btn-comment-image" onmousedown="event.preventDefault()" onclick="document.getElementById('comment-image-upload').click()" title="图片">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+            </svg>
+        </button>
+        <input type="file" id="comment-image-upload" accept="image/*" style="display:none" onchange="app.handleCommentImage(this.files[0])">
+        <div class="comment-image-preview" id="comment-image-preview"></div>
+        <input type="text" id="comment-input" placeholder="写评论...">
+        <button class="btn btn-primary" id="btn-send-comment">发送</button>
+    </div>
+
+    <!-- 登录注册模态框 -->
+    <div class="modal-overlay" id="auth-modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h3>欢迎来到 woquan</h3>
+                <button class="btn-icon" onclick="document.getElementById('auth-modal').classList.remove('active')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="display:flex;gap:16px;margin-bottom:20px;border-bottom:1px solid var(--border);">
+                    <button class="auth-tab active" id="tab-login" style="flex:1;padding:12px;background:none;border:none;border-bottom:2px solid var(--primary);font-size:15px;cursor:pointer;" onclick="app.switchAuthTab('login')">登录</button>
+                    <button class="auth-tab" id="tab-register" style="flex:1;padding:12px;background:none;border:none;border-bottom:2px solid transparent;font-size:15px;cursor:pointer;" onclick="app.switchAuthTab('register')">注册</button>
+                </div>
+                <div class="auth-form" id="login-form">
+                    <div class="form-group">
+                        <label>用户名/邮箱</label>
+                        <input type="text" class="form-input" id="login-username" placeholder="请输入用户名或邮箱">
+                    </div>
+                    <div class="form-group">
+                        <label>密码</label>
+                        <input type="password" class="form-input" id="login-password" placeholder="请输入密码">
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="app.login()">登录</button>
+                </div>
+                <div class="auth-form" id="register-form" style="display:none;">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" class="form-input" id="reg-username" placeholder="3-20位字母数字" pattern="[a-zA-Z0-9]{3,20}" title="3-20位字母或数字" onblur="app.checkRegisterField('username')">
+                        <div class="field-hint" id="reg-username-hint"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>邮箱</label>
+                        <input type="email" class="form-input" id="reg-email" placeholder="请输入邮箱" onblur="app.checkRegisterField('email')">
+                        <div class="field-hint" id="reg-email-hint"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>密码</label>
+                        <input type="password" class="form-input" id="reg-password" placeholder="至少6位">
+                    </div>
+                    <div class="form-group">
+                        <label>确认密码</label>
+                        <input type="password" class="form-input" id="reg-password-confirm" placeholder="请再次输入密码">
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="app.register()">注册</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知面板 -->
+    <div class="modal-overlay" id="notification-modal">
+        <div class="modal-content notification-modal-content">
+            <div class="modal-header">
+                <h3>通知</h3>
+                <div>
+                    <button class="btn-icon" id="btn-mark-all-read" title="全部已读">✓</button>
+                    <button class="btn-icon" onclick="document.getElementById('notification-modal').classList.remove('active')">✕</button>
+                </div>
+            </div>
+            <div class="modal-body notification-list" id="notification-list">
+                <div class="empty-state">暂无通知</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑资料模态框 -->
+    <div class="modal-overlay" id="profile-modal">
+        <div class="modal-content" style="max-width:440px;">
+            <div class="modal-header">
+                <h3>编辑资料</h3>
+                <button class="btn-icon" onclick="document.getElementById('profile-modal').classList.remove('active')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>头像</label>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <img id="profile-modal-avatar" src="assets/images/default-avatar.svg" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--border);">
+                        <label for="avatar-upload" class="btn btn-default" style="cursor:pointer;font-size:13px;padding:6px 16px;">更换头像</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>用户名（不可修改）</label>
+                    <input type="text" class="form-input" id="profile-username" disabled style="opacity:0.6;">
+                </div>
+                <div class="form-group">
+                    <label>昵称</label>
+                    <input type="text" class="form-input" id="profile-nickname" placeholder="设置昵称" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>个性签名</label>
+                    <textarea class="form-input" id="profile-bio-input" placeholder="一句话介绍自己（最多 20 字）" maxlength="20" style="min-height:80px;resize:vertical;"></textarea>
+                </div>
+                <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="app.saveProfile()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 修改密码模态框 -->
+    <div class="modal-overlay" id="password-modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h3>修改密码</h3>
+                <button class="btn-icon" onclick="document.getElementById('password-modal').classList.remove('active')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>原密码</label>
+                    <input type="password" class="form-input" id="password-old" placeholder="请输入原密码">
+                </div>
+                <div class="form-group">
+                    <label>新密码</label>
+                    <input type="password" class="form-input" id="password-new" placeholder="至少6位">
+                </div>
+                <div class="form-group">
+                    <label>确认新密码</label>
+                    <input type="password" class="form-input" id="password-confirm" placeholder="请再次输入新密码">
+                </div>
+                <button class="btn btn-primary" style="width:100%;margin-top:8px;" onclick="app.changePassword()">确认修改</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+        </main>
+        <!-- 结束中间主内容区 -->
+
+        <!-- 右栏 (仅 PC 端显示) -->
+        <aside class="sidebar-right">
+            <!-- 关于此用户 -->
+            <div class="sidebar-card user-about-card">
+                <h4 class="sidebar-title"><svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>关于</h4>
+                <div class="user-about-content" id="user-about-content">
+                    <div class="about-item">
+                        <svg class="about-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span id="about-username">-</span>
+                    </div>
+                    <div class="about-item">
+                        <svg class="about-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <span id="about-joindate">-</span>
+                    </div>
+                    <div class="about-bio" id="about-bio"></div>
+                </div>
+            </div>
+
+            <div class="sidebar-card stats-card">
+                <h4 class="sidebar-title"><svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>动态统计</h4>
+                <div class="stats-grid">
+                    <div class="stats-item">
+                        <div class="stats-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+                        <div class="stats-info">
+                            <div class="stats-value" id="stats-total-posts">0</div>
+                            <div class="stats-label">全部动态</div>
+                        </div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+                        <div class="stats-info">
+                            <div class="stats-value" id="stats-total-comments">0</div>
+                            <div class="stats-label">评论总数</div>
+                        </div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+                        <div class="stats-info">
+                            <div class="stats-value" id="stats-total-likes">0</div>
+                            <div class="stats-label">点赞总数</div>
+                        </div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                        <div class="stats-info">
+                            <div class="stats-value" id="stats-total-users">0</div>
+                            <div class="stats-label">注册用户</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-card friends-card">
+                <h4 class="sidebar-title"><svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>友情链接</h4>
+                <ul class="friends-list" id="sidebar-friends">
+                    <li>加载中...</li>
+                </ul>
+            </div>
+        </aside>
+
+    </div>
+    <!-- 结束 pc-layout -->
+
+    <!-- 底部导航 -->
+    <div class="bottom-nav" id="bottom-nav"></div>
+</div>
+
+<script type="module" src="assets/js/app.js?v=20261117.1"></script>
+<script type="module">
+import { renderBottomNav } from './assets/js/modules/nav.js?v=20260908.1';
+window.renderBottomNav = renderBottomNav;
+</script>
+<script>
+// 用户页专用逻辑
+document.addEventListener('DOMContentLoaded', async () => {
+    // 用户页不调用 app.init(), 避免加载全部时间线; 只初始化认证/事件/配置
+    await app.fetchCsrf();
+    await app.fetchUser();
+    await app.loadSiteConfig();
+    app.initEmojiPicker();
+    app.bindEvents();
+    if (typeof window.renderBottomNav === 'function') {
+        window.renderBottomNav(app, 'profile');
+    }
+    app.updateAuthUI();
+    // 加载左栏用户卡 + 右栏站点统计 + 友情链接
+    app.loadSidebarData();
+    if (app.authed !== false) {
+        app.loadUnreadCount();
+        app.startNotificationPolling();
+    }
+
+    // 从 /u/{username} 路径解析用户名
+    const match = window.location.pathname.match(/\/u\/([a-zA-Z0-9_-]+)\/?$/);
+    const username = match ? match[1] : '';
+    if (!username) {
+        app.showToast('用户不存在');
+        return;
+    }
+
+    try {
+        const profile = await app.request('/user/profile?username=' + encodeURIComponent(username));
+        document.getElementById('profile-avatar').src = app.resolveAvatar(profile.user.avatar);
+        document.getElementById('profile-name').innerHTML = app.escapeHtml(profile.user.nickname || profile.user.username) + app.vipBadgeText(profile.user.vip_level, 12);
+        document.getElementById('profile-bio').textContent = app.escapeHtml(profile.user.bio || '这个人很懒，什么都没写~');
+        document.getElementById('stat-posts').textContent = profile.stats.posts;
+        document.getElementById('stat-likes').textContent = profile.stats.likes_received ?? 0;
+
+        // 加载封面：图片用 cover 铺满封面区，四周不留空白
+        // P1-12 修复：URL 必须经过 safeUrl 协议白名单，防止 cover 字段注入 javascript: 等非法协议
+        const coverBg = document.getElementById('cover-bg');
+        if (coverBg && profile.user.cover) {
+            coverBg.style.backgroundImage = '';
+            const safeCover = app.safeUrl(profile.user.cover);
+            if (safeCover) {
+                app.setCover(coverBg, safeCover, /\.(mp4|webm)(\?|$)/i.test(safeCover));
+            }
+        }
+
+        // 加载关注/粉丝统计
+        app.viewingUser = profile.user;
+        app.viewingUserId = profile.user.id;
+        app.viewingUsername = username;
+        const followStats = await app.loadFollowStats(username);
+        document.getElementById('stat-following').textContent = followStats.following_count || 0;
+        document.getElementById('stat-followers').textContent = followStats.followers_count || 0;
+
+        // 更新PC端左栏侧边栏
+        const sidebarAvatar = document.getElementById('sidebar-avatar');
+        const sidebarNickname = document.getElementById('sidebar-nickname');
+        const sidebarBio = document.getElementById('sidebar-bio');
+        const sidebarStatPosts = document.getElementById('sidebar-stat-posts');
+        const sidebarStatFollowing = document.getElementById('sidebar-stat-following');
+        const sidebarStatFollowers = document.getElementById('sidebar-stat-followers');
+        const sidebarActionBtn = document.getElementById('sidebar-action-btn');
+        const sidebarChatBtn = document.getElementById('sidebar-chat-btn');
+        
+        if (sidebarAvatar) sidebarAvatar.src = app.resolveAvatar(profile.user.avatar);
+        if (sidebarNickname) sidebarNickname.innerHTML = app.escapeHtml(profile.user.nickname || profile.user.username) + app.vipBadge(profile.user.vip_level, 16);
+        if (sidebarBio) sidebarBio.textContent = profile.user.bio || '这个人很懒，什么都没写~';
+        if (sidebarStatPosts) sidebarStatPosts.textContent = profile.stats.posts;
+        if (sidebarStatFollowing) sidebarStatFollowing.textContent = followStats.following_count || 0;
+        if (sidebarStatFollowers) sidebarStatFollowers.textContent = followStats.followers_count || 0;
+        
+        // 更新PC端右栏统计（由 loadSiteStats 负责填充）
+
+        // 当前用户主页显示编辑资料/退出/管理后台入口
+        const isSelf = !!(app.user && app.user.username && profile.user.username &&
+            app.user.username.toLowerCase() === profile.user.username.toLowerCase());
+
+        // 自己的主页显示封面上传入口（独立判断，不依赖 actions 元素）
+        if (isSelf) {
+            const coverMask = document.getElementById('cover-upload-mask');
+            if (coverMask) coverMask.style.display = 'flex';
+        }
+
+        if (isSelf) {
+            // 导航栏仅保留通知按钮，管理/退出按钮移到下方操作栏
+            const actions = document.querySelector('.navbar .actions');
+            if (actions) {
+                // 保留通知按钮，清除其他动态按钮
+                const notifyBtn = document.getElementById('btn-notify');
+                actions.innerHTML = '';
+                if (notifyBtn) actions.appendChild(notifyBtn);
+            }
+
+            // 显示操作栏按钮
+            const selfActions = document.getElementById('self-actions');
+            if (selfActions) selfActions.style.display = 'flex';
+
+            // 管理员显示"管理后台"按钮
+            const adminBtn = document.getElementById('self-action-admin');
+            if (adminBtn) {
+                if (app.user.role === 'admin') {
+                    adminBtn.style.display = 'flex';
+                } else {
+                    adminBtn.style.display = 'none';
+                }
+            }
+
+            const btnEdit = document.getElementById('btn-edit-profile');
+            if (btnEdit) btnEdit.style.display = 'none';
+            // PC端左栏编辑资料按钮
+            if (sidebarActionBtn) {
+                sidebarActionBtn.style.display = 'block';
+                sidebarActionBtn.textContent = '编辑资料';
+                sidebarActionBtn.onclick = () => app.openProfileModal();
+            }
+            if (sidebarChatBtn) sidebarChatBtn.style.display = 'none';
+            // PC端左栏退出登录按钮
+            const sidebarLogoutBtn = document.getElementById('sidebar-logout-btn');
+            if (sidebarLogoutBtn) {
+                sidebarLogoutBtn.style.display = 'inline-flex';
+                sidebarLogoutBtn.onclick = () => app.logout();
+            }
+        } else if (!isSelf && app.authed !== false) {
+            // 他人主页：显示关注按钮
+            const followActions = document.getElementById('follow-actions');
+            if (followActions) followActions.style.display = 'flex';
+            const isFollowing = await app.checkFollowing(profile.user.id);
+            const btn = document.getElementById('btn-follow');
+            if (btn) {
+                btn.classList.toggle('following', isFollowing);
+                btn.textContent = isFollowing ? '已关注' : '关注';
+            }
+            // 回填拉黑状态
+            if (typeof app.checkBlockStatus === 'function') {
+                app.checkBlockStatus(profile.user.id);
+            }
+            // PC端左栏关注按钮
+            if (sidebarActionBtn) {
+                sidebarActionBtn.style.display = 'block';
+                sidebarActionBtn.textContent = isFollowing ? '已关注' : '关注';
+                sidebarActionBtn.classList.toggle('btn-primary', !isFollowing);
+                sidebarActionBtn.classList.toggle('btn-default', isFollowing);
+                sidebarActionBtn.onclick = () => app.toggleFollow(profile.user.id);
+            }
+            // PC端左栏私信按钮
+            if (sidebarChatBtn) {
+                sidebarChatBtn.style.display = 'inline-flex';
+                sidebarChatBtn.onclick = () => {
+                    if (app.checkAuth()) {
+                        app.startPrivateChat(profile.user.id);
+                    } else {
+                        app.openAuthModal();
+                    }
+                };
+            }
+        }
+
+        // 加载用户动态(仅该用户)
+        const data = await app.request(`/posts/timeline?username=${encodeURIComponent(username)}&page=1&limit=20`);
+        const list = document.getElementById('moments-list');
+        list.innerHTML = '';
+        if (data.list.length === 0) {
+            list.innerHTML = '<div class="empty-state"><div class="icon">📝</div><div>还没有发布动态</div></div>';
+        } else {
+            // 个人主页：全站置顶动态按正常时间线展示，且隐藏置顶标识
+            data.list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            data.list.forEach(post => {
+                if (post.is_pinned) post.__hidePinned = true;
+                list.appendChild(app.createPostElement(post));
+            });
+        }
+        document.getElementById('load-more').style.display = 'none';
+
+        // 更新 Tab 计数
+        const tabCountPosts = document.getElementById('tab-count-posts');
+        const tabCountComments = document.getElementById('tab-count-comments');
+        const tabCountLikes = document.getElementById('tab-count-likes');
+        if (tabCountPosts) tabCountPosts.textContent = profile.stats.posts;
+        if (tabCountComments) tabCountComments.textContent = profile.stats.comments;
+        if (tabCountLikes) tabCountLikes.textContent = profile.stats.likes;
+
+        // 填充右栏"关于"信息
+        const aboutUsername = document.getElementById('about-username');
+        const aboutJoindate = document.getElementById('about-joindate');
+        const aboutBio = document.getElementById('about-bio');
+        if (aboutUsername) aboutUsername.textContent = '@' + profile.user.username;
+        if (aboutJoindate) {
+            const d = new Date(profile.user.created_at);
+            aboutJoindate.textContent = d.getFullYear() + '年' + (d.getMonth()+1) + '月加入';
+        }
+        if (aboutBio && profile.user.bio) aboutBio.textContent = profile.user.bio;
+
+        // Tab 切换逻辑
+        const tabs = document.querySelectorAll('.profile-tab');
+        const momentsList = document.getElementById('moments-list');
+        const loadMore = document.getElementById('load-more');
+        const commentsList = document.getElementById('comments-list');
+        const likesList = document.getElementById('likes-list');
+        const favoritesList = document.getElementById('favorites-list');
+        let tabLoaded = { comments: false, likes: false, favorites: false };
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', async () => {
+                const target = tab.dataset.tab;
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // 切换容器显示
+                momentsList.style.display = target === 'posts' ? '' : 'none';
+                loadMore.style.display = target === 'posts' ? 'none' : 'none';
+                commentsList.style.display = target === 'comments' ? '' : 'none';
+                likesList.style.display = target === 'likes' ? '' : 'none';
+                favoritesList.style.display = target === 'favorites' ? '' : 'none';
+
+                // 懒加载
+                if (target === 'comments' && !tabLoaded.comments) {
+                    tabLoaded.comments = true;
+                    await loadUserComments(app, username, commentsList);
+                }
+                if (target === 'likes' && !tabLoaded.likes) {
+                    tabLoaded.likes = true;
+                    await loadUserLikes(app, username, likesList);
+                }
+                if (target === 'favorites' && !tabLoaded.favorites) {
+                    tabLoaded.favorites = true;
+                    await loadUserFavorites(app, username, favoritesList, isSelf);
+                }
+            });
+        });
+    } catch (e) {
+        app.showToast(e.message);
+    }
+});
+
+// 加载用户评论列表：每条 = "评论了" 标注 + 完整动态卡片 + 评论气泡
+async function loadUserComments(app, username, container) {
+    container.innerHTML = '<div class="empty-state">加载中...</div>';
+    try {
+        const data = await app.request(`/user/comments?username=${encodeURIComponent(username)}&page=1&limit=20`);
+        const list = data?.list || [];
+        if (list.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="icon">💬</div><div>还没有发表评论</div></div>';
+            return;
+        }
+        container.innerHTML = '';
+        list.forEach(item => {
+            if (!item || !item.post) return;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'action-card-wrapper';
+
+            // 操作标注条
+            const badge = document.createElement('div');
+            badge.className = 'action-badge comment-badge';
+            badge.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span class="action-badge-text">评论了这条动态</span>
+                <span class="action-badge-time">${app.formatTimeAgo(item.comment.created_at)}</span>
+            `;
+            wrapper.appendChild(badge);
+
+            // 完整动态卡片
+            wrapper.appendChild(app.createPostElement(item.post));
+
+            // 评论内容气泡
+            const bubble = document.createElement('div');
+            bubble.className = 'comment-bubble';
+            bubble.innerHTML = `<div class="comment-bubble-content">${app.formatText(item.comment.content || '')}</div>`;
+            wrapper.appendChild(bubble);
+
+            container.appendChild(wrapper);
+        });
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div>加载失败：' + app.escapeHtml(e.message) + '</div></div>';
+    }
+}
+
+// 加载用户点赞列表：每条 = "赞过" 标注 + 完整动态卡片
+async function loadUserLikes(app, username, container) {
+    container.innerHTML = '<div class="empty-state">加载中...</div>';
+    try {
+        const data = await app.request(`/user/likes?username=${encodeURIComponent(username)}&page=1&limit=20`);
+        const list = data?.list || [];
+        if (list.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="icon">❤️</div><div>还没有点赞动态</div></div>';
+            return;
+        }
+        container.innerHTML = '';
+        list.forEach(post => {
+            if (!post) return;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'action-card-wrapper';
+
+            // 操作标注条
+            const badge = document.createElement('div');
+            badge.className = 'action-badge like-badge';
+            badge.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <span class="action-badge-text">赞了这条动态</span>
+            `;
+            wrapper.appendChild(badge);
+
+            // 完整动态卡片
+            wrapper.appendChild(app.createPostElement(post));
+
+            container.appendChild(wrapper);
+        });
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div>加载失败</div></div>';
+    }
+}
+
+// 加载用户收藏列表
+async function loadUserFavorites(app, username, container, isSelf) {
+    if (!isSelf) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">🔒</div><div>收藏列表仅本人可见</div></div>';
+        return;
+    }
+    container.innerHTML = '<div class="empty-state">加载中...</div>';
+    try {
+        const data = await app.loadFavorites(1);
+        const list = data?.list || [];
+        if (list.length === 0) {
+            container.innerHTML = '<div class="empty-state"><div class="icon">⭐</div><div>还没有收藏任何动态</div></div>';
+            return;
+        }
+        container.innerHTML = '';
+        list.forEach(post => {
+            container.appendChild(app.createPostElement(post));
+        });
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div>加载失败</div></div>';
+    }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+# Hublog PHPStan 配置
+#
+# 静态分析作为 CI 的「可观测、可阻断」护栏。
+#
+# 【本项目没有 composer autoload】
+#   框架用的是自研 PSR-4（api/core/AutoLoader.php），PHPStan 反射解析类型时
+#   必须先「认识」这些类，否则会刷出一堆「Class Hublog\Core\X not found」假错。
+#   scanDirectories 就是干这个的：让 PHPStan 直接扫描源码目录建立符号表。
+#
+# 【parallel.maximumNumberOfProcesses: 1】
+#   PHPStan 默认并行，会 spawn 子进程；在 Windows 上 react/child-process 会调
+#   wmic / reg，被安全策略拦掉就直接崩。强制单进程后不再 spawn 子进程。
+#
+# 【安装】
+#   本地：php scripts/install-phpstan.php   （下载独立 phar 到 tools/，不入库）
+#   或：php composer.phar require --dev phpstan/phpstan
+#   运行：php tools/phpstan.phar analyse
+#
+# 【level 的推进策略】
+#   基线文件 phpstan-baseline.neon 记录「当前已知问题」。
+#   提级后新增的错误会直接让 CI 变红 —— 这正是提级的意义：
+#   它把「不能引入新的类型错误」变成可执行的门禁，而不是一次性的报告。
+#   持续清基线（phpstan.phar analyse --generate-baseline）直到基线清空，即可再提一级。
+
+parameters:
+    level: 3
+    paths:
+        - api
+    # 让 PHPStan 认识自研 PSR-4 的类（无 composer autoload 的替代方案）
+    scanDirectories:
+        - api/core
+        - api/controllers
+        - api/middleware
+        - plugins
+    # bootstrap.php 提供 Hublog\Bootstrap\* 的函数与常量；
+    # config.example.php 提供 config.php 里的全部常量（DB_* / JWT_SECRET / UPLOAD_* …）。
+    # 两个文件都只有声明、无副作用（config.example.php 仅 ini_set + date_default_timezone_set），
+    # 因此可以安全地在分析进程里执行一遍，让常量与函数符号进入 PHPStan 的符号表。
+    bootstrapFiles:
+        - bootstrap.php
+        - config.example.php
+    # 测试与脚手架不纳入主分析（它们用 PHPUnit 类型约束，且含大量模拟）
+    excludePaths:
+        - api/tests/*
+    # 单进程：避免 Windows 上 spawn 子进程被安全策略拦截
+    # （PHPStan 并行模式在 Windows 下会调 wmic/reg 拿进程命令行）
+    parallel:
+        maximumNumberOfProcesses: 1
+    # 业务大量使用 exec/shell_exec 调 ffmpeg 等，属预期用法，不报
+    ignoreErrors:
+        - '#Function (exec|shell_exec|proc_open|popen) is forbidden by allowFunctions#'
+    # 本机 PHP 没禁用 allowFunctions 里的函数，上面的忽略规则匹配不到任何错误 ——
+    # 保留它是为了 CI 环境（若哪天启用了 disable_functions），
+    # 但「未匹配的忽略规则」本身不该报错，否则每次跑都红。
+    reportUnmatchedIgnoredErrors: false
+    treatPhpDocTypesAsCertain: false

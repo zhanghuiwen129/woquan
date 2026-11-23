@@ -1,0 +1,5706 @@
+openapi: 3.0.3
+info:
+  title: woquan API
+  version: v2.16.29
+  description: |
+    woquan 轻量级多用户朋友圈博客系统 API 规范。
+
+    > 本文档与 `docs/API_接口手册.md` 均按 `api/routes.php`（当前 416 条路由）逐条对齐。
+
+    ## 认证方式
+    - JWT Bearer Token：登录后所有需鉴权接口需在 `Authorization` 头携带 `Bearer {token}`
+    - CSRF Token：写操作(POST/PUT/DELETE)需在 `X-CSRF-Token` 头携带 CSRF 令牌；
+      纯 Bearer 请求或 App / 小程序端（无认证 Cookie）由中间件自动豁免
+    - Token 刷新：推荐 `/api/auth/token-refresh`（凭 refresh_token，JWT 过期 7 天后仍可续期、单次轮换）；
+      `/api/auth/refresh` 仅用于未过期令牌的 Web 端无感续期（依赖有效登录态）
+
+    ## 接口分组
+    - **公开接口**：无需登录，限流保护
+    - **登录接口**：需 JWT Bearer Token
+    - **管理员接口**：`/api/admin/*`，需管理员角色 JWT + `AdminMiddleware`
+    - **系统接口**：`/api/cron/*`、`/api/metrics`，需 `secret` / `X-Cron-Token` / `X-Metrics-Token`
+
+    ## 响应格式
+    所有接口统一返回：
+    ```json
+    {
+      "code": 200,
+      "message": "success",
+      "data": { ... }
+    }
+    ```
+    错误响应：
+    ```json
+    {
+      "code": 400,
+      "message": "错误描述",
+      "data": null
+    }
+    ```
+  contact:
+    name: woquan
+    url: https://gitee.com/aiwoquan/woquan
+  license:
+    name: MIT
+
+servers:
+  - url: /
+    description: 相对路径（与前端同域）
+  - url: http://127.0.0.1
+    description: 本地开发
+
+tags:
+  - name: 认证
+    description: 注册、登录、密码找回、第三方登录
+  - name: 用户
+    description: 用户资料、评论、点赞、数据导出
+  - name: 动态
+    description: 发布、编辑、删除、时间线、详情
+  - name: 评论
+    description: 评论与点赞
+  - name: 收藏
+    description: 收藏管理
+  - name: 关注
+    description: 关注、粉丝、屏蔽
+  - name: 通知
+    description: 消息通知与 SSE 实时推送
+  - name: 即时通讯
+    description: 私信、会话
+  - name: 搜索
+    description: 全文搜索
+  - name: 站点
+    description: 站点配置、统计、语言包
+  - name: 定位
+    description: IP 定位与逆地理编码
+  - name: 举报
+    description: 内容举报
+  - name: 管理员
+    description: 后台管理接口
+  - name: CSRF
+    description: CSRF 令牌
+  - name: 运维
+    description: 健康检查、监控指标、定时任务等系统端点
+  - name: 商城
+    description: 商品、订单、优惠券与积分转盘
+  - name: 圈子
+    description: 圈子成员、申请审核与群组管理
+  - name: 实名
+    description: 实名认证提交与审核
+  - name: 徽章
+    description: 徽章发放、冻结与日志
+  - name: 活动
+    description: 活动列表、报名与取消报名
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer Token，登录后获取
+    CsrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: CSRF 令牌，写操作必需
+  schemas:
+    HeartbeatReportPayload:
+      type: object
+      description: 授权统计上报请求体（POST /remote_verify.php，X-Site-Report: heartbeat）。server_ip 由服务端自行记录，客户端绝不发送。
+      required: [installation_id, fingerprint, site_host, version, timestamp, nonce, signature]
+      properties:
+        installation_id:
+          type: string
+          format: uuid
+          description: 安装实例主键，安装时生成并持久化，与域名/host 无关
+        fingerprint:
+          type: string
+          description: 硬件指纹 SHA-256 摘要，辅助身份识别
+        license_code:
+          type: string
+          description: 授权码，空串表示未提供（未授权站点）
+        site_host:
+          type: string
+          description: 展示字段，可伪造会变化，不参与身份判定
+        version:
+          type: string
+          description: 源码版本
+        users:
+          type: integer
+          minimum: 0
+          description: 全站启用用户数聚合计数，非个人信息
+        posts:
+          type: integer
+          minimum: 0
+          description: 全站启用动态数聚合计数，非个人信息
+        timestamp:
+          type: integer
+          description: Unix 秒；服务端时间窗 ±1800s
+        nonce:
+          type: string
+          description: 一次性随机串（32 位 hex），防重放
+        signature:
+          type: string
+          description: 请求签名，64 位小写 hex HMAC-SHA256
+    SuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: success
+        data:
+          oneOf:
+            - type: object
+            - type: array
+            - type: string
+            - type: integer
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: 参数错误
+        data:
+          nullable: true
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 100
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        nickname:
+          type: string
+        avatar:
+          type: string
+        bio:
+          type: string
+        role:
+          type: string
+          enum: [user, admin, reviewer]
+        created_at:
+          type: string
+          format: date-time
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+        category_id:
+          type: integer
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        content:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+        attachments:
+          type: array
+          items:
+            type: object
+        videos:
+          type: array
+          items:
+            type: object
+        view_count:
+          type: integer
+        like_count:
+          type: integer
+        comment_count:
+          type: integer
+        is_pinned:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        user:
+          $ref: '#/components/schemas/User'
+
+paths:
+  /api/csrf:
+    get:
+      tags: [CSRF]
+      summary: 获取 CSRF 令牌
+      description: 获取用于写操作的 CSRF 令牌
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 200 }
+                  data:
+                    type: object
+                    properties:
+                      token: { type: string }
+
+  # ========== 认证 ==========
+
+  /api/auth/register:
+    post:
+      tags: [认证]
+      summary: 注册账号
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string, minLength: 3, maxLength: 20 }
+                password: { type: string, minLength: 8 }
+                email: { type: string, format: email }
+                nickname: { type: string }
+      responses:
+        '200':
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 200 }
+                  data:
+                    type: object
+                    properties:
+                      token: { type: string }
+                      user: { $ref: '#/components/schemas/User' }
+        '400':
+          description: 参数错误或用户名已存在
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /api/auth/login:
+    post:
+      tags: [认证]
+      summary: 账号登录
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 200 }
+                  data:
+                    type: object
+                    properties:
+                      token: { type: string }
+                      expires_in: { type: integer, example: 604800 }
+                      user: { $ref: '#/components/schemas/User' }
+        '401':
+          description: 用户名或密码错误
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /api/auth/check-username:
+    get:
+      tags: [认证]
+      summary: 检查用户名可用性
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 检查结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      available: { type: boolean }
+
+  /api/auth/check-email:
+    get:
+      tags: [认证]
+      summary: 检查邮箱可用性
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema: { type: string, format: email }
+      responses:
+        '200':
+          description: 检查结果
+
+  /api/auth/send-verification:
+    post:
+      tags: [认证]
+      summary: 发送验证邮件
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, type]
+              properties:
+                email: { type: string, format: email }
+                type: { type: string, enum: [register, reset] }
+      responses:
+        '200': { description: 发送成功 }
+
+  /api/auth/verify-email:
+    post:
+      tags: [认证]
+      summary: 验证邮箱
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code]
+              properties:
+                email: { type: string, format: email }
+                code: { type: string }
+      responses:
+        '200': { description: 验证成功 }
+
+  /api/auth/forgot-password:
+    post:
+      tags: [认证]
+      summary: 找回密码
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200': { description: 重置链接已发送 }
+
+  /api/auth/reset-password:
+    post:
+      tags: [认证]
+      summary: 重置密码
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string }
+                password: { type: string, minLength: 8 }
+      responses:
+        '200': { description: 重置成功 }
+
+  /api/auth/oauth/{provider}:
+    get:
+      tags: [认证]
+      summary: 第三方登录跳转
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema: { type: string, enum: [github, google, wechat] }
+      responses:
+        '302': { description: 跳转到第三方授权页 }
+
+  /api/auth/oauth/{provider}/callback:
+    get:
+      tags: [认证]
+      summary: 第三方登录回调
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema: { type: string }
+        - name: code
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: 登录成功 }
+
+  /api/auth/oauth/exchange:
+    post:
+      tags: [认证]
+      summary: 第三方凭据换取令牌
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider, code]
+              properties:
+                provider: { type: string }
+                code: { type: string }
+      responses:
+        '200': { description: 兑换成功 }
+
+  /api/auth/wx-mini-login:
+    post:
+      tags: [认证]
+      summary: 微信小程序登录
+      description: wx.login → code → openid → JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string }
+      responses:
+        '200': { description: 登录成功 }
+
+  /api/auth/me:
+    get:
+      tags: [认证]
+      summary: 获取当前登录用户
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 当前用户信息
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data: { $ref: '#/components/schemas/User' }
+
+  /api/auth/refresh:
+    post:
+      tags: [认证]
+      summary: 刷新令牌
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 新 Token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      token: { type: string }
+
+  /api/auth/logout:
+    post:
+      tags: [认证]
+      summary: 退出登录
+      security: [BearerAuth: []]
+      responses:
+        '200': { description: 退出成功 }
+
+  /api/auth/profile:
+    put:
+      tags: [认证]
+      summary: 更新资料
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nickname: { type: string }
+                bio: { type: string }
+                email: { type: string, format: email }
+      responses:
+        '200': { description: 更新成功 }
+
+    get:
+      tags: [认证]
+      summary: 获取资料
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 获取资料成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/auth/password:
+    put:
+      tags: [认证]
+      summary: 修改密码
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [old_password, new_password]
+              properties:
+                old_password: { type: string }
+                new_password: { type: string, minLength: 8 }
+      responses:
+        '200': { description: 修改成功 }
+
+  /api/auth/avatar:
+    post:
+      tags: [认证]
+      summary: 上传头像
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar: { type: string, format: binary }
+      responses:
+        '200': { description: 上传成功 }
+
+  /api/auth/cover:
+    post:
+      tags: [认证]
+      summary: 上传封面
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                cover: { type: string, format: binary }
+      responses:
+        '200': { description: 上传成功 }
+
+  # ========== 用户 ==========
+
+  /api/user/profile:
+    get:
+      tags: [用户]
+      summary: 获取用户资料
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 用户资料
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data: { $ref: '#/components/schemas/User' }
+
+  /api/user/search:
+    get:
+      tags: [用户]
+      summary: 搜索用户
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200': { description: 搜索结果 }
+
+  /api/user/comments:
+    get:
+      tags: [用户]
+      summary: 我的评论列表
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200': { description: 评论列表 }
+
+  /api/user/likes:
+    get:
+      tags: [用户]
+      summary: 我的点赞列表
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+      responses:
+        '200': { description: 点赞列表 }
+
+  /api/user/export-data:
+    get:
+      tags: [用户]
+      summary: 导出我的数据
+      description: |
+        导出当前登录用户的全部数据，包含账号信息、动态、评论、点赞、收藏、关注、粉丝。
+        数据格式为 hublog-personal-data-v1，便于未来跨平台迁移。
+      security: [BearerAuth: []]
+      parameters:
+        - name: format
+          in: query
+          schema: { type: string, enum: [json], default: json }
+      responses:
+        '200':
+          description: 个人数据包
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      meta:
+                        type: object
+                        properties:
+                          exported_at: { type: string, format: date-time }
+                          platform: { type: string }
+                          version: { type: string }
+                          format: { type: string }
+                      profile: { $ref: '#/components/schemas/User' }
+                      posts:
+                        type: array
+                        items: { $ref: '#/components/schemas/Post' }
+                      comments: { type: array }
+                      likes: { type: array }
+                      favorites: { type: array }
+                      following: { type: array }
+                      followers: { type: array }
+
+  # ========== 动态 ==========
+
+  /api/posts/timeline:
+    get:
+      tags: [动态]
+      summary: 动态时间线
+      description: |
+        核心接口，使用 Deferred Join + 覆盖索引避免深分页。
+        支持分类筛选、username 用户筛选、关注的人筛选与 media 媒体过滤，不提供话题筛选。
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10, maximum: 20 }
+        - name: category_id
+          in: query
+          schema: { type: integer }
+        - name: following
+          in: query
+          schema: { type: boolean }
+          description: 仅看关注的人
+      responses:
+        '200':
+          description: 时间线列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  data:
+                    type: object
+                    properties:
+                      list:
+                        type: array
+                        items: { $ref: '#/components/schemas/Post' }
+                      pagination: { $ref: '#/components/schemas/Pagination' }
+
+  /api/posts/detail:
+    get:
+      tags: [动态]
+      summary: 动态详情
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: 动态详情 }
+
+  /api/posts/pinned:
+    get:
+      tags: [动态]
+      summary: 置顶动态
+      responses:
+        '200': { description: 置顶列表 }
+
+  /api/posts/topic:
+    get:
+      tags: [动态]
+      summary: 话题动态
+      description: 按话题名取动态，支持 #话题# 与 ##话题## 格式；不接收 topic_id。
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema: { type: string }
+          description: 话题名称（不带 #）
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10, maximum: 20 }
+        - name: cursor
+          in: query
+          schema: { type: integer }
+          description: 游标，取上一页最后一条 post_id；大于 0 时启用游标分页
+      responses:
+        '200': { description: 话题动态 }
+
+  /api/posts/category:
+    get:
+      tags: [动态]
+      summary: 分类动态
+      parameters:
+        - name: category_id
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+      responses:
+        '200': { description: 分类动态 }
+
+  /api/posts/latest-ids:
+    get:
+      tags: [动态]
+      summary: 最新动态 ID
+      responses:
+        '200': { description: ID 列表 }
+
+  /api/posts/check-new:
+    get:
+      tags: [动态]
+      summary: 检查新动态
+      parameters:
+        - name: since_id
+          in: query
+          schema: { type: integer }
+      responses:
+        '200': { description: 新动态数量 }
+
+  /api/posts/popular:
+    get:
+      tags: [动态]
+      summary: 热门动态
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: period
+          in: query
+          schema: { type: string, enum: [day, week, month] }
+      responses:
+        '200': { description: 热门列表 }
+
+  /api/posts/likes:
+    get:
+      tags: [动态]
+      summary: 动态点赞列表
+      parameters:
+        - name: post_id
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: 点赞用户 }
+
+  /api/posts:
+    post:
+      tags: [动态]
+      summary: 发布动态
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: content、images/videos/attachments 媒体或帖型内容至少提供其一；content 可为空（有媒体或帖型时）
+              properties:
+                content: { type: string, nullable: true }
+                title: { type: string }
+                category_id: { type: integer }
+                images: { type: array, items: { type: string } }
+                videos: { type: array, items: { type: string } }
+                attachments: { type: array, items: { type: object } }
+                mentions: { type: array, items: { type: integer } }
+                is_anonymous: { type: boolean }
+                location: { type: object }
+      responses:
+        '200': { description: 发布成功 }
+    put:
+      tags: [动态]
+      summary: 编辑动态
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id: { type: integer }
+                content: { type: string }
+                title: { type: string }
+                images: { type: array, items: { type: string } }
+      responses:
+        '200': { description: 编辑成功 }
+    delete:
+      tags: [动态]
+      summary: 删除动态
+      security: [BearerAuth: [], CsrfToken: []]
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: 删除成功 }
+
+  /api/posts/like:
+    post:
+      tags: [动态]
+      summary: 点赞动态
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [post_id]
+              properties:
+                post_id: { type: integer }
+      responses:
+        '200': { description: 操作成功 }
+
+  /api/posts/comment-like:
+    post:
+      tags: [评论]
+      summary: 评论点赞
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [comment_id]
+              properties:
+                comment_id: { type: integer }
+      responses:
+        '200': { description: 操作成功 }
+
+  /api/posts/comment:
+    post:
+      tags: [评论]
+      summary: 发表评论
+      description: 支持 @提及，mentions 数组传被提及用户 ID
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [post_id, content]
+              properties:
+                post_id: { type: integer }
+                content: { type: string }
+                parent_id: { type: integer, nullable: true }
+                image: { type: string, nullable: true }
+                mentions: { type: array, items: { type: integer } }
+      responses:
+        '200': { description: 评论成功 }
+    delete:
+      tags: [评论]
+      summary: 删除评论
+      security: [BearerAuth: [], CsrfToken: []]
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: 删除成功 }
+
+  /api/posts/upload:
+    post:
+      tags: [动态]
+      summary: 上传图片动态
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '200': { description: 上传成功 }
+
+  /api/posts/upload-video:
+    post:
+      tags: [动态]
+      summary: 上传视频动态
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '200': { description: 上传成功 }
+
+  /api/posts/upload-attachment:
+    post:
+      tags: [动态]
+      summary: 上传附件动态
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '200': { description: 上传成功 }
+
+  /api/posts/delete-upload:
+    post:
+      tags: [动态]
+      summary: 删除上传
+      description: 用户取消发布时清理已上传但未使用的文件
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url: { type: string }
+      responses:
+        '200': { description: 删除成功 }
+
+  /api/upload/sign:
+    post:
+      tags: [动态]
+      summary: 直传签名
+      description: |
+        第一步，获取直传签名。type 支持 avatar / cover / image / video / attachment；
+        按类型大小上限：avatar 20MB、cover / image 50MB、video / attachment 500MB。
+        content_length 必须大于 0，超限返回 400。
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, filename, content_length]
+              properties:
+                type: { type: string, enum: [avatar, cover, image, video, attachment] }
+                filename: { type: string }
+                content_length: { type: integer, minimum: 1 }
+                content_type: { type: string }
+      responses:
+        '200': { description: 签名信息 }
+
+  /api/upload/register:
+    post:
+      tags: [动态]
+      summary: 直传注册
+      description: 第二步，前端直传完成后回传 object_key 与 final_url 入库；按 type 返回对应媒体对象
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, object_key, final_url]
+              properties:
+                type: { type: string, enum: [avatar, cover, image, video, attachment] }
+                object_key: { type: string }
+                final_url: { type: string }
+                file_size: { type: integer }
+                orig_filename: { type: string }
+                mime_type: { type: string }
+      responses:
+        '200': { description: 登记成功 }
+
+  # ========== 收藏 ==========
+
+  /api/favorites/toggle:
+    post:
+      tags: [收藏]
+      summary: 切换收藏
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [post_id]
+              properties:
+                post_id: { type: integer }
+      responses:
+        '200': { description: 操作成功 }
+
+  /api/favorites/list:
+    get:
+      tags: [收藏]
+      summary: 收藏列表
+      security: [BearerAuth: []]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+      responses:
+        '200': { description: 收藏列表 }
+
+  /api/favorites/check:
+    get:
+      tags: [收藏]
+      summary: 检查收藏状态
+      security: [BearerAuth: []]
+      parameters:
+        - name: post_id
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: 检查结果 }
+
+  # ========== 关注 ==========
+
+  /api/follow/stats:
+    get:
+      tags: [关注]
+      summary: 关注统计
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: 统计数据 }
+
+  /api/follow/followers:
+    get:
+      tags: [关注]
+      summary: 粉丝列表
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+      responses:
+        '200': { description: 粉丝列表 }
+
+  /api/follow/following:
+    get:
+      tags: [关注]
+      summary: 我关注的人
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+      responses:
+        '200': { description: 关注列表 }
+
+  /api/follow/suggest:
+    get:
+      tags: [关注]
+      summary: 推荐用户
+      description: 公开接口，游客可用；登录时按已关注列表与自身 ID 做排除
+      security: []
+      responses:
+        '200': { description: 推荐列表 }
+
+  /api/follow:
+    post:
+      tags: [关注]
+      summary: 关注
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id: { type: integer }
+      responses:
+        '200': { description: 操作成功 }
+
+  /api/follow/check:
+    get:
+      tags: [关注]
+      summary: 检查关注状态
+      security: [BearerAuth: []]
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: 关注状态 }
+
+  /api/follow/batch-check:
+    post:
+      tags: [关注]
+      summary: 批量检查关注状态
+      description: |
+        批量接口，消除前端 N+1 问题。
+        传入 user_id 数组，返回每个用户的关注状态。
+      security: [BearerAuth: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_ids]
+              properties:
+                user_ids:
+                  type: array
+                  items: { type: integer }
+      responses:
+        '200': { description: 批量关注状态 }
+
+  /api/follow/block:
+    post:
+      tags: [关注]
+      summary: 拉黑用户
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id: { type: integer }
+      responses:
+        '200': { description: 屏蔽成功 }
+
+  /api/follow/unblock:
+    post:
+      tags: [关注]
+      summary: 解除拉黑
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id: { type: integer }
+      responses:
+        '200': { description: 取消屏蔽 }
+
+  /api/follow/blocks:
+    get:
+      tags: [关注]
+      summary: 黑名单列表
+      security: [BearerAuth: []]
+      responses:
+        '200': { description: 屏蔽列表 }
+
+  /api/follow/blocked-check:
+    get:
+      tags: [关注]
+      summary: 查询拉黑状态
+      security: [BearerAuth: []]
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: 屏蔽状态 }
+
+  # ========== 通知 ==========
+
+  /api/notifications:
+    get:
+      tags: [通知]
+      summary: 通知列表
+      security: [BearerAuth: []]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 15, minimum: 1, maximum: 50 }
+        - name: before_id
+          in: query
+          schema: { type: integer }
+          description: 游标，大于 0 时按 id 游标分页（替代 OFFSET）
+        - name: type
+          in: query
+          schema: { type: string, enum: [comment, like, comment_like, follow, mention, system, message, category] }
+          description: 通知类型，逗号分隔可多选；非法值忽略
+      responses:
+        '200': { description: 通知列表 }
+
+  /api/notifications/unread-count:
+    get:
+      tags: [通知]
+      summary: 未读数
+      security: [BearerAuth: []]
+      responses:
+        '200': { description: 未读数 }
+
+  /api/notifications/{id}/read:
+    put:
+      tags: [通知]
+      summary: 标记通知已读
+      security: [BearerAuth: [], CsrfToken: []]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: 标记成功 }
+
+  /api/notifications/read-all:
+    put:
+      tags: [通知]
+      summary: 全部标记已读
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200': { description: 全部已读 }
+
+  /api/notifications/{id}:
+    delete:
+      tags: [通知]
+      summary: 删除通知
+      security: [BearerAuth: [], CsrfToken: []]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: 删除成功 }
+
+  /api/sse:
+    get:
+      tags: [通知]
+      summary: SSE 实时推送
+      description: |
+        Server-Sent Events 长连接，实时推送通知和新消息。
+        与轮询互为补充：SSE 连接时跳过轮询，断开时自动回退。
+      security: [BearerAuth: []]
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: SSE 事件流
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  # ========== 即时通讯 ==========
+
+  /api/chat/conversations:
+    get:
+      tags: [即时通讯]
+      summary: 会话列表
+      security: [BearerAuth: []]
+      responses:
+        '200': { description: 会话列表 }
+
+  /api/chat/messages:
+    get:
+      tags: [即时通讯]
+      summary: 消息列表
+      security: [BearerAuth: []]
+      parameters:
+        - name: conversation_id
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: before_id
+          in: query
+          schema: { type: integer }
+          description: 分页游标，获取此 ID 之前的消息
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200': { description: 消息列表 }
+
+  /api/chat/new-messages:
+    get:
+      tags: [即时通讯]
+      summary: 新消息
+      security: [BearerAuth: []]
+      responses:
+        '200': { description: 新消息 }
+
+  /api/chat/send:
+    post:
+      tags: [即时通讯]
+      summary: 发送消息
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: image / video / file / voice 类型需用 multipart/form-data 上传对应文件字段；extra 为服务端生成字段，不是入参
+              required: [conversation_id, type]
+              properties:
+                conversation_id: { type: integer }
+                type: { type: string, enum: [text, image, video, file, voice] }
+                content: { type: string }
+                image: { type: string, format: binary }
+                video: { type: string, format: binary }
+                file: { type: string, format: binary }
+                voice: { type: string, format: binary }
+                duration: { type: integer, minimum: 1, maximum: 600, description: 语音时长（秒），超出范围自动收敛 }
+                client_msg_id: { type: string }
+      responses:
+        '200': { description: 发送成功 }
+
+  /api/chat/read:
+    put:
+      tags: [即时通讯]
+      summary: 标记已读
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [conversation_id]
+              properties:
+                conversation_id: { type: integer }
+      responses:
+        '200': { description: 标记成功 }
+
+  /api/chat/unread-count:
+    get:
+      tags: [即时通讯]
+      summary: 未读数
+      security: [BearerAuth: []]
+      responses:
+        '200': { description: 未读数 }
+
+  /api/chat/private:
+    post:
+      tags: [即时通讯]
+      summary: 创建私聊
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id: { type: integer }
+      responses:
+        '200': { description: 会话信息 }
+
+  /api/chat/settings:
+    put:
+      tags: [即时通讯]
+      summary: 聊天设置
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversation_id: { type: integer }
+                muted: { type: boolean }
+                pinned: { type: boolean }
+      responses:
+        '200': { description: 更新成功 }
+
+  # ========== 搜索 ==========
+
+  /api/search:
+    get:
+      tags: [搜索]
+      summary: 全文搜索
+      description: 按关键词全文搜索动态；不提供 type 参数，支持分类 / 时间范围 / 媒体类型过滤与 before_id 游标
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, maxLength: 100 }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10, maximum: 20 }
+        - name: before_id
+          in: query
+          schema: { type: integer }
+          description: 游标，大于 0 时按 id 游标分页（替代 OFFSET）
+        - name: category_id
+          in: query
+          schema: { type: integer }
+        - name: date_range
+          in: query
+          schema: { type: string, enum: [7d, 30d, all] }
+        - name: media_type
+          in: query
+          schema: { type: string, enum: [all, image, video, text] }
+      responses:
+        '200': { description: 搜索结果 }
+
+  # ========== 站点 ==========
+
+  /api/site/config:
+    get:
+      tags: [站点]
+      summary: 站点配置
+      responses:
+        '200': { description: 站点配置 }
+
+  /api/site/friend-links:
+    get:
+      tags: [站点]
+      summary: 公开友链列表
+      responses:
+        '200': { description: 友链列表 }
+
+  /api/site/stats:
+    get:
+      tags: [站点]
+      summary: 站点统计
+      responses:
+        '200': { description: 统计数据 }
+
+  /api/site/user-ranking:
+    get:
+      tags: [站点]
+      summary: 用户榜
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+      responses:
+        '200': { description: 排行榜 }
+
+  /api/site/lang:
+    get:
+      tags: [站点]
+      summary: 语言包
+      parameters:
+        - name: lang
+          in: query
+          schema: { type: string, default: zh-CN }
+      responses:
+        '200': { description: 语言包 }
+
+  # ========== 定位 ==========
+
+  /api/location/ip:
+    get:
+      tags: [定位]
+      summary: IP 定位
+      responses:
+        '200': { description: 定位结果 }
+
+  /api/location/reverse:
+    get:
+      tags: [定位]
+      summary: 逆地理编码
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema: { type: number }
+        - name: lng
+          in: query
+          required: true
+          schema: { type: number }
+      responses:
+        '200': { description: 地址信息 }
+
+  # ========== 举报 ==========
+
+  /api/reports:
+    post:
+      tags: [举报]
+      summary: 创建举报
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target_type, target_id, reason]
+              properties:
+                target_type: { type: string, enum: [post, comment, user, circle, message] }
+                target_id: { type: integer }
+                reason: { type: string, enum: [spam, porn, abuse, other] }
+                description: { type: string, maxLength: 500 }
+      responses:
+        '200': { description: 举报成功 }
+        '400': { description: target_type / reason 非法，或 target_id 为空、description 超过 500 字 }
+
+  # ========== SEO ==========
+
+  /sitemap.xml:
+    get:
+      tags: [站点]
+      summary: 输出 sitemap.xml
+      responses:
+        '200':
+          description: XML 站点地图
+          content:
+            application/xml:
+              schema: { type: string }
+
+  /robots.txt:
+    get:
+      tags: [站点]
+      summary: 输出 robots.txt
+      responses:
+        '200':
+          description: robots.txt
+          content:
+            text/plain:
+              schema: { type: string }
+
+  # ========== 管理员（仅列出关键端点）==========
+
+  /api/admin/dashboard:
+    get:
+      tags: [管理员]
+      summary: 后台概览
+      security: [BearerAuth: []]
+      responses:
+        '200': { description: 仪表盘数据 }
+
+  /api/admin/users:
+    get:
+      tags: [管理员]
+      summary: 用户列表
+      security: [BearerAuth: []]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: status
+          in: query
+          schema: { type: integer }
+        - name: keyword
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: 用户列表 }
+
+    delete:
+      tags: [管理员]
+      summary: 删除用户
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除用户成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/posts:
+    get:
+      tags: [管理员]
+      summary: 帖子列表
+      security: [BearerAuth: []]
+      responses:
+        '200': { description: 动态列表 }
+
+  /api/admin/settings:
+    get:
+      tags: [管理员]
+      summary: 获取站点设置
+      security: [BearerAuth: []]
+      responses:
+        '200': { description: 设置项 }
+    put:
+      tags: [管理员]
+      summary: 保存站点设置
+      security: [BearerAuth: [], CsrfToken: []]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200': { description: 更新成功 }
+
+  /api/admin/export:
+    get:
+      tags: [管理员]
+      summary: 导出数据
+      security: [BearerAuth: []]
+      parameters:
+        - name: type
+          in: query
+          schema: { type: string, enum: [users, posts, comments, all] }
+        - name: format
+          in: query
+          schema: { type: string, enum: [json, csv] }
+      responses:
+        '200': { description: 导出数据 }
+
+  /api/admin/backup:
+    post:
+      tags: [管理员]
+      summary: 创建备份
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200': { description: 备份成功 }
+
+  /api/admin/version-check:
+    get:
+      tags: [管理员]
+      summary: 版本检查
+      security: [BearerAuth: []]
+      responses:
+        '200': { description: 版本信息 }
+
+  /api/admin/upgrade:
+    post:
+      tags: [管理员]
+      summary: 执行升级
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200': { description: 升级成功 }
+
+  /api/admin/ai/ollama-status:
+    get:
+      tags: [管理员]
+      summary: 检测 Ollama 状态
+      security: [BearerAuth: []]
+      responses:
+        '200': { description: 状态信息 }
+
+  /api/admin/ai/ollama-install:
+    post:
+      tags: [管理员]
+      summary: 安装 Ollama
+      description: 长时间运行操作，前端需设置 10 分钟超时
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200': { description: 安装成功 }
+
+  /api/admin/license:
+    get:
+      tags: [管理员]
+      summary: 授权状态
+      security: [BearerAuth: []]
+      responses:
+        '200': { description: 授权信息 }
+
+  /api/activities:
+    get:
+      tags: [活动]
+      summary: 活动列表
+      security: []
+      responses:
+        '200':
+          description: 活动列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/activity/detail:
+    get:
+      tags: [活动]
+      summary: 活动详情
+      security: []
+      responses:
+        '200':
+          description: 活动详情成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/activity/join:
+    post:
+      tags: [活动]
+      summary: 报名活动
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 报名活动成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/activity/leave:
+    post:
+      tags: [活动]
+      summary: 取消报名
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 取消报名成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/activity/mine:
+    get:
+      tags: [活动]
+      summary: 我报名的活动
+      security: []
+      responses:
+        '200':
+          description: 我报名的活动成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/activities:
+    get:
+      tags: [管理员]
+      summary: 活动列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 活动列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    post:
+      tags: [管理员]
+      summary: 新建活动
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 新建活动成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [管理员]
+      summary: 更新活动
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新活动成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    delete:
+      tags: [管理员]
+      summary: 删除活动
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除活动成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/ai/test:
+    post:
+      tags: [管理员]
+      summary: 测试 AI 服务
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 测试 AI 服务成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/app-versions:
+    get:
+      tags: [管理员]
+      summary: App 版本列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: App 版本列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    post:
+      tags: [管理员]
+      summary: 新建 App 版本
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 新建 App 版本成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [管理员]
+      summary: 更新 App 版本
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新 App 版本成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    delete:
+      tags: [管理员]
+      summary: 删除 App 版本
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除 App 版本成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/appeal-handle:
+    post:
+      tags: [管理员]
+      summary: 处理申诉
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 处理申诉成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/appeals:
+    get:
+      tags: [管理员]
+      summary: 申诉列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 申诉列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/attachments:
+    get:
+      tags: [管理员]
+      summary: 附件列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 附件列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    delete:
+      tags: [管理员]
+      summary: 删除附件
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除附件成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/attachments/status:
+    put:
+      tags: [管理员]
+      summary: 更新附件状态
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新附件状态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/backup/auto:
+    post:
+      tags: [管理员]
+      summary: 执行自动备份
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 执行自动备份成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/backup/cleanup:
+    post:
+      tags: [管理员]
+      summary: 清理备份
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 清理备份成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/badge-god-marks:
+    get:
+      tags: [管理员]
+      summary: 大神标记列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 大神标记列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    delete:
+      tags: [管理员]
+      summary: 删除大神标记
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除大神标记成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/badge-logs:
+    get:
+      tags: [管理员]
+      summary: 徽章日志
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 徽章日志成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/badge-save:
+    post:
+      tags: [管理员]
+      summary: 新建徽章
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 新建徽章成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [管理员]
+      summary: 更新徽章
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新徽章成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/badge-scan:
+    post:
+      tags: [管理员]
+      summary: 扫描徽章
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 扫描徽章成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/badge-toggle:
+    post:
+      tags: [管理员]
+      summary: 徽章开关
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 徽章开关成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/badges:
+    get:
+      tags: [管理员]
+      summary: 徽章列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 徽章列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/categories:
+    get:
+      tags: [管理员]
+      summary: 分类列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 分类列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    post:
+      tags: [管理员]
+      summary: 新建分类
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 新建分类成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [管理员]
+      summary: 更新分类
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新分类成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    delete:
+      tags: [管理员]
+      summary: 删除分类
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除分类成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/chat/batch-delete:
+    post:
+      tags: [管理员]
+      summary: 批量删除私信消息
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 批量删除私信消息成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/chat/cleanup-expired:
+    post:
+      tags: [管理员]
+      summary: 清理过期私信
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 清理过期私信成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/chat/cleanup-orphan:
+    post:
+      tags: [管理员]
+      summary: 清理孤儿私信
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 清理孤儿私信成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/chat/conversation:
+    delete:
+      tags: [管理员]
+      summary: 删除会话
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除会话成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/chat/conversations:
+    get:
+      tags: [管理员]
+      summary: 会话列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 会话列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/chat/deletions:
+    get:
+      tags: [管理员]
+      summary: 删除记录
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 删除记录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/chat/export:
+    get:
+      tags: [管理员]
+      summary: 导出会话记录
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 导出会话记录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/chat/message:
+    delete:
+      tags: [管理员]
+      summary: 删除消息
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除消息成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/chat/messages:
+    get:
+      tags: [管理员]
+      summary: 消息列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 消息列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/chat/restore:
+    post:
+      tags: [管理员]
+      summary: 恢复消息
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 恢复消息成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/chat/settings:
+    get:
+      tags: [管理员]
+      summary: 获取私信设置
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 获取私信设置成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [管理员]
+      summary: 保存私信设置
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 保存私信设置成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/chat/storage-stats:
+    get:
+      tags: [管理员]
+      summary: 私信存储统计
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 私信存储统计成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/circles:
+    get:
+      tags: [管理员]
+      summary: 圈子列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 圈子列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    post:
+      tags: [管理员]
+      summary: 新建圈子
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 新建圈子成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [管理员]
+      summary: 更新圈子
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新圈子成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    delete:
+      tags: [管理员]
+      summary: 删除圈子
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除圈子成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/circles/members:
+    get:
+      tags: [管理员]
+      summary: 圈子成员列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 圈子成员列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    delete:
+      tags: [管理员]
+      summary: 移除圈子成员
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 移除圈子成员成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/circles/members/role:
+    post:
+      tags: [管理员]
+      summary: 设置圈子成员角色
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 设置圈子成员角色成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/circles/moderate:
+    post:
+      tags: [管理员]
+      summary: 管理圈子内容
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 管理圈子内容成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/circles/requests:
+    get:
+      tags: [管理员]
+      summary: 待审申请列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 待审申请列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/circles/requests/approve:
+    post:
+      tags: [管理员]
+      summary: 通过圈子申请
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 通过圈子申请成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/circles/requests/reject:
+    post:
+      tags: [管理员]
+      summary: 驳回圈子申请
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 驳回圈子申请成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/circles/transfer:
+    post:
+      tags: [管理员]
+      summary: 转让圈主
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 转让圈主成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/comments:
+    get:
+      tags: [管理员]
+      summary: 评论列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 评论列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    delete:
+      tags: [管理员]
+      summary: 删除评论
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除评论成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/comments/batch:
+    post:
+      tags: [管理员]
+      summary: 批量操作评论
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 批量操作评论成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/crash-alert-threshold:
+    put:
+      tags: [管理员]
+      summary: 崩溃告警阈值
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 崩溃告警阈值成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/crash-logs:
+    get:
+      tags: [管理员]
+      summary: 崩溃日志列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 崩溃日志列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/featured:
+    get:
+      tags: [管理员]
+      summary: 精选列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 精选列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/featured/toggle:
+    post:
+      tags: [管理员]
+      summary: 切换精选
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 切换精选成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/filter-logs:
+    get:
+      tags: [管理员]
+      summary: 过滤日志
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 过滤日志成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/friend-links:
+    get:
+      tags: [管理员]
+      summary: 友链列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 友链列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    post:
+      tags: [管理员]
+      summary: 新建友链
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 新建友链成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [管理员]
+      summary: 更新友链
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新友链成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    delete:
+      tags: [管理员]
+      summary: 删除友链
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除友链成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/grant-vip:
+    post:
+      tags: [管理员]
+      summary: 发放会员
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 发放会员成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/license/activate:
+    post:
+      tags: [管理员]
+      summary: 激活授权
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 激活授权成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/license/deactivate:
+    post:
+      tags: [管理员]
+      summary: 停用授权
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 停用授权成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/license/refresh-hashes:
+    post:
+      tags: [管理员]
+      summary: 刷新授权哈希
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 刷新授权哈希成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/license/save-settings:
+    post:
+      tags: [管理员]
+      summary: 保存授权设置
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 保存授权设置成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/license/sync-revoked:
+    post:
+      tags: [管理员]
+      summary: 同步吊销列表
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 同步吊销列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/license/test-remote:
+    post:
+      tags: [管理员]
+      summary: 远程测试授权
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 远程测试授权成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/mail/test:
+    post:
+      tags: [管理员]
+      summary: 测试邮件发送
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 测试邮件发送成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/my-circles:
+    get:
+      tags: [管理员]
+      summary: 我的圈子
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 我的圈子成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/plugins:
+    get:
+      tags: [管理员]
+      summary: 插件列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 插件列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [管理员]
+      summary: 启用/停用插件
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 启用/停用插件成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/plugins/install:
+    post:
+      tags: [管理员]
+      summary: 安装插件（按清单幂等建表并调用 install 钩子）
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 安装成功，返回 name/install_status/installed_version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '422':
+          description: 清单非法或核心版本不满足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/plugins/upgrade:
+    post:
+      tags: [管理员]
+      summary: 升级插件（from/to 必填）
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 升级成功，返回 name/from/to/install_status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 参数非法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/plugins/uninstall:
+    post:
+      tags: [管理员]
+      summary: 卸载插件（仅声明删表时需 confirm_token）
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 卸载成功，返回 name/enabled/data_kept
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '403':
+          description: 删表确认令牌缺失或无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/plugin-admin-config:
+    get:
+      tags: [管理员]
+      summary: 后台插件菜单与设置声明汇总（仅已启用且有后台声明者）
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 返回 menus/settings 两个数组
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/plugin-config:
+    get:
+      tags: [管理员]
+      summary: 读取插件配置（plugin_name+key 必填）
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 返回 value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 参数非法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags: [管理员]
+      summary: 幂等保存插件配置（uk_plugin_config upsert，保留键拒绝）
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 保存成功，返回 ok=true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '403':
+          description: 写入核心保留键
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/plugin-settings-page:
+    get:
+      tags: [管理员]
+      summary: 读取插件目录内 settings.html（realpath 越界校验）
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: text/html 设置页内容
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          description: 插件设置页不存在或路径非法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/pages:
+    get:
+      tags: [管理员]
+      summary: 单页列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 单页列表成功，字段为 list/total
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    post:
+      tags: [管理员]
+      summary: 新建单页
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 创建成功，返回 id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: slug 或标题非法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: slug 已存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags: [管理员]
+      summary: 更新单页
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新成功，返回 id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: 页面不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [管理员]
+      summary: 删除单页
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除成功，返回 deleted=true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: 页面不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/pages/publish:
+    post:
+      tags: [管理员]
+      summary: 发布 / 撤回单页
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 发布状态已更新，返回 slug/status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: 页面不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/point-task-delete:
+    post:
+      tags: [管理员]
+      summary: 删除积分任务
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除积分任务成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/point-task-save:
+    post:
+      tags: [管理员]
+      summary: 保存积分任务
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 保存积分任务成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/point-tasks:
+    get:
+      tags: [管理员]
+      summary: 积分任务列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 积分任务列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/points-adjust:
+    post:
+      tags: [管理员]
+      summary: 调整积分
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 调整积分成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/points-logs:
+    get:
+      tags: [管理员]
+      summary: 积分流水
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 积分流水成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/posts/batch:
+    post:
+      tags: [管理员]
+      summary: 批量操作帖子
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 批量操作帖子成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/posts/cleanup-orphan-uploads:
+    post:
+      tags: [管理员]
+      summary: 清理孤儿上传
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 清理孤儿上传成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/posts/pin:
+    put:
+      tags: [管理员]
+      summary: 置顶帖子
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 置顶帖子成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/posts/status:
+    put:
+      tags: [管理员]
+      summary: 更新帖子状态
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新帖子状态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/realname:
+    get:
+      tags: [管理员]
+      summary: 实名认证列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 实名认证列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/realname/review:
+    post:
+      tags: [管理员]
+      summary: 审核实名认证
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 审核实名认证成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/recharge-orders:
+    get:
+      tags: [管理员]
+      summary: 充值订单
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 充值订单成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/reports:
+    get:
+      tags: [管理员]
+      summary: 举报列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 举报列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/reports/resolve:
+    put:
+      tags: [管理员]
+      summary: 处理举报
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 处理举报成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/rollback:
+    post:
+      tags: [管理员]
+      summary: 回滚版本
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 回滚版本成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/sensitive-words:
+    get:
+      tags: [管理员]
+      summary: 敏感词列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 敏感词列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    post:
+      tags: [管理员]
+      summary: 新建敏感词
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 新建敏感词成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [管理员]
+      summary: 更新敏感词
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新敏感词成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    delete:
+      tags: [管理员]
+      summary: 删除敏感词
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除敏感词成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/sensitive-words/import:
+    post:
+      tags: [管理员]
+      summary: 导入敏感词
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 导入敏感词成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/shop-coupons:
+    get:
+      tags: [管理员]
+      summary: 商城优惠券列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 商城优惠券列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/shop-orders:
+    get:
+      tags: [管理员]
+      summary: 商城订单
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 商城订单成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/shop-product-delete:
+    post:
+      tags: [管理员]
+      summary: 删除商城商品
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除商城商品成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/shop-product-save:
+    post:
+      tags: [管理员]
+      summary: 新建商城商品
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 新建商城商品成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [管理员]
+      summary: 更新商城商品
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新商城商品成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/shop-products:
+    get:
+      tags: [管理员]
+      summary: 商城商品列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 商城商品列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/shop-ship:
+    post:
+      tags: [管理员]
+      summary: 商城发货
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 商城发货成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/stats:
+    get:
+      tags: [管理员]
+      summary: 运行统计
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 运行统计成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/storage/test-connection:
+    get:
+      tags: [管理员]
+      summary: 测试存储连接
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 测试存储连接成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/theme-options:
+    get:
+      tags: [管理员]
+      summary: 获取外观选项
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 获取外观选项成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [管理员]
+      summary: 保存外观选项
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 保存外观选项成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/theme-options/upload:
+    post:
+      tags: [管理员]
+      summary: 上传主题图片
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 上传主题图片成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/themes:
+    get:
+      tags: [管理员]
+      summary: 主题列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 主题列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/topics:
+    get:
+      tags: [管理员]
+      summary: 话题列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 话题列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    post:
+      tags: [管理员]
+      summary: 新建话题
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 新建话题成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [管理员]
+      summary: 更新话题
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新话题成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    delete:
+      tags: [管理员]
+      summary: 删除话题
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除话题成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/topics/cover:
+    post:
+      tags: [管理员]
+      summary: 设置话题封面
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 设置话题封面成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/upgrade-compare:
+    post:
+      tags: [管理员]
+      summary: 版本比对
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 版本比对成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/upgrade/online-compare:
+    get:
+      tags: [管理员]
+      summary: 在线版本比对
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 在线版本比对成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/upgrade/online-preflight:
+    get:
+      tags: [管理员]
+      summary: 在线升级预检
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 在线升级预检成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/upgrade/online-run:
+    post:
+      tags: [管理员]
+      summary: 执行在线升级
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 执行在线升级成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/upload-homepage-cover:
+    post:
+      tags: [管理员]
+      summary: 上传首页封面
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 上传首页封面成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/upload-watermark:
+    post:
+      tags: [管理员]
+      summary: 上传水印
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 上传水印成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/user-badge-freeze:
+    post:
+      tags: [管理员]
+      summary: 冻结用户徽章
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 冻结用户徽章成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/user-badge-grant:
+    post:
+      tags: [管理员]
+      summary: 发放用户徽章
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 发放用户徽章成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/user-badge-revoke:
+    post:
+      tags: [管理员]
+      summary: 吊销用户徽章
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 吊销用户徽章成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/user-badges:
+    get:
+      tags: [管理员]
+      summary: 用户徽章列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 用户徽章列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/users/batch:
+    post:
+      tags: [管理员]
+      summary: 批量操作用户
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 批量操作用户成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/users/mute:
+    post:
+      tags: [管理员]
+      summary: 禁言用户
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 禁言用户成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/users/status:
+    put:
+      tags: [管理员]
+      summary: 更新用户状态
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新用户状态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/users/unmute:
+    post:
+      tags: [管理员]
+      summary: 解除用户禁言
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 解除用户禁言成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/users/update:
+    put:
+      tags: [管理员]
+      summary: 更新用户资料
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新用户资料成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/vip-orders:
+    get:
+      tags: [管理员]
+      summary: 会员订单
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 会员订单成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/wallet-adjust:
+    post:
+      tags: [管理员]
+      summary: 调整钱包
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 调整钱包成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/wallet-logs:
+    get:
+      tags: [管理员]
+      summary: 钱包流水
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 钱包流水成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/watermark-preview:
+    post:
+      tags: [管理员]
+      summary: 水印预览
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 水印预览成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/wheel-prize-delete:
+    post:
+      tags: [管理员]
+      summary: 删除转盘奖品
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除转盘奖品成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/wheel-prize-save:
+    post:
+      tags: [管理员]
+      summary: 新建转盘奖品
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 新建转盘奖品成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [管理员]
+      summary: 更新转盘奖品
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新转盘奖品成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/wheel-prizes:
+    get:
+      tags: [管理员]
+      summary: 转盘奖品列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 转盘奖品列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/ai/assist:
+    post:
+      tags: [动态]
+      summary: AI 辅助创作
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: AI 辅助创作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/app/account:
+    delete:
+      tags: [站点]
+      summary: 注销账号
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 注销账号成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/app/agreements:
+    get:
+      tags: [站点]
+      summary: 用户协议
+      security: []
+      responses:
+        '200':
+          description: 用户协议成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/pages/{slug}:
+    get:
+      tags: [站点]
+      summary: 通用单页公开读取（仅已发布，草稿 404）
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: 页面标识，形如 about / help / agreement_user
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 单页详情，字段为 slug/title/content/seo_title/seo_description/seo_keywords/updated_at
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: 页面不存在或未发布（不回退到协议正文）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/app/auth/wx-app-login:
+    post:
+      tags: [认证]
+      summary: 微信 App 登录
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 微信 App 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/app/categories:
+    get:
+      tags: [站点]
+      summary: 分类列表
+      security: []
+      responses:
+        '200':
+          description: 分类列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/app/config:
+    get:
+      tags: [站点]
+      summary: 应用配置
+      security: []
+      responses:
+        '200':
+          description: 应用配置成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/app/devices:
+    get:
+      tags: [站点]
+      summary: 设备列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 设备列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/app/devices/kick:
+    post:
+      tags: [站点]
+      summary: 移除设备
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 移除设备成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/app/events:
+    get:
+      tags: [通知]
+      summary: 事件长轮询
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 事件长轮询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/app/push-token:
+    post:
+      tags: [通知]
+      summary: 注册推送令牌
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 注册推送令牌成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/app/track:
+    post:
+      tags: [站点]
+      summary: 埋点上报
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 埋点上报成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/app/version:
+    get:
+      tags: [站点]
+      summary: 应用版本
+      security: []
+      responses:
+        '200':
+          description: 应用版本成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/app/wx-jsapi-config:
+    get:
+      tags: [站点]
+      summary: 微信 JSAPI 配置
+      security: []
+      responses:
+        '200':
+          description: 微信 JSAPI 配置成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/auth/login-phone:
+    post:
+      tags: [认证]
+      summary: 手机号登录
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 手机号登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/auth/phone-code:
+    post:
+      tags: [认证]
+      summary: 发送手机验证码
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 发送手机验证码成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/auth/set-password:
+    post:
+      tags: [认证]
+      summary: 设置密码
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 设置密码成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/auth/token-refresh:
+    post:
+      tags: [认证]
+      summary: 刷新令牌
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 刷新令牌成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/badges/my:
+    get:
+      tags: [徽章]
+      summary: 我的徽章
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 我的徽章成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/call/accept:
+    post:
+      tags: [即时通讯]
+      summary: 接受通话
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 接受通话成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/call/cancel:
+    post:
+      tags: [即时通讯]
+      summary: 取消通话
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 取消通话成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/call/hangup:
+    post:
+      tags: [即时通讯]
+      summary: 挂断通话
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 挂断通话成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/call/invite:
+    post:
+      tags: [即时通讯]
+      summary: 邀请通话
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 邀请通话成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/call/pending:
+    get:
+      tags: [即时通讯]
+      summary: 待接听通话
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 待接听通话成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/call/records:
+    get:
+      tags: [即时通讯]
+      summary: 通话记录
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 通话记录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/call/reject:
+    post:
+      tags: [即时通讯]
+      summary: 拒绝通话
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 拒绝通话成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/call/token:
+    post:
+      tags: [即时通讯]
+      summary: 提交通话令牌
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 提交通话令牌成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/category/follow:
+    post:
+      tags: [关注]
+      summary: 关注分类频道
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 关注分类频道成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/category/following:
+    get:
+      tags: [关注]
+      summary: 已关注分类频道
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 已关注分类频道成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/category/status:
+    get:
+      tags: [关注]
+      summary: 分类频道关注状态
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 分类频道关注状态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/chat/conversation:
+    delete:
+      tags: [即时通讯]
+      summary: 删除会话
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除会话成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/chat/deleted:
+    get:
+      tags: [即时通讯]
+      summary: 已删除会话
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 已删除会话成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/chat/group/announce:
+    put:
+      tags: [即时通讯]
+      summary: 发布群公告
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 发布群公告成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/chat/group/dissolve:
+    post:
+      tags: [即时通讯]
+      summary: 解散群组
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 解散群组成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/chat/group/info:
+    get:
+      tags: [即时通讯]
+      summary: 群组信息
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 群组信息成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/chat/group/kick:
+    post:
+      tags: [即时通讯]
+      summary: 移出群成员
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 移出群成员成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/chat/group/members:
+    get:
+      tags: [即时通讯]
+      summary: 群成员列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 群成员列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/chat/group/mute:
+    post:
+      tags: [即时通讯]
+      summary: 群内禁言
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 群内禁言成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/chat/message:
+    delete:
+      tags: [即时通讯]
+      summary: 撤回消息
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 撤回消息成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/chat/restore:
+    post:
+      tags: [即时通讯]
+      summary: 恢复会话
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 恢复会话成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/chat/typing:
+    post:
+      tags: [即时通讯]
+      summary: 正在输入
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 正在输入成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles:
+    get:
+      tags: [圈子]
+      summary: 圈子列表
+      security: []
+      responses:
+        '200':
+          description: 圈子列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    post:
+      tags: [圈子]
+      summary: 新建圈子
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 新建圈子成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [圈子]
+      summary: 更新圈子
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 更新圈子成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    delete:
+      tags: [圈子]
+      summary: 删除圈子
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除圈子成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/announce:
+    post:
+      tags: [圈子]
+      summary: 设置圈子公告
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 设置圈子公告成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/approve:
+    post:
+      tags: [圈子]
+      summary: 通过加入申请
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 通过加入申请成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/ban-member:
+    post:
+      tags: [圈子]
+      summary: 封禁圈子成员
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 封禁圈子成员成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/blacklist:
+    get:
+      tags: [圈子]
+      summary: 圈子黑名单
+      security: []
+      responses:
+        '200':
+          description: 圈子黑名单成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/detail:
+    get:
+      tags: [圈子]
+      summary: 圈子详情
+      security: []
+      responses:
+        '200':
+          description: 圈子详情成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/group:
+    post:
+      tags: [圈子]
+      summary: 加入圈子群组
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 加入圈子群组成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/join:
+    post:
+      tags: [圈子]
+      summary: 加入圈子
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 加入圈子成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/leave:
+    post:
+      tags: [圈子]
+      summary: 退出圈子
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 退出圈子成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/manage-member:
+    post:
+      tags: [圈子]
+      summary: 管理圈子成员
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 管理圈子成员成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/manage-post:
+    post:
+      tags: [圈子]
+      summary: 管理圈子动态
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 管理圈子动态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/members:
+    get:
+      tags: [圈子]
+      summary: 圈子成员列表
+      security: []
+      responses:
+        '200':
+          description: 圈子成员列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/mute-member:
+    post:
+      tags: [圈子]
+      summary: 禁言圈子成员
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 禁言圈子成员成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/my:
+    get:
+      tags: [圈子]
+      summary: 我的圈子
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 我的圈子成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/my-requests:
+    get:
+      tags: [圈子]
+      summary: 我的加入申请
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 我的加入申请成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/pending-requests:
+    get:
+      tags: [圈子]
+      summary: 待审申请列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 待审申请列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/posts:
+    get:
+      tags: [动态]
+      summary: 圈子动态列表
+      security: []
+      responses:
+        '200':
+          description: 圈子动态列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/reject:
+    post:
+      tags: [圈子]
+      summary: 驳回加入申请
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 驳回加入申请成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/circles/unban-member:
+    post:
+      tags: [圈子]
+      summary: 解除圈子成员封禁
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 解除圈子成员封禁成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/cron/archive:
+    post:
+      tags: [运维]
+      summary: 执行归档任务
+      security: []
+      description: 需 `secret` 查询参数或 `X-Cron-Token` 请求头
+      responses:
+        '200':
+          description: 执行归档任务成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/cron/badges:
+    post:
+      tags: [运维]
+      summary: 执行徽章扫描
+      security: []
+      description: 需 `secret` 查询参数或 `X-Cron-Token` 请求头
+      responses:
+        '200':
+          description: 执行徽章扫描成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/cron/jobs:
+    post:
+      tags: [运维]
+      summary: 执行异步任务
+      security: []
+      description: 需 `secret` 查询参数或 `X-Cron-Token` 请求头
+      responses:
+        '200':
+          description: 执行异步任务成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/cron/jobs/status:
+    get:
+      tags: [运维]
+      summary: 队列状态
+      security: []
+      description: 需 `secret` 查询参数或 `X-Cron-Token` 请求头
+      responses:
+        '200':
+          description: 队列状态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/cron/scheduled:
+    post:
+      tags: [运维]
+      summary: 执行定时发布
+      security: []
+      description: 需 `secret` 查询参数或 `X-Cron-Token` 请求头
+      responses:
+        '200':
+          description: 执行定时发布成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/cron/license-heartbeat:
+    post:
+      tags: [运维]
+      summary: 主动触发授权统计心跳上报
+      security: []
+      description: >
+        需 `secret` 查询参数或 `X-Cron-Token` 请求头（与 /api/cron/jobs 共用 cron_secret，
+        未配置时 fail-closed）。内部调用 HeartbeatReporter::reportNow()，无 token 返回 403。
+        日常上报由 api/index.php 的 shutdown 钩子自动触发，本端点仅为有服务器 cron 的站点提供兜底。
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                secret:
+                  type: string
+                  description: cron_secret，也可放 X-Cron-Token 头
+      responses:
+        '200':
+          description: 触发成功（reported=false 表示本次未实际发送，通常因未到期或失败静默）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, example: 200 }
+                  data:
+                    type: object
+                    properties:
+                      reported: { type: boolean }
+        '403':
+          description: cron token 无效或未配置
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/metrics:
+    get:
+      tags: [运维]
+      summary: Prometheus 监控指标
+      security: []
+      description: 需 `X-Metrics-Token` 请求头或 Bearer；未配置密钥时返回 404
+      responses:
+        '200':
+          description: Prometheus 监控指标成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/notifications/clear:
+    delete:
+      tags: [通知]
+      summary: 清空通知
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 清空通知成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/pay/circle-pay:
+    get:
+      tags: [站点]
+      summary: 圈子支付信息
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 圈子支付信息成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/pay/circle-subscribe:
+    post:
+      tags: [站点]
+      summary: 订阅圈子付费
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 订阅圈子付费成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/pay/notify/alipay:
+    post:
+      tags: [站点]
+      summary: 支付宝回调
+      security: []
+      description: 支付宝服务器回调，不走鉴权与 CSRF
+      responses:
+        '200':
+          description: 支付宝回调成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/pay/notify/wxpay:
+    post:
+      tags: [站点]
+      summary: 微信支付回调
+      security: []
+      description: 微信支付服务器回调，不走鉴权与 CSRF
+      responses:
+        '200':
+          description: 微信支付回调成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/pay/recharge-config:
+    get:
+      tags: [站点]
+      summary: 充值配置
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 充值配置成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/pay/recharge-create:
+    post:
+      tags: [站点]
+      summary: 创建充值单
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 创建充值单成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/pay/recharge-orders:
+    get:
+      tags: [站点]
+      summary: 充值订单
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 充值订单成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/pay/vip-buy:
+    post:
+      tags: [站点]
+      summary: 购买会员
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 购买会员成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/pay/vip-info:
+    get:
+      tags: [站点]
+      summary: 会员信息
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 会员信息成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/pay/vip-orders:
+    get:
+      tags: [站点]
+      summary: 会员订单
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 会员订单成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/pay/wallet:
+    get:
+      tags: [站点]
+      summary: 钱包信息
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 钱包信息成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/points/claim:
+    post:
+      tags: [站点]
+      summary: 领取积分奖励
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 领取积分奖励成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/points/home:
+    get:
+      tags: [站点]
+      summary: 积分中心首页
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 积分中心首页成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/points/logs:
+    get:
+      tags: [站点]
+      summary: 积分流水
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 积分流水成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/points/signin:
+    post:
+      tags: [站点]
+      summary: 积分签到
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 积分签到成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/points/tasks:
+    get:
+      tags: [站点]
+      summary: 积分任务列表
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 积分任务列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/points/wheel:
+    post:
+      tags: [站点]
+      summary: 积分大转盘
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 积分大转盘成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/points/wheel-prizes:
+    get:
+      tags: [站点]
+      summary: 转盘奖品列表
+      security: []
+      responses:
+        '200':
+          description: 转盘奖品列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/points/wheel-records:
+    get:
+      tags: [站点]
+      summary: 转盘记录
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 转盘记录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/posts/checkin/do:
+    post:
+      tags: [动态]
+      summary: 执行打卡动态
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 执行打卡动态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/posts/comment/god:
+    post:
+      tags: [评论]
+      summary: 标记神评
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 标记神评成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/posts/comment/god/unmark:
+    post:
+      tags: [评论]
+      summary: 取消神评
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 取消神评成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/posts/comment/pin:
+    post:
+      tags: [评论]
+      summary: 置顶评论
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 置顶评论成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/posts/feedback:
+    post:
+      tags: [动态]
+      summary: 动态反馈
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 动态反馈成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/posts/poll/vote:
+    post:
+      tags: [动态]
+      summary: 投票动态
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 投票动态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/posts/question/accept:
+    post:
+      tags: [动态]
+      summary: 采纳回答动态
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 采纳回答动态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/posts/question/answer:
+    post:
+      tags: [动态]
+      summary: 回答问题动态
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 回答问题动态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/posts/repost:
+    post:
+      tags: [动态]
+      summary: 转发动态
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 转发动态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/posts/scheduled:
+    get:
+      tags: [动态]
+      summary: 定时动态列表
+      security: []
+      responses:
+        '200':
+          description: 定时动态列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/posts/team/join:
+    post:
+      tags: [动态]
+      summary: 加入组队动态
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 加入组队动态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/posts/team/leave:
+    post:
+      tags: [动态]
+      summary: 退出组队动态
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 退出组队动态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/realname/status:
+    get:
+      tags: [实名]
+      summary: 实名认证状态
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 实名认证状态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/realname/verify:
+    post:
+      tags: [实名]
+      summary: 校验实名
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 校验实名成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/shop/buy:
+    post:
+      tags: [商城]
+      summary: 购买商品
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 购买商品成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/shop/config:
+    get:
+      tags: [商城]
+      summary: 商城配置
+      security: []
+      responses:
+        '200':
+          description: 商城配置成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/shop/my-posts:
+    get:
+      tags: [商城]
+      summary: 我的商城动态
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 我的商城动态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/shop/orders:
+    get:
+      tags: [商城]
+      summary: 我的商城订单
+      security: [BearerAuth: []]
+      responses:
+        '200':
+          description: 我的商城订单成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/shop/post:
+    post:
+      tags: [商城]
+      summary: 发布商城动态
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 发布商城动态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/shop/post-delete:
+    post:
+      tags: [商城]
+      summary: 删除商城动态
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 删除商城动态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/shop/product:
+    get:
+      tags: [商城]
+      summary: 商城商品详情
+      security: []
+      responses:
+        '200':
+          description: 商城商品详情成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/shop/products:
+    get:
+      tags: [商城]
+      summary: 商城商品列表
+      security: []
+      responses:
+        '200':
+          description: 商城商品列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/site/featured:
+    get:
+      tags: [站点]
+      summary: 精选内容
+      security: []
+      responses:
+        '200':
+          description: 精选内容成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/site/ranking:
+    get:
+      tags: [站点]
+      summary: 排行榜
+      security: []
+      responses:
+        '200':
+          description: 排行榜成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/topics:
+    get:
+      tags: [动态]
+      summary: 话题列表
+      security: []
+      responses:
+        '200':
+          description: 话题列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/uploads/cleanup:
+    post:
+      tags: [用户]
+      summary: 清理本人上传
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:
+        '200':
+          description: 清理本人上传成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/user/alive:
+    put:
+      tags: [关注]
+      summary: 心跳保活
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 心跳保活成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/user/appeal:
+    post:
+      tags: [关注]
+      summary: 提交申诉
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 提交申诉成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/user/appeals:
+    get:
+      tags: [关注]
+      summary: 我的申诉列表
+      security: []
+      responses:
+        '200':
+          description: 我的申诉列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/user/check-nickname:
+    get:
+      tags: [关注]
+      summary: 检查昵称可用性
+      security: []
+      responses:
+        '200':
+          description: 检查昵称可用性成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/user/draft:
+    post:
+      tags: [关注]
+      summary: 保存草稿
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 保存草稿成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    delete:
+      tags: [关注]
+      summary: 删除草稿
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 删除草稿成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/user/drafts:
+    get:
+      tags: [关注]
+      summary: 草稿列表
+      security: []
+      responses:
+        '200':
+          description: 草稿列表成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/user/frame:
+    post:
+      tags: [关注]
+      summary: 设置头像框
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 设置头像框成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/user/notify-prefs:
+    get:
+      tags: [关注]
+      summary: 获取通知偏好
+      security: []
+      responses:
+        '200':
+          description: 获取通知偏好成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [关注]
+      summary: 保存通知偏好
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 保存通知偏好成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/user/online:
+    get:
+      tags: [关注]
+      summary: 在线状态
+      security: []
+      responses:
+        '200':
+          description: 在线状态成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/user/phone-code:
+    post:
+      tags: [关注]
+      summary: 发送手机验证码
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 发送手机验证码成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/user/phone/verify:
+    post:
+      tags: [关注]
+      summary: 校验手机号
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 校验手机号成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/user/privacy:
+    get:
+      tags: [关注]
+      summary: 获取隐私设置
+      security: []
+      responses:
+        '200':
+          description: 获取隐私设置成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    put:
+      tags: [关注]
+      summary: 保存隐私设置
+      security: [CsrfToken: []]
+      responses:
+        '200':
+          description: 保存隐私设置成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /health:
+    get:
+      tags: [运维]
+      summary: 健康检查
+      security: []
+      responses:
+        '200':
+          description: 健康检查成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/content-pay/product:
+    get:
+      tags: [站点]
+      summary: 查询内容商品与解锁状态
+      security: [BearerAuth: []]
+      responses:/n        '200':
+          description: 查询内容商品与解锁状态成功
+          content:/n            application/json:/n              schema:/n                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/content-pay/column:
+    get:
+      tags: [站点]
+      summary: 查询专栏信息与条目
+      security: [BearerAuth: []]
+      responses:/n        '200':
+          description: 查询专栏信息与条目成功
+          content:/n            application/json:/n              schema:/n                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/content-pay/buy:
+    post:
+      tags: [站点]
+      summary: 购买解锁内容
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:/n        '200':
+          description: 购买解锁内容成功
+          content:/n            application/json:/n              schema:/n                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/content-pay/orders:
+    get:
+      tags: [站点]
+      summary: 我的内容订单
+      security: [BearerAuth: []]
+      responses:/n        '200':
+          description: 我的内容订单成功
+          content:/n            application/json:/n              schema:/n                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/content-pay/entitlements:
+    get:
+      tags: [站点]
+      summary: 我的已解锁权益
+      security: [BearerAuth: []]
+      responses:/n        '200':
+          description: 我的已解锁权益成功
+          content:/n            application/json:/n              schema:/n                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/content-pay/orders:
+    get:
+      tags: [管理员]
+      summary: 全站内容订单
+      security: [BearerAuth: []]
+      responses:/n        '200':
+          description: 全站内容订单成功
+          content:/n            application/json:/n              schema:/n                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/content-pay/columns:
+    get:
+      tags: [管理员]
+      summary: 专栏列表
+      security: [BearerAuth: []]
+      responses:/n        '200':
+          description: 专栏列表成功
+          content:/n            application/json:/n              schema:/n                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/content-pay/product:
+    post:
+      tags: [管理员]
+      summary: 内容定价 upsert
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:/n        '200':
+          description: 内容定价 upsert成功
+          content:/n            application/json:/n              schema:/n                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/content-pay/column:
+    post:
+      tags: [管理员]
+      summary: 专栏 upsert
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:/n        '200':
+          description: 专栏 upsert成功
+          content:/n            application/json:/n              schema:/n                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/content-pay/item:
+    post:
+      tags: [管理员]
+      summary: 专栏条目 upsert
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:/n        '200':
+          description: 专栏条目 upsert成功
+          content:/n            application/json:/n              schema:/n                $ref: '#/components/schemas/SuccessResponse'
+    delete:
+      tags: [管理员]
+      summary: 删除专栏条目
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:/n        '200':
+          description: 删除专栏条目成功
+          content:/n            application/json:/n              schema:/n                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/admin/content-pay/grant:
+    post:
+      tags: [管理员]
+      summary: 免费赠送内容权益
+      security: [BearerAuth: [], CsrfToken: []]
+      responses:/n        '200':
+          description: 免费赠送内容权益成功
+          content:/n            application/json:/n              schema:/n                $ref: '#/components/schemas/SuccessResponse'

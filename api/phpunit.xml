@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- P2-1 测试护栏（V165 通电）
+     本机运行环境：宝塔自带 PHP 8.1.29（D:\BtSoft\php\81\php.exe）。
+     注意两点坑：
+       1) 该 PHP 的 disable_functions 屏蔽了 putenv，运行 composer 必须临时清空：
+          php -d disable_functions="" D:\BtSoft\panel\script\composer.phar <命令>
+       2) 境外源（packagist.org / GitHub）在本机网络不通，需切华为云镜像：
+          composer config repos.packagist composer https://repo.huaweicloud.com/repository/php
+     安装依赖（下面命令行里的 dev 前缀请写成 require 的 dev 参数形式，此处省略以免 XML 注释出现连续短横线）：
+          composer require phpunit/phpunit:^10.5   (dev 依赖)
+     执行测试（在项目根目录）：
+          php -d disable_functions="" vendor/bin/phpunit -c api/phpunit.xml
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         bootstrap="tests/bootstrap.php"
+         colors="true"
+         failOnWarning="false"
+         failOnNotice="false"
+         cacheResult="false">
+    <testsuites>
+        <testsuite name="Hublog API">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+    <!-- V165：PHPUnit 10 起路径过滤从 <coverage><include> 迁到 <source><include>，
+         保留旧写法会报 "Element 'include' is not expected" 校验警告。
+         路径相对本配置文件所在目录（即 api/）。 -->
+    <source>
+        <include>
+            <directory suffix=".php">core</directory>
+            <directory suffix=".php">controllers</directory>
+            <directory suffix=".php">middleware</directory>
+        </include>
+    </source>
+</phpunit>

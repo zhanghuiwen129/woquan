@@ -1,0 +1,113 @@
+# Hublog Apache 配置（线上为 nginx，此文件用于 Apache 环境兜底；规则与 nginx.conf 对齐）
+
+# ── 1. 路由重写 ──
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # API：/api/* → api/index.php（排除 api/index.php 直接访问，PATH_INFO 模式不依赖伪静态）
+    RewriteCond %{REQUEST_URI} !^/api/index\.php
+    RewriteRule ^api/(.*)$ api/index.php [L,QSA]
+
+    # 管理后台：/admin/* → admin/index.html（静态；真实存在的后台资源文件直接输出）
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^admin(/.*)?$ admin/index.html [L]
+
+    # 顶层 API 端点：/health /robots.txt /sitemap.xml → api/index.php
+    # 这三个端点注册在 api/routes.php 顶层（不在 /api 组内），
+    # 若落到前台入口 index.php 会被主题页分支排除（health 在保留字里），/health 返回首页 HTML 而不是 JSON
+    RewriteRule ^health/?$ api/index.php [L,QSA]
+    RewriteRule ^robots\.txt$ api/index.php [L,QSA]
+    RewriteRule ^sitemap\.xml$ api/index.php [L,QSA]
+
+    # 首页：根目录是真实目录（上面的兜底条件 !-d 会跳过它），单独指向前台入口
+    RewriteRule ^$ index.php [L,QSA]
+
+    # 前台页面路由兜底（与 nginx location / { try_files ... /index.php } 等价）：
+    # 未命中真实文件/目录、且不属于 api / admin / uploads / plugins 的路径 → index.php
+    # 覆盖主题扩展页（任意单段路径）与 /followers /following /messages /reset-password
+    # /wallet /points 等全部前台路由（改写用相对文件名，REQUEST_URI 保持原路径）
+    RewriteCond %{REQUEST_URI} !^/(api|admin|uploads|plugins)(/|$)
+    RewriteCond %{REQUEST_URI} !\.php(/|$)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L,QSA]
+</IfModule>
+
+# ── 2. PHP 运行参数 ──
+<IfModule mod_php.c>
+    php_value upload_max_filesize 100M
+    php_value post_max_size       100M
+    php_value max_execution_time  120
+    php_flag cgi.fix_pathinfo     0
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag cgi.fix_pathinfo     0
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag cgi.fix_pathinfo     0
+</IfModule>
+
+# ── 3. 安全响应头 ──
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options    "nosniff"
+    Header set X-Frame-Options           "SAMEORIGIN"
+    Header set X-XSS-Protection          "1; mode=block"
+    Header set Referrer-Policy           "strict-origin-when-cross-origin"
+    Header set Permissions-Policy        "camera=(), microphone=(), geolocation=(), payment=()"
+    <If "%{HTTPS} == 'on'">
+        Header set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    </If>
+</IfModule>
+
+# ── 4. 全局安全选项 ──
+Options -Indexes -MultiViews
+<IfModule mod_authz_core.c>
+    <FilesMatch "^\.">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "^(config|install|fix_admin_id|fix_db|fix_migration|composer\.(json|lock))\.php|install\.lock|installed\.lock|\.env(\.|$)">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "\.(sql|log|bak|backup|ini|conf)$">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "\.(zip|rar|7z|tar|gz|tgz|bz2|xz|lz|iso)$">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "\.(md|yaml|yml|env|phar|serialize)$">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "^security-check(\.[^.]+)?\.php$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set Content-Security-Policy "frame-ancestors 'self';"
+</IfModule>
+
+# ── 5. 缓存控制 ──
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/html                         "access plus 0 seconds"
+    ExpiresByType text/css                          "access plus 1 year"
+    ExpiresByType application/javascript            "access plus 1 year"
+    ExpiresByType text/javascript                   "access plus 1 year"
+    ExpiresByType image/jpeg                        "access plus 1 year"
+    ExpiresByType image/png                         "access plus 1 year"
+    ExpiresByType image/webp                        "access plus 1 year"
+    ExpiresByType image/gif                         "access plus 1 year"
+    ExpiresByType image/svg+xml                     "access plus 1 year"
+    ExpiresByType image/x-icon                      "access plus 1 year"
+    ExpiresByType font/woff2                        "access plus 1 year"
+    ExpiresByType application/font-woff             "access plus 1 year"
+</IfModule>
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain text/html text/css text/xml
+    AddOutputFilterByType DEFLATE application/xml application/xhtml+xml application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript application/x-javascript application/json
+    AddOutputFilterByType DEFLATE font/ttf font/opentype image/svg+xml
+</IfModule>

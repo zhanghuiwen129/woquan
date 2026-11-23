@@ -1,0 +1,131 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="消息中心 - {{SITE_NAME}}">
+    <title>消息中心 - {{SITE_NAME}}</title>
+    <link rel="stylesheet" href="assets/css/style.css?v=20261117.1">
+    <script>
+        window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/'; window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+        // 根据 URL hash 决定初始激活的 tab：#chat 或默认 notify
+        (function () {
+            try {
+                var h = (window.location.hash || '').replace(/^#/, '');
+                if (h === 'chat') {
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var t = setTimeout(function () {
+                            if (window.app && typeof window.app.switchMessagesTab === 'function') {
+                                window.app.switchMessagesTab('chat');
+                            }
+                        }, 50);
+                    });
+                }
+            } catch (e) {}
+        })();
+    </script>
+</head>
+<body data-page="messages">
+<div class="app-container messages-page">
+    <!-- PC 端左中右三栏布局容器 -->
+    <div class="pc-layout">
+
+        <!-- 左栏 (仅 PC 端显示) -->
+        <aside class="sidebar-left">
+            <div class="sidebar-card user-card">
+                <div class="user-card-avatar">
+                    <img src="assets/images/default-avatar.svg" alt="avatar" id="sidebar-avatar">
+                </div>
+                <div class="user-card-info">
+                    <h3 id="sidebar-nickname">woquan 用户</h3>
+                    <p class="user-bio" id="sidebar-bio">这个人很懒，什么都没留下~</p>
+                </div>
+                <div class="user-card-stats" id="sidebar-stats">
+                    <div class="stat-item">
+                        <span class="stat-num" id="sidebar-stat-posts">0</span>
+                        <span class="stat-label">动态</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num" id="sidebar-stat-following">0</span>
+                        <span class="stat-label">关注</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num" id="sidebar-stat-followers">0</span>
+                        <span class="stat-label">粉丝</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="if(app.checkAuth() && app.user) app.goUser(app.user.username); else app.openAuthModal();">查看主页</button>
+            </div>
+
+            <div class="sidebar-card nav-card">
+                <h4 class="sidebar-title">功能菜单</h4>
+                <ul class="nav-list">
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); location.assign(window.HUBLOG_PAGE_BASE + '/');"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>首页</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); location.assign(window.HUBLOG_PAGE_BASE + '/search');"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>发现</span></a></li>
+                    <li><a href="#" class="nav-link active" onclick="event.preventDefault();"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>消息中心</span><span class="chat-nav-badge" id="chat-unread-badge" style="display:none;">0</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); if(app.checkAuth()) { location.assign(window.HUBLOG_PAGE_BASE + '/chat'); } else { app.openAuthModal(); }"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>私信</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); if(app.checkAuth()) { location.assign(window.HUBLOG_PAGE_BASE + '/favorites'); } else { app.openAuthModal(); }"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><span>我的收藏</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- 中栏主内容 -->
+        <main class="main-content">
+            <!-- 移动端页头 -->
+            <div class="messages-header navbar">
+                <div class="title">消息中心</div>
+                <div class="actions">
+                    <button class="btn-icon" id="btn-mark-all-read" title="全部已读">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><polyline points="20 6 9 17 4 12"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 消息标签页 -->
+            <div class="messages-tabs" id="messages-tabs">
+                <button class="msg-tab active" data-tab="notify">
+                    <span class="msg-tab-title">通知</span>
+                    <em class="msg-tab-badge" id="msg-tab-notify-badge" style="display:none;">0</em>
+                </button>
+                <button class="msg-tab" data-tab="chat">
+                    <span class="msg-tab-title">私信</span>
+                    <em class="msg-tab-badge" id="msg-tab-chat-badge" style="display:none;">0</em>
+                </button>
+            </div>
+
+            <!-- 通知列表区 -->
+            <section class="messages-tab-panel active" id="panel-notify">
+                <div class="notification-list" id="notification-list">
+                    <div class="empty-state">加载中...</div>
+                </div>
+                <div class="msg-load-more" id="msg-notify-more" style="display:none;">加载更多</div>
+            </section>
+
+            <!-- 私信会话区 -->
+            <section class="messages-tab-panel" id="panel-chat">
+                <div class="chat-conversation-list msg-conversations" id="messages-chat-list">
+                    <div class="empty-state">加载中...</div>
+                </div>
+            </section>
+
+            <div style="height: 24px;"></div>
+        </main>
+
+        <!-- 右栏 (仅 PC 端显示) -->
+        <aside class="sidebar-right">
+            <div class="sidebar-card">
+                <h4 class="sidebar-title">站点信息</h4>
+                <div id="sidebar-friend-links"></div>
+            </div>
+        </aside>
+
+    </div>
+    <!-- 结束 pc-layout -->
+
+    <!-- 底部导航 -->
+    <div class="bottom-nav" id="bottom-nav"></div>
+</div>
+
+<script type="module" src="assets/js/app.js?v=20261117.1"></script>
+</body>
+</html>

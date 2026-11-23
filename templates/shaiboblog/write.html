@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="{{PAGE_DESCRIPTION}}">
+<meta name="keywords" content="{{PAGE_KEYWORDS}}">
+<title>{{PAGE_TITLE}}</title>
+<link rel="stylesheet" href="assets/css/style.css?v=20261116.16">
+<link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+<!-- 发布前把 Markdown 渲染为安全 HTML，依赖与详情页一致 -->
+<script src="assets/vendor/markdown/marked.umd.js"></script>
+<script src="assets/vendor/markdown/purify.min.js"></script>
+<script>
+window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/';
+window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+</script>
+</head>
+<body class="page-write">
+<h1 class="sr-only">写文章</h1>
+
+<!-- @include partials/topbar.html -->
+
+<main class="page-main">
+  <section class="page-head compact-head">
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="{{PAGE_BASE}}/" data-home>首页</a><span>/</span><span>写文章</span>
+    </nav>
+    <span class="page-kicker">// NEW POST</span>
+    <h1>写文章</h1>
+    <p>支持 Markdown，专注把想法写完再发布。</p>
+  </section>
+
+  <div class="write-layout">
+    <section class="editor-card">
+      <input class="title-input" id="titleInput" type="text" placeholder="输入文章标题…" maxlength="120" aria-label="文章标题">
+
+      <div class="editor-toolbar" id="toolbar" role="toolbar" aria-label="Markdown 工具栏">
+        <button type="button" data-md="h2" title="二级标题">H2</button>
+        <button type="button" data-md="bold" title="加粗"><b>B</b></button>
+        <button type="button" data-md="italic" title="斜体"><i>I</i></button>
+        <button type="button" data-md="quote" title="引用">&gt;</button>
+        <button type="button" data-md="code" title="代码">&lt;/&gt;</button>
+        <button type="button" data-md="ul" title="列表">•</button>
+        <button type="button" data-md="link" title="链接">Link</button>
+        <span class="toolbar-sep" aria-hidden="true"></span>
+        <button type="button" data-md="image" title="插入图片">图片</button>
+        <button type="button" data-md="video" title="在光标处插入视频">视频</button>
+        <button type="button" data-md="attachment" title="在光标处插入附件">附件</button>
+        <button type="button" data-md="emoji" title="插入表情">表情</button>
+        <span class="toolbar-spacer" aria-hidden="true"></span>
+        <span class="toolbar-hint">Markdown</span>
+      </div>
+
+      <textarea class="md-input" id="bodyInput" placeholder="开始写正文…&#10;&#10;支持 Markdown：## 标题、**加粗**、> 引用、`代码`、- 列表、![图片](url)"></textarea>
+
+      <div class="editor-foot">
+        <span class="word-count"><b id="wordCount">0</b> / 2000 字</span>
+        <span class="editor-state" id="editorState">自动暂存草稿</span>
+      </div>
+    </section>
+
+    <aside class="write-side">
+      <section class="side-card">
+        <div class="side-head"><h3>发布设置</h3><span class="side-mark">//</span></div>
+        <label class="form-row">
+          <span>分类</span>
+          <select id="catSelect"><option value="">不分类</option></select>
+        </label>
+        <label class="form-row">
+          <span>标签</span>
+          <input id="tagInput" type="text" placeholder="输入后回车添加" maxlength="20">
+        </label>
+        <div class="tag-edit-list" id="tagList"></div>
+        <div class="switch-row">
+          <div class="txt">声明原创</div>
+          <label class="switch"><input type="checkbox" id="originalSwitch"><span class="slider"></span></label>
+        </div>
+        <div class="switch-row">
+          <div class="txt">置顶文章</div>
+          <label class="switch"><input type="checkbox" id="pinSwitch"><span class="slider"></span></label>
+        </div>
+        <div class="switch-row">
+          <div class="txt">允许评论</div>
+          <label class="switch"><input type="checkbox" id="commentSwitch" checked><span class="slider"></span></label>
+        </div>
+        <div class="switch-row">
+          <div class="txt">定时发布</div>
+          <label class="switch"><input type="checkbox" id="schedSwitch"><span class="slider"></span></label>
+        </div>
+        <input id="schedTime" type="datetime-local" class="sched-time" hidden>
+      </section>
+
+      <section class="side-card">
+        <div class="side-head"><h3>封面预览</h3><span class="side-mark">//</span></div>
+        <div class="cover-preview" id="coverPreview"><span>正文首图将作为封面</span></div>
+      </section>
+
+      <section class="side-card write-tips">
+        <div class="side-head"><h3>写作提示</h3><span class="side-mark">//</span></div>
+        <ul>
+          <li>正文里插入的第一张本站图片会自动作为封面。</li>
+          <li>用 <code>## 标题</code> 组织段落，阅读体验更好。</li>
+          <li>草稿每 1.5 秒自动保存到本地。</li>
+        </ul>
+      </section>
+
+      <div class="write-actions">
+        <button class="btn-ghost" type="button" data-draft>存草稿</button>
+        <button class="btn-primary" type="button" data-publish>发布文章</button>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<!-- @include partials/footer.html -->
+
+<!-- @include partials/page-tail.html -->
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

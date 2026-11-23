@@ -1,0 +1,37 @@
+        <div id="page-featured" class="hidden">
+            <div class="card">
+                <div class="card-head">
+                    <h3><i data-icon="star"></i>全站精选（首页楼层）</h3>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <select class="form-input" id="featured-slot" style="width:auto;">
+                            <option value="home">首页精选</option>
+                            <option value="circle">圈子精选</option>
+                        </select>
+                        <button class="btn btn-primary" data-action="load-featured">刷新</button>
+                    </div>
+                </div>
+                <p style="font-size:13px;color:var(--text-muted,#888);margin-bottom:12px;">把站内好内容加成「全站精选」，会出现在 App 首页顶部的横向楼层。已在列表中的动态会自动取消推荐。</p>
+                <table>
+                    <thead><tr><th>动态ID</th><th>作者</th><th>内容</th><th>排序</th><th>推荐理由</th><th>操作</th></tr></thead>
+                    <tbody id="featured-table"></tbody>
+                </table>
+                <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+                    <h3 style="font-size:15px;margin-bottom:12px;"><i data-icon="star"></i>新增推荐</h3>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+                        <div class="form-group" style="margin:0;">
+                            <label>动态ID</label>
+                            <input type="number" class="form-input" id="featured-post-id" placeholder="例如 123" style="width:160px;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label>排序（越小越靠前）</label>
+                            <input type="number" class="form-input" id="featured-sort" value="0" style="width:120px;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label>推荐理由</label>
+                            <input type="text" class="form-input" id="featured-remark" placeholder="优质内容打卡帖" style="width:220px;">
+                        </div>
+                        <button class="btn btn-primary" data-action="toggle-featured">加入精选</button>
+                    </div>
+                </div>
+            </div>
+        </div>

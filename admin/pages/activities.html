@@ -1,0 +1,89 @@
+        <div id="page-activities" class="hidden">
+            <div class="card">
+                <div class="card-head">
+                    <h3><i data-icon="target"></i>活动列表</h3>
+                    <button class="btn btn-primary" data-action="open-activity-form">+ 创建活动</button>
+                </div>
+                <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+                    <select class="form-input" id="activity-filter-type" style="max-width:160px;" data-change="load-activities">
+                        <option value="">全部类型</option>
+                        <option value="signup">报名活动</option>
+                    </select>
+                    <select class="form-input" id="activity-filter-status" style="max-width:160px;" data-change="load-activities">
+                        <option value="">全部状态</option>
+                        <option value="open">报名中</option>
+                        <option value="closed">已截止</option>
+                        <option value="ended">已结束</option>
+                    </select>
+                    <input type="text" class="form-input" id="activity-filter-keyword" style="max-width:240px;" placeholder="按标题搜索…" data-keydown="enter-activities">
+                    <button class="btn btn-default" data-action="load-activities">查询</button>
+                </div>
+                <table>
+                    <thead><tr><th>标题</th><th>类型</th><th>所属圈子</th><th>参与</th><th>起止时间</th><th>状态</th><th>操作</th></tr></thead>
+                    <tbody id="activities-table"></tbody>
+                </table>
+                <div id="activity-form" class="hidden" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+                    <h3 style="font-size:16px;margin-bottom:16px;" id="activity-form-title"><i data-icon="target"></i>创建活动</h3>
+                    <input type="hidden" id="activity-id">
+                    <div class="form-group">
+                        <label>活动标题 *</label>
+                        <input type="text" class="form-input" id="activity-title" maxlength="100" placeholder="如：每日读书打卡">
+                    </div>
+                    <div class="form-group">
+                        <label>活动类型 *</label>
+                        <select class="form-input" id="activity-type" data-change="activity-type-change">
+                            <option value="signup">报名活动（用户报名参与）</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>活动说明</label>
+                        <textarea class="form-input" id="activity-description" rows="3" placeholder="活动规则、目标等（最多 2000 字）"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>封面图地址（可选，http(s) 直链）</label>
+                        <input type="text" class="form-input" id="activity-cover" placeholder="https://woquan.top/uploads/xxx.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label>所属圈子</label>
+                        <select class="form-input" id="activity-circle">
+                            <option value="0">全站活动（不限定圈子）</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="activity-mode-group">
+                        <label>人数限制</label>
+                        <select class="form-input" id="activity-mode" data-change="activity-mode-change">
+                            <option value="free">不限人数</option>
+                            <option value="count">限制人数</option>
+                        </select>
+                    </div>
+                    <div class="form-group hidden" id="activity-capacity-group">
+                        <label>人数上限 *</label>
+                        <input type="number" class="form-input" id="activity-capacity" placeholder="如 50" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>开始时间（可留空）</label>
+                        <input type="datetime-local" class="form-input" id="activity-start-at">
+                    </div>
+                    <div class="form-group">
+                        <label>截止时间（可留空）</label>
+                        <input type="datetime-local" class="form-input" id="activity-end-at">
+                    </div>
+                    <div class="form-group">
+                        <label>状态</label>
+                        <select class="form-input" id="activity-status">
+                            <option value="open">报名中（用户可参与）</option>
+                            <option value="closed">已截止（不再开放）</option>
+                            <option value="ended">已结束</option>
+                        </select>
+                    </div>
+                    <div style="display:flex;gap:12px;">
+                        <button class="btn btn-primary" data-action="save-activity">保存</button>
+                        <button class="btn btn-default" data-action="close-activity-form">取消</button>
+                    </div>
+                </div>
+                <p style="margin-top:16px;color:var(--text-3);font-size:12px;">
+                    提示：活动仅保留<b>报名活动</b>类型，用户可报名 / 取消报名（原「打卡活动 / 我的打卡 / 打卡排行」已整体下线，打卡请走「打卡帖」）。
+                    活动创建后 App 端立刻可见（列表接口不走缓存）。删除活动会同时删掉该活动的报名记录，请谨慎操作。
+                </p>
+            </div>
+        </div>

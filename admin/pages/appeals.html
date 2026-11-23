@@ -1,0 +1,28 @@
+        <div id="page-appeals" class="hidden">
+            <div class="card">
+                <div class="card-head"><h3><i data-icon="inbox"></i>申诉处理</h3></div>
+                <div class="tab-bar">
+                    <button class="setting-tab appeal-tab active" data-status="" data-action="switch-appeal-tab">全部</button>
+                    <button class="setting-tab appeal-tab" data-status="pending" data-action="switch-appeal-tab">待处理</button>
+                    <button class="setting-tab appeal-tab" data-status="reviewing" data-action="switch-appeal-tab">处理中</button>
+                    <button class="setting-tab appeal-tab" data-status="resolved" data-action="switch-appeal-tab">已解决</button>
+                    <button class="setting-tab appeal-tab" data-status="rejected" data-action="switch-appeal-tab">已驳回</button>
+                </div>
+                <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+                    <select id="appeal-category-filter" style="padding:6px 10px;border:1px solid var(--border);border-radius:4px;">
+                        <option value="">全部类型</option>
+                        <option value="falseblock">账号误封</option>
+                        <option value="forbidden">内容误下架</option>
+                        <option value="misreview">审核有误</option>
+                        <option value="other">其他</option>
+                    </select>
+                    <input id="appeal-keyword" type="text" placeholder="搜索申诉说明 / 用户名 / 昵称" style="padding:6px 10px;border:1px solid var(--border);border-radius:4px;width:240px;">
+                    <button class="btn btn-primary btn-sm" data-action="search-appeals">搜索</button>
+                </div>
+                <table>
+                    <thead><tr><th>ID</th><th>申诉人</th><th>类型</th><th>申诉对象</th><th>申诉说明</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+                    <tbody id="appeals-table"></tbody>
+                </table>
+                <div class="pagination" id="appeals-pagination"></div>
+            </div>
+        </div>

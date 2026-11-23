@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>写文章 · 一根竿</title>
+<style>
+  :root{
+    --bg:#F3F5F4; --card:#FFFFFF; --ink:#17211E; --body:#2A3330;
+    --sub:#66726E; --line:#E6EAE8; --brand:#0E7C6B; --brand-soft:#E3F1EE;
+    --accent:#E8833A; --radius:12px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.6;
+  }
+  button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
+  input,textarea,select{font-family:inherit}
+
+  /* ===== 顶部导航 ===== */
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topbar-inner{max-width:1080px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
+  .back-btn{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .back-btn svg{width:20px;height:20px}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px}
+  .brand-mark{width:28px;height:28px;border-radius:8px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center}
+  .brand-mark svg{width:17px;height:17px}
+  .topbar-title{font-size:16px;font-weight:600}
+  .topbar-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .btn-ghost{font-size:14px;color:var(--sub);padding:8px 14px;border-radius:18px}
+  .btn-primary{background:var(--brand);color:#fff;font-size:14px;padding:8px 18px;border-radius:18px}
+
+  /* ===== 主体 ===== */
+  .wrap{max-width:1080px;margin:0 auto;padding:16px 16px 120px;display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:960px){.wrap{grid-template-columns:minmax(0,1fr) 320px;gap:20px;padding-top:20px}}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius)}
+
+  /* ===== 编辑区 ===== */
+  .editor{padding:20px 18px}
+  @media(min-width:960px){.editor{padding:24px 28px}}
+
+  .title-input{
+    width:100%;border:none;outline:none;font-size:24px;font-weight:700;line-height:1.4;
+    padding:4px 0 16px;border-bottom:1px solid var(--line);margin-bottom:14px;background:transparent;
+  }
+  .title-input::placeholder{color:#B7C0BC}
+  @media(min-width:960px){.title-input{font-size:28px}}
+
+  /* ===== 工具栏 ===== */
+  .toolbar{
+    display:flex;align-items:center;gap:2px;flex-wrap:wrap;
+    padding:8px 0;border-bottom:1px solid var(--line);margin-bottom:16px;
+  }
+  .tool{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--sub);position:relative}
+  .tool svg{width:18px;height:18px}
+  .tool:hover{background:var(--bg);color:var(--ink)}
+  .tool.active{background:var(--brand-soft);color:var(--brand)}
+  .tool-sep{width:1px;height:20px;background:var(--line);margin:0 6px}
+  .tool-label{font-size:12px;color:var(--sub);padding:0 4px}
+  .tool-color{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--sub);overflow:hidden;position:relative}
+  .tool-color input[type=color]{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .tool-color svg{width:18px;height:18px;pointer-events:none}
+  .word-count{margin-left:auto;font-size:12px;color:var(--sub)}
+
+  /* ===== 富文本编辑区 ===== */
+  .body-input{
+    width:100%;border:none;outline:none;background:transparent;
+    font-size:16px;line-height:1.85;color:var(--body);min-height:320px;
+  }
+  .body-input:empty::before{content:attr(data-placeholder);color:#B7C0BC}
+  .body-input p{margin:0 0 14px}
+  .body-input h1{font-size:24px;font-weight:700;margin:18px 0 12px}
+  .body-input h2{font-size:20px;font-weight:700;margin:18px 0 12px}
+  .body-input h3{font-size:17px;font-weight:700;margin:14px 0 10px}
+  .body-input blockquote{border-left:3px solid var(--brand);background:var(--bg);padding:10px 14px;margin:0 0 14px;color:var(--sub);border-radius:0 8px 8px 0}
+  .body-input pre{background:#1F2A27;color:#E6EAE8;border-radius:10px;padding:12px 14px;font-size:14px;margin:0 0 14px;overflow-x:auto}
+  .body-input ul,.body-input ol{margin:0 0 14px;padding-left:24px}
+  .body-input li{margin-bottom:6px}
+  .body-input img{max-width:100%;border-radius:10px;margin:10px 0}
+  .body-input figure{margin:14px 0}
+  .body-input figure img{margin:0}
+  .body-input figcaption{font-size:12px;color:var(--sub);text-align:center;padding-top:6px}
+  .body-input hr{border:none;border-top:1px solid var(--line);margin:18px 0}
+  .body-input a{color:var(--brand);text-decoration:underline}
+
+  /* ===== 封面（自动提取首图） ===== */
+  .cover-block{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+  .block-label{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+  .block-label .hint{font-size:12px;color:var(--sub);font-weight:400}
+  .cover-current{display:flex;gap:14px;align-items:center}
+  .cover-thumb{width:160px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;flex:none;border:1px solid var(--line);background:var(--bg)}
+  .cover-meta{flex:1;min-width:0}
+  .cover-meta p{font-size:13px;color:var(--sub);margin-bottom:6px}
+  .cover-meta .cover-sub{font-size:12px}
+  .cover-empty{
+    border:1.5px dashed var(--line);border-radius:10px;padding:22px;
+    display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--sub);font-size:13px;
+  }
+  .cover-empty svg{width:26px;height:26px}
+
+  /* ===== 侧栏：发布设置 ===== */
+  .side{display:flex;flex-direction:column;gap:16px}
+  .side-panel{padding:18px}
+  .side-title{font-size:15px;font-weight:700;margin-bottom:14px}
+
+  .cat-list{display:flex;flex-wrap:wrap;gap:8px}
+  .cat-item{font-size:13px;padding:7px 14px;border-radius:16px;background:var(--bg);color:var(--sub);cursor:pointer}
+  .cat-item.active{background:var(--brand-soft);color:var(--brand);font-weight:600}
+
+  .tag-box{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .tag-chip{display:inline-flex;align-items:center;gap:6px;font-size:13px;background:var(--bg);border-radius:14px;padding:5px 10px}
+  .tag-chip button{color:var(--sub);font-size:14px;line-height:1}
+  .tag-input{flex:1;min-width:120px;border:none;outline:none;font-size:13px;padding:5px 4px;background:transparent}
+
+  .summary-input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;resize:none;outline:none;background:var(--bg)}
+  .summary-input:focus{border-color:var(--brand)}
+  .summary-count{font-size:12px;color:var(--sub);text-align:right;margin-top:4px}
+
+  .switch-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0}
+  .switch-row .txt{font-size:14px}
+  .switch-row .desc{font-size:12px;color:var(--sub)}
+  .switch{position:relative;width:42px;height:24px;flex:none}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:#D8DED9;border-radius:24px;transition:.25s;cursor:pointer}
+  .slider::before{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .switch input:checked + .slider{background:var(--brand)}
+  .switch input:checked + .slider::before{transform:translateX(18px)}
+
+  .side-actions{display:flex;flex-direction:column;gap:10px;padding:18px}
+  .btn-block{font-size:15px;border-radius:20px;padding:11px;text-align:center}
+  .btn-block.draft{background:var(--bg);color:var(--sub)}
+  .btn-block.publish{background:var(--brand);color:#fff;font-weight:600}
+
+  /* ===== 移动端底部操作条 ===== */
+  .mobile-bar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;border-top:1px solid var(--line);display:flex;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom))}
+  .mobile-bar .btn-block{flex:1}
+  @media(min-width:960px){.mobile-bar{display:none}}
+
+  .toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:rgba(23,33,30,.88);color:#fff;font-size:14px;padding:10px 18px;border-radius:20px;z-index:100;opacity:0;pointer-events:none;transition:opacity .25s}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ===== 顶部导航 ===== -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <button class="back-btn" data-toast="返回上一页（演示）">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <span class="brand">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 20C8 14 12 10 20 5"/><circle cx="6" cy="18" r="1.6" fill="#fff" stroke="none"/></svg>
+      </span>
+      一根竿
+    </span>
+    <span class="topbar-title">写文章</span>
+    <div class="topbar-actions">
+      <button class="btn-ghost" data-toast="预览文章（演示）">预览</button>
+      <button class="btn-primary" data-publish>发布</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- ===== 编辑区 ===== -->
+  <main class="panel editor">
+    <input class="title-input" id="titleInput" type="text" placeholder="输入文章标题，建议 15–30 字" maxlength="40">
+
+    <!-- 富文本工具栏 -->
+    <div class="toolbar" id="toolbar">
+      <button class="tool" data-cmd="undo" title="撤销"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+      <button class="tool" data-cmd="redo" title="重做"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
+      <span class="tool-sep"></span>
+
+      <button class="tool" data-block="p" title="正文"><span class="tool-label">正文</span></button>
+      <button class="tool" data-block="h2" title="小标题"><span class="tool-label">H2</span></button>
+      <button class="tool" data-block="h3" title="三级标题"><span class="tool-label">H3</span></button>
+      <span class="tool-sep"></span>
+
+      <button class="tool" data-cmd="bold" title="加粗"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5h8a4 4 0 0 1 0 8H7zM7 13h9a4 4 0 0 1 0 8H7z"/></svg></button>
+      <button class="tool" data-cmd="italic" title="斜体"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M19 4h-9M14 20H5M15 4L9 20"/></svg></button>
+      <button class="tool" data-cmd="underline" title="下划线"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 4v6a6 6 0 0 0 12 0V4M5 20h14"/></svg></button>
+      <button class="tool" data-cmd="strikeThrough" title="删除线"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M16 4H7v6a5 5 0 0 0 10 0V4zM5 12h14M7 20h9"/></svg></button>
+      <span class="tool-sep"></span>
+
+      <button class="tool" data-block="blockquote" title="引用"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3h2v5H6"/><path d="M20 11h-4a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3h2v5h-2"/><path d="M3 15c0 3 2 5 5 5M13 15c0 3 2 5 5"/></svg></button>
+      <button class="tool" data-block="pre" title="代码块"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/></svg></button>
+      <span class="tool-sep"></span>
+
+      <button class="tool" data-cmd="insertUnorderedList" title="无序列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1.3" fill="currentColor"/><circle cx="4" cy="12" r="1.3" fill="currentColor"/><circle cx="4" cy="18" r="1.3" fill="currentColor"/></svg></button>
+      <button class="tool" data-cmd="insertOrderedList" title="有序列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 5h1v4M3.5 9h2M4 14l1.5 2-1.5 2h2"/></svg></button>
+      <span class="tool-sep"></span>
+
+      <button class="tool" data-cmd="justifyLeft" title="左对齐"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h10M4 18h16"/></svg></button>
+      <button class="tool" data-cmd="justifyCenter" title="居中对齐"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M4 18h16"/></svg></button>
+      <button class="tool" data-cmd="justifyRight" title="右对齐"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M10 12h10M4 18h16"/></svg></button>
+      <span class="tool-sep"></span>
+
+      <button class="tool" data-insert="image" title="插入图片"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-5 4 4 3-3 6 6"/></svg></button>
+      <button class="tool" data-cmd="createLink" title="插入链接"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg></button>
+      <button class="tool" data-cmd="insertHorizontalRule" title="分割线"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12h16"/></svg></button>
+      <button class="tool" data-insert="emoji" title="表情"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><circle cx="9" cy="9.5" r=".9" fill="currentColor"/><circle cx="15" cy="9.5" r=".9" fill="currentColor"/></svg></button>
+      <span class="tool-sep"></span>
+
+      <label class="tool-color" title="文字颜色">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18h14M7 18l4.5-11L16 18"/><path d="M9.5 14h5"/></svg>
+        <input type="color" id="colorPicker" value="#17211E">
+      </label>
+      <button class="tool" data-cmd="removeFormat" title="清除格式"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7l3 14 3-14M6 4l12 3"/></svg></button>
+
+      <span class="word-count" id="wordCount">0 字</span>
+    </div>
+
+    <!-- 富文本编辑区 -->
+    <div class="body-input" id="bodyInput" contenteditable="true" data-placeholder="开始写作……&#10;&#10;支持分段、标题、引用、列表、配图和链接，正文建议 600 字以上，配图 2–5 张，更容易获得推荐。"></div>
+
+    <!-- 封面：自动提取正文第一张图 -->
+    <div class="cover-block">
+      <div class="block-label">文章封面 <span class="hint">自动提取正文第一张图片，无需单独上传</span></div>
+      <div class="cover-current" id="coverCurrent" hidden>
+        <div class="cover-thumb"><img id="coverImg" alt="封面缩略图"></div>
+        <div class="cover-meta">
+          <p>封面已自动使用正文第一张图片</p>
+          <p class="cover-sub">调整正文图片顺序即可更换封面，无需单独上传</p>
+        </div>
+      </div>
+      <div class="cover-empty" id="coverEmpty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-5 4 4 3-3 6 6"/></svg>
+        暂无封面图，在正文插入图片后将自动作为封面
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== 发布设置侧栏 ===== -->
+  <aside class="side">
+    <section class="panel side-panel">
+      <div class="side-title">所属栏目</div>
+      <div class="cat-list" id="catList">
+        <button class="cat-item active" data-cat="野钓">野钓</button>
+        <button class="cat-item" data-cat="路亚">路亚</button>
+        <button class="cat-item" data-cat="台钓">台钓</button>
+        <button class="cat-item" data-cat="鱼种">鱼种</button>
+        <button class="cat-item" data-cat="装备">装备</button>
+        <button class="cat-item" data-cat="视频">视频</button>
+      </div>
+    </section>
+
+    <section class="panel side-panel">
+      <div class="side-title">文章标签</div>
+      <div class="tag-box" id="tagBox">
+        <span class="tag-chip">鲫鱼<button data-tag-del>×</button></span>
+        <span class="tag-chip">冬季作钓<button data-tag-del>×</button></span>
+        <input class="tag-input" id="tagInput" type="text" placeholder="输入后回车添加">
+      </div>
+    </section>
+
+    <section class="panel side-panel">
+      <div class="side-title">文章摘要</div>
+      <textarea class="summary-input" id="summaryInput" rows="3" maxlength="120" placeholder="用一两句话概括文章看点，将显示在卡片列表上"></textarea>
+      <div class="summary-count"><span id="summaryCount">0</span>/120</div>
+    </section>
+
+    <section class="panel side-panel">
+      <div class="switch-row">
+        <div><div class="txt">原创声明</div><div class="desc">内容为本人原创，未在其他平台首发</div></div>
+        <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+      </div>
+      <div class="switch-row">
+        <div><div class="txt">允许评论</div><div class="desc">读者可在文章下方留言讨论</div></div>
+        <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+      </div>
+      <div class="switch-row">
+        <div><div class="txt">置顶展示</div><div class="desc">在栏目首页优先展示（需审核）</div></div>
+        <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+      </div>
+      <div class="switch-row">
+        <div><div class="txt">定时发布</div><div class="desc">设定时间后自动上线</div></div>
+        <label class="switch"><input type="checkbox" id="schedSwitch"><span class="slider"></span></label>
+      </div>
+    </section>
+
+    <section class="panel side-actions">
+      <button class="btn-block draft" data-draft>存草稿</button>
+      <button class="btn-block publish" data-publish>发布文章</button>
+    </section>
+  </aside>
+</div>
+
+<!-- ===== 移动端底部操作条 ===== -->
+<nav class="mobile-bar">
+  <button class="btn-block draft" data-draft>存草稿</button>
+  <button class="btn-block publish" data-publish>发布文章</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+let toastTimer;
+function toast(msg){
+  const t = $("#toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"),1600);
+}
+
+const editor = $("#bodyInput");
+
+/* ===== 正文示例（便于预览封面自动提取效果，可自行删除） ===== */
+editor.innerHTML =
+  '<p>连续三天守同一片老塘口，水温下降后鲫鱼扎堆浅滩草边，这篇记录出钓时段、钓位选择、窝料饵料和线组调漂的完整过程。</p>' +
+  '<figure><img src="https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/Y2wfbpb1aoFE5nxCtB5cX9nJnjb" alt="示例配图"><figcaption>示例配图：手捧大板鲫</figcaption></figure>' +
+  '<p>下竿后先守二十分钟，没口再轻逗；冬季鱼蹭线多，浮漂小幅度上下蹭不要急着提竿，等出现清晰下顿或顶漂再扬竿。</p>';
+
+/* ===== 封面：自动提取正文第一张图片 ===== */
+function updateCover(){
+  const firstImg = editor.querySelector("img");
+  const current = $("#coverCurrent"), empty = $("#coverEmpty");
+  if(firstImg && firstImg.src){
+    $("#coverImg").src = firstImg.src;
+    current.hidden = false; empty.hidden = true;
+  }else{
+    current.hidden = true; empty.hidden = false;
+  }
+}
+
+/* ===== 字数统计 ===== */
+function updateCount(){
+  const text = editor.innerText.replace(/\s/g,"");
+  $("#wordCount").textContent = text.length + " 字";
+}
+
+/* 监听正文变化：字数 + 封面联动 */
+const observer = new MutationObserver(()=>{ updateCount(); updateCover(); });
+observer.observe(editor, {childList:true, subtree:true, characterData:true, attributes:true});
+editor.addEventListener("input", ()=>{ updateCount(); updateCover(); });
+
+/* ===== 工具栏：富文本命令 ===== */
+function exec(cmd, arg){
+  editor.focus();
+  document.execCommand(cmd, false, arg);
+  updateCount(); updateCover();
+}
+
+$$("#toolbar .tool[data-cmd]").forEach(btn=>{
+  btn.onclick = ()=>{
+    const cmd = btn.dataset.cmd;
+    if(cmd === "createLink"){
+      const url = prompt("输入链接地址：", "https://");
+      if(url) exec("createLink", url);
+      return;
+    }
+    exec(cmd);
+  };
+});
+
+/* 段落格式：正文 / H2 / H3 / 引用 / 代码块 */
+$$("#toolbar .tool[data-block]").forEach(btn=>{
+  btn.onclick = ()=>{
+    const tag = btn.dataset.block;
+    editor.focus();
+    document.execCommand("formatBlock", false, tag === "p" ? "<p>" : `<${tag}>`);
+    updateCount();
+  };
+});
+
+/* 文字颜色 */
+$("#colorPicker").addEventListener("input", e=>exec("foreColor", e.target.value));
+
+/* 插入图片（演示素材轮替） */
+const SAMPLE_IMGS = [
+  "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/DGMIbCWygoEvWRxGelHcpaMqnxc",
+  "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/DYjQb0CJCoiJCvxnv9Fc5WwIn6f",
+  "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/JapFbukAYoUn0fxuqbccorXVnDg",
+  "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/YolHb2VNhowWiYxkqetcKZn6ngv",
+  "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/AC5kbXKWZoVmI5xnlNPcgzBInHd"
+];
+let imgIdx = 0;
+$$("#toolbar .tool[data-insert]").forEach(btn=>{
+  btn.onclick = ()=>{
+    const type = btn.dataset.insert;
+    if(type === "image"){
+      const src = SAMPLE_IMGS[imgIdx % SAMPLE_IMGS.length]; imgIdx++;
+      editor.focus();
+      document.execCommand("insertImage", false, src);
+      toast("图片已插入正文，并自动同步到封面");
+      updateCount(); updateCover();
+    }else{
+      toast("表情面板（演示）");
+    }
+  };
+});
+
+/* ===== 摘要字数 ===== */
+$("#summaryInput").addEventListener("input", e=>{
+  $("#summaryCount").textContent = e.target.value.length;
+});
+
+/* ===== 栏目单选 ===== */
+$("#catList").addEventListener("click", e=>{
+  const item = e.target.closest(".cat-item");
+  if(!item) return;
+  $$(".cat-item").forEach(c=>c.classList.remove("active"));
+  item.classList.add("active");
+  toast(`已选择栏目：${item.dataset.cat}`);
+});
+
+/* ===== 标签添加 / 删除 ===== */
+const tagBox = $("#tagBox");
+const tagInput = $("#tagInput");
+tagInput.addEventListener("keydown", e=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    const val = tagInput.value.trim();
+    if(!val) return;
+    const chip = document.createElement("span");
+    chip.className = "tag-chip";
+    chip.innerHTML = `${val}<button data-tag-del>×</button>`;
+    tagBox.insertBefore(chip, tagInput);
+    tagInput.value = "";
+    toast("标签已添加");
+  }
+});
+tagBox.addEventListener("click", e=>{
+  const del = e.target.closest("[data-tag-del]");
+  if(del){ del.closest(".tag-chip").remove(); toast("标签已移除"); }
+});
+
+/* ===== 定时发布开关 ===== */
+$("#schedSwitch").addEventListener("change", e=>{
+  toast(e.target.checked ? "已开启定时发布（演示）" : "已关闭定时发布");
+});
+
+/* ===== 发布 / 草稿校验 ===== */
+function validate(){
+  const title = $("#titleInput").value.trim();
+  const body = editor.innerText.trim();
+  if(!title){ toast("请先填写文章标题"); $("#titleInput").focus(); return false; }
+  if(body.length < 20){ toast("正文内容过少，建议不少于 20 字"); editor.focus(); return false; }
+  return true;
+}
+$$("[data-publish]").forEach(btn=>{
+  btn.onclick = ()=>{ if(validate()) toast("文章已提交，等待审核（演示）"); };
+});
+$$("[data-draft]").forEach(btn=>{
+  btn.onclick = ()=>toast("草稿已保存（演示）");
+});
+
+/* ===== 初始化 ===== */
+updateCount(); updateCover();
+
+/* ===== 全局 toast ===== */
+document.addEventListener("click", e=>{
+  const el = e.target.closest("[data-toast]");
+  if(el){ e.stopPropagation(); toast(el.dataset.toast); }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+<FilesMatch "\.(php|phtml|phar)$">
+    Order Allow,Deny
+    Allow from none
+</FilesMatch>
+
+Options -Indexes

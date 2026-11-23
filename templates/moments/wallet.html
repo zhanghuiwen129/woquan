@@ -1,0 +1,534 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>会员中心 - {{SITE_NAME}}</title>
+    <link rel="stylesheet" href="assets/css/style.css?v=20261117.1">
+    <script>
+        window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/'; window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+    </script>
+</head>
+<body data-page="favorites">
+<div class="app-container">
+    <!-- PC 端左中右三栏布局容器 -->
+    <div class="pc-layout">
+
+        <!-- 左栏 (仅 PC 端显示) -->
+        <aside class="sidebar-left">
+            <div class="sidebar-card user-card">
+                <div class="user-card-avatar">
+                    <img src="assets/images/default-avatar.svg" alt="avatar" id="sidebar-avatar">
+                </div>
+                <div class="user-card-info">
+                    <h3 id="sidebar-nickname">woquan 用户</h3>
+                    <p class="user-bio" id="sidebar-bio">这个人很懒，什么都没留下~</p>
+                </div>
+                <div class="user-card-stats" id="sidebar-stats">
+                    <div class="stat-item">
+                        <span class="stat-num" id="sidebar-stat-posts">0</span>
+                        <span class="stat-label">动态</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num" id="sidebar-stat-following">0</span>
+                        <span class="stat-label">关注</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num" id="sidebar-stat-followers">0</span>
+                        <span class="stat-label">粉丝</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="if(app.checkAuth() && app.user) app.goUser(app.user.username); else app.openAuthModal();">查看主页</button>
+            </div>
+
+            <div class="sidebar-card nav-card">
+                <h4 class="sidebar-title">功能菜单</h4>
+                <ul class="nav-list">
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); location.assign(window.HUBLOG_PAGE_BASE + '/');"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>首页</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); location.assign(window.HUBLOG_PAGE_BASE + '/search');"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>发现</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); if(app.checkAuth()) { location.assign(window.HUBLOG_PAGE_BASE + '/chat'); } else { app.openAuthModal(); }"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>私信</span><span class="chat-nav-badge" id="chat-unread-badge" style="display:none;">0</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); if(app.checkAuth() && app.user) app.goUser(app.user.username); else app.openAuthModal();"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的主页</span></a></li>
+                    <li><a href="#" class="nav-link active" onclick="event.preventDefault(); if(app.checkAuth()) { location.assign(window.HUBLOG_PAGE_BASE + '/favorites'); } else { app.openAuthModal(); }"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><span>我的收藏</span></a></li>
+                    <li><a href="#" class="nav-link" onclick="event.preventDefault(); if(app.checkAuth()) app.openNotificationModal(); else app.openAuthModal();"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>通知</span><span class="chat-nav-badge" id="sidebar-notify-badge" style="display:none;">0</span></a></li>
+                    <li id="nav-admin" style="display:none;"><a href="#" class="nav-link" onclick="event.preventDefault(); app.goAdmin();"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1-.51 1.65 1.65 0 0 0-1.51 1V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>管理后台</span></a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- 中间主内容区 -->
+        <main class="main-content">
+
+            <!-- 会员中心（V178）：左列 余额/积分 + 会员 + 订单，右列 会员权益 + 流水 -->
+            <div class="wal-wrap">
+                <div class="wal-grid">
+                    <div class="wal-col">
+                        <div class="wal-hero">
+                            <div class="wal-hero-row"><span class="wal-hero-l">钱包余额</span><span class="wal-hero-v">¥<b id="wal-balance">0.00</b></span></div>
+                            <div class="wal-hero-row"><span class="wal-hero-l">积分</span><span class="wal-hero-v">$<b id="wal-points">0</b><span class="wal-hero-s">（可抵 ¥<b id="wal-points-yuan">0</b>）</span></span></div>
+                        </div>
+
+                        <div class="wal-card">
+                            <div class="wal-card-t">开通会员，解锁更高配额</div>
+                            <div id="wal-plans" class="wal-plans">
+                                <div class="wal-empty">加载中…</div>
+                            </div>
+                        </div>
+
+                        <div class="wal-card">
+                            <div class="wal-card-t">我的会员订单</div>
+                            <div id="wal-orders" class="wal-orders"><div class="wal-empty">暂无订单</div></div>
+                        </div>
+                    </div>
+
+                    <div class="wal-col">
+                        <div class="wal-card wal-vip-card">
+                            <div class="wal-vip-hd"><span class="wal-vip-t">会员权益</span><span class="wal-vip-badge" id="wal-vip-tip">普通用户</span></div>
+                            <div class="wal-vip-row"><span>每日可发动态</span><b><span id="wal-quota-post">10</span> 条</b></div>
+                            <div class="wal-vip-row"><span>可创建圈子</span><b><span id="wal-quota-circle">1</span> 个</b></div>
+                            <div class="wal-vip-bene">· 积分抵扣：每 <b id="wal-bene-rate">10</b> 积分抵 ¥1，最多抵订单金额一半</div>
+                            <div class="wal-vip-bene">· 付费圈子可直接凭等级进入</div>
+                            <div class="wal-vip-bene">· 专属头像框 + 青铜 / 白银 / 黄金会员标识，全站头像与昵称处展示</div>
+                        </div>
+
+                        <div class="wal-card">
+                            <div class="wal-card-hd" onclick="walToggle('wal-box', 'wal-fold')">
+                                <span class="wal-card-t">钱包流水</span>
+                                <span class="wal-card-r"><span class="wal-muted" id="wal-count">—</span><span class="wal-fold" id="wal-fold">展开 ▾</span></span>
+                            </div>
+                            <div id="wal-box" style="display:none;">
+                                <div class="wal-sum">
+                                    <div class="wal-sum-i"><span class="wal-sum-l">总收入</span><span class="wal-sum-v in" id="wal-income">+¥0.00</span></div>
+                                    <div class="wal-sum-i"><span class="wal-sum-l">总支出</span><span class="wal-sum-v out" id="wal-expense">-¥0.00</span></div>
+                                </div>
+                                <div class="wal-chips" id="wal-dir-chips"></div>
+                                <div class="wal-chips" id="wal-type-chips"></div>
+                                <div id="wal-logs" class="wal-logs"><div class="wal-empty">加载中…</div></div>
+                                <div class="wal-more" id="wal-more" style="display:none;" onclick="walMore()">加载更多</div>
+                            </div>
+                        </div>
+
+                        <div class="wal-card">
+                            <div class="wal-card-hd" onclick="walToggle('pl-box', 'pl-fold')">
+                                <span class="wal-card-t">积分流水</span>
+                                <span class="wal-card-r"><span class="wal-muted" id="pl-count">—</span><span class="wal-fold" id="pl-fold">展开 ▾</span></span>
+                            </div>
+                            <div id="pl-box" style="display:none;">
+                                <div class="wal-sum">
+                                    <div class="wal-sum-i"><span class="wal-sum-l">累计获得</span><span class="wal-sum-v in" id="pl-earned">+0</span></div>
+                                    <div class="wal-sum-i"><span class="wal-sum-l">累计消耗</span><span class="wal-sum-v out" id="pl-spent">-0</span></div>
+                                </div>
+                                <div class="wal-chips" id="pl-dir-chips"></div>
+                                <div class="wal-chips" id="pl-type-chips"></div>
+                                <div id="pl-logs" class="wal-logs"><div class="wal-empty">加载中…</div></div>
+                                <div class="wal-more" id="pl-more" style="display:none;" onclick="plMore()">加载更多</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 开通会员确认弹窗 -->
+                <div class="wal-modal-mask" id="wal-modal" style="display:none;" onclick="if(event.target===this) walCloseModal()">
+                    <div class="wal-modal">
+                        <div class="wal-modal-hd"><span class="wal-modal-t">开通会员</span><span class="wal-modal-x" onclick="walCloseModal()">✕</span></div>
+                        <div class="wal-modal-plan"><span id="wal-modal-plan-name">—</span><span class="wal-modal-price">原价 <b id="wal-modal-price">¥0.00</b></span></div>
+                        <label class="wal-check wal-modal-check">
+                            <input type="checkbox" id="wal-modal-use-pts" onchange="walModalCalc()" />
+                            <span>用积分抵扣（最多抵 <b id="wal-modal-max">¥0</b>，当前 <span id="wal-modal-pts">0</span> 积分）</span>
+                        </label>
+                        <div class="wal-modal-sum">
+                            <div class="wal-sum-line"><span>原价</span><span id="wal-modal-orig">¥0.00</span></div>
+                            <div class="wal-sum-line"><span>应付</span><span class="wal-modal-pay" id="wal-modal-pay">¥0.00</span></div>
+                            <div class="wal-modal-warn" id="wal-modal-warn" style="display:none;"></div>
+                        </div>
+                        <div class="wal-modal-ft">
+                            <button type="button" class="wal-btn-ghost" onclick="walCloseModal()">取消</button>
+                            <button type="button" class="wal-btn-primary" id="wal-modal-btn" onclick="walConfirmBuy()">确认开通</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <style>
+            .wal-wrap{display:flex;flex-direction:column;gap:16px;}
+            .wal-grid{display:flex;flex-direction:column;gap:16px;}
+            .wal-col{display:flex;flex-direction:column;gap:16px;min-width:0;}
+            .wal-hero{background:linear-gradient(135deg,#2fb86a,#1f8f52);color:#fff;border-radius:12px;padding:16px 18px;}
+            .wal-hero-row{display:flex;justify-content:space-between;align-items:baseline;}
+            .wal-hero-row+.wal-hero-row{margin-top:10px;}
+            .wal-hero-l{font-size:13px;opacity:.9;}
+            .wal-hero-v{font-size:16px;font-weight:700;}
+            .wal-hero-v b{font-size:22px;margin:0 1px;}
+            .wal-hero-s{font-size:12px;font-weight:400;opacity:.9;}
+            .wal-card{background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
+            .wal-card-t{font-size:15px;font-weight:600;margin-bottom:12px;}
+            .wal-card-hd{display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+            .wal-card-hd .wal-card-t{margin-bottom:0;}
+            .wal-card-r{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+            .wal-muted{font-size:12px;color:#9a9a9a;}
+            .wal-fold{font-size:12px;color:#2fb86a;}
+            .wal-vip-card{background:linear-gradient(135deg,#2fb86a,#1f8f52);color:#fff;}
+            .wal-vip-hd{display:flex;justify-content:space-between;align-items:center;}
+            .wal-vip-t{font-size:16px;font-weight:700;}
+            .wal-vip-badge{font-size:12px;background:rgba(255,255,255,.18);border-radius:999px;padding:4px 12px;flex-shrink:0;}
+            .wal-vip-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;}
+            .wal-vip-row span{font-size:13px;opacity:.95;}
+            .wal-vip-row b{font-size:15px;}
+            .wal-vip-bene{font-size:12px;opacity:.85;line-height:1.8;margin-top:8px;}
+            .wal-sum{display:flex;background:rgba(0,0,0,.04);border-radius:10px;padding:12px 6px;margin:12px 0 10px;}
+            .wal-sum-i{flex:1;display:flex;flex-direction:column;align-items:center;}
+            .wal-sum-i+.wal-sum-i{border-left:1px solid #eceef0;}
+            .wal-sum-l{font-size:12px;color:#9a9a9a;}
+            .wal-sum-v{font-size:16px;font-weight:700;margin-top:4px;}
+            .wal-sum-v.in{color:#2fb86a;}
+            .wal-sum-v.out{color:#e05b4a;}
+            .wal-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+            .wal-chip{padding:5px 14px;border-radius:999px;background:#f2f3f5;color:#6b7075;font-size:12px;cursor:pointer;}
+            .wal-chip.on{background:#e8f6ee;color:#1f8f52;font-weight:600;}
+            .wal-log{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f5f5f5;}
+            .wal-log:last-child{border-bottom:none;}
+            .wal-log-main{min-width:0;}
+            .wal-log-t{display:block;font-size:14px;}
+            .wal-log-main small{display:block;font-size:12px;color:#9a9a9a;margin-top:2px;}
+            .wal-log-amt{font-size:15px;font-weight:600;color:#2fb86a;white-space:nowrap;margin-left:12px;}
+            .wal-log-amt.minus{color:#e05b4a;}
+            .wal-more{text-align:center;padding:10px 0 2px;font-size:13px;color:#2fb86a;cursor:pointer;}
+            .wal-plan{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;}
+            .wal-plan:last-of-type{border-bottom:none;}
+            .wal-plan-t{font-size:14px;font-weight:600;}
+            .wal-plan-d{font-size:12px;color:#8e8e93;margin-top:2px;}
+            .wal-plan-price{font-size:14px;color:#2fb86a;font-weight:600;}
+            .wal-plan-price.cur{color:#8e8e93;font-weight:400;}
+            .wal-check{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:12px;color:#555;cursor:pointer;}
+            .wal-empty{font-size:13px;color:#9a9a9a;padding:6px 0;}
+            /* 开通会员确认弹窗 */
+            .wal-modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;}
+            .wal-modal{background:#fff;border-radius:16px;width:100%;max-width:420px;box-shadow:0 12px 48px rgba(0,0,0,.2);overflow:hidden;}
+            .wal-modal-hd{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;}
+            .wal-modal-t{font-size:17px;font-weight:700;}
+            .wal-modal-x{font-size:15px;color:#9a9a9a;cursor:pointer;padding:4px 8px;line-height:1;}
+            .wal-modal-x:hover{color:#555;}
+            .wal-modal-plan{display:flex;justify-content:space-between;align-items:baseline;padding:0 20px;font-size:15px;font-weight:600;}
+            .wal-modal-price{font-size:13px;color:#1f8f52;font-weight:600;}
+            .wal-modal-price b{font-size:16px;}
+            .wal-modal-check{padding:0 20px;margin-top:12px;}
+            .wal-modal-check b{color:#1f8f52;}
+            .wal-modal-sum{margin-top:16px;padding:14px 20px;border-top:1px solid #f0f0f0;}
+            .wal-sum-line{display:flex;justify-content:space-between;font-size:13px;color:#8e8e93;}
+            .wal-sum-line+.wal-sum-line{margin-top:8px;}
+            .wal-modal-pay{color:#2fb86a;font-size:18px;font-weight:700;}
+            .wal-modal-warn{margin-top:10px;font-size:13px;color:#e05b4a;}
+            .wal-modal-ft{display:flex;justify-content:flex-end;gap:12px;padding:14px 20px 18px;}
+            .wal-btn-ghost{padding:9px 26px;border-radius:10px;border:none;background:#f2f3f5;color:#555;font-size:14px;cursor:pointer;}
+            .wal-btn-ghost:hover{background:#e8eaed;}
+            .wal-btn-primary{padding:9px 26px;border-radius:10px;border:none;background:#2fb86a;color:#fff;font-size:14px;font-weight:600;cursor:pointer;}
+            .wal-btn-primary:hover{background:#28a55f;}
+            .wal-btn-primary:disabled{background:#8fd6ae;cursor:not-allowed;}
+            .wal-order{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid #f5f5f5;}
+            .wal-order:last-child{border-bottom:none;}
+            .wal-order span:last-child{color:#8e8e93;}
+            /* PC 端：左右两栏 */
+            @media (min-width: 1024px) {
+                .wal-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;}
+            }
+            @media (max-width: 768px) { .wal-wrap{padding:12px;} }
+            </style>
+    </div>
+    <!-- 结束 pc-layout -->
+
+    <!-- 底部导航 -->
+
+<script>
+
+const WAL = {
+    plans: [],
+    points: 0,
+    rate: 10,
+    balance: 0,
+    vipLevel: 0,
+    vipExpire: ''
+};
+
+// V178：流水筛选状态（钱包 / 积分各一份；summary 为全量统计，不随筛选变化）
+const walLog = { dir: 'all', type: '', limit: 20, rows: [], summary: null };
+const plLog = { dir: 'all', type: '', limit: 20, rows: [], summary: null };
+const LOG_PAGE_MAX = 50;
+
+const DIRS = [['all', '全部'], ['income', '收入'], ['expense', '支出']];
+const WAL_TYPES = [['', '全部类型'], ['recharge', '充值'], ['consume', '消费'], ['income', '收入'], ['adjust', '调整']];
+const PL_TYPES = [['', '全部类型'], ['signin', '签到'], ['task', '任务'], ['spend', '抵扣'], ['reward', '奖励'], ['refund', '退款'], ['post', '发帖'], ['comment', '评论'], ['adjust', '调整']];
+const WAL_TYPE_TEXT = { recharge: '充值', consume: '消费', adjust: '后台调整', income: '收入' };
+const PL_TYPE_TEXT = { signin: '签到', task: '完成任务', spend: '积分抵扣', reward: '奖励', adjust: '后台调整', refund: '退款', post: '发布动态', comment: '评论' };
+
+function walTypeText(t) { return WAL_TYPE_TEXT[t] || t; }
+function plTypeText(t) { return PL_TYPE_TEXT[t] || t; }
+
+function walText(el, v) { const n = document.getElementById(el); if (n) n.textContent = v; }
+
+function walFmtTime(s) { return String(s || '').replace('T', ' ').slice(0, 16); }
+
+function walChips(boxId, options, current, onPick) {
+    const box = document.getElementById(boxId);
+    if (!box) return;
+    box.innerHTML = options.map((o) =>
+        '<span class="wal-chip' + (o[0] === current ? ' on' : '') + '" data-k="' + o[0] + '">' + o[1] + '</span>'
+    ).join('');
+    box.querySelectorAll('.wal-chip').forEach((el) => {
+        el.addEventListener('click', () => onPick(el.getAttribute('data-k')));
+    });
+}
+
+function walToggle(boxId, foldId) {
+    const box = document.getElementById(boxId);
+    const fold = document.getElementById(foldId);
+    if (!box || !fold) return;
+    const show = box.style.display === 'none';
+    box.style.display = show ? '' : 'none';
+    fold.textContent = show ? '收起 ▴' : '展开 ▾';
+}
+
+function walRenderPlans() {
+    const box = document.getElementById('wal-plans');
+    if (!box) return;
+    if (!WAL.plans.length) { box.innerHTML = '<div class="wal-empty">暂时没有可开通的会员档位</div>'; return; }
+    box.innerHTML = WAL.plans.map((p) => {
+        const price = Number(p.price || 0);
+        const cur = p.current ? ' cur' : '';
+        return '<div class="wal-plan' + (cur ? ' cur-plan' : '') + '" onclick="walOpenBuy(' + p.level + ',' + price + ')">' +
+            '<div><div class="wal-plan-t">Lv' + p.level + ' · ' + p.days + ' 天</div>' +
+            '<div class="wal-plan-d">发布动态与建圈配额提升</div></div>' +
+            '<div class="wal-plan-price' + cur + '">' + (p.current ? '当前等级' : '¥' + price) + '</div></div>';
+    }).join('');
+}
+
+function walRenderOrders(orders) {
+    const box = document.getElementById('wal-orders');
+    if (!box) return;
+    const list = Array.isArray(orders) ? orders : (orders && orders.list) || [];
+    if (!list.length) { box.innerHTML = '<div class="wal-empty">暂无订单</div>'; return; }
+    box.innerHTML = list.map((o) =>
+        '<div class="wal-order"><span>Lv' + o.level + ' · ' + o.days + '天</span>' +
+        '<span>¥' + o.amount + ' · ' + String(o.expire_at || o.created_at || '').slice(0, 10) + '</span></div>'
+    ).join('');
+}
+
+// ==================== V178：开通会员确认弹窗 ====================
+let walBuyCtx = null; // {level, days, price, cut}
+
+function walOpenBuy(level, price) {
+    if (!app.checkAuth()) return app.openAuthModal();
+    const plan = WAL.plans.find((p) => Number(p.level) === level) || {};
+    walBuyCtx = { level: level, days: plan.days || [30, 90, 365][level - 1] || 30, price: price, cut: 0 };
+    walText('wal-modal-plan-name', 'Lv' + level + ' 会员 · ' + walBuyCtx.days + ' 天');
+    walText('wal-modal-price', '¥' + price.toFixed(2));
+    walText('wal-modal-max', '¥' + Math.floor(price * 0.5));
+    walText('wal-modal-pts', WAL.points);
+    const cb = document.getElementById('wal-modal-use-pts');
+    cb.checked = false;
+    cb.disabled = WAL.points <= 0;
+    walModalCalc();
+    document.getElementById('wal-modal').style.display = '';
+}
+
+function walModalCalc() {
+    if (!walBuyCtx) return;
+    const price = walBuyCtx.price;
+    const cb = document.getElementById('wal-modal-use-pts');
+    const cut = (cb.checked && !cb.disabled)
+        ? Math.min(Math.floor(WAL.points / (WAL.rate || 10)), Math.floor(price * 0.5)) : 0;
+    const pay = Math.max(0, Math.round((price - cut) * 100) / 100);
+    walBuyCtx.cut = cut;
+    walText('wal-modal-orig', '¥' + price.toFixed(2));
+    walText('wal-modal-pay', '¥' + pay.toFixed(2));
+    const warn = document.getElementById('wal-modal-warn');
+    const btn = document.getElementById('wal-modal-btn');
+    const lack = WAL.balance < pay;
+    warn.style.display = lack ? '' : 'none';
+    if (lack) warn.textContent = '余额不足，还差 ¥' + (pay - WAL.balance).toFixed(2) + '。请联系站长充值入账后再开通。';
+    btn.disabled = lack;
+    btn.textContent = lack ? '余额不足' : '确认开通';
+}
+
+function walCloseModal() {
+    document.getElementById('wal-modal').style.display = 'none';
+    walBuyCtx = null;
+}
+
+async function walConfirmBuy() {
+    if (!walBuyCtx) return;
+    const usePts = walBuyCtx.cut > 0 ? Math.min(WAL.points, walBuyCtx.cut * (WAL.rate || 10)) : 0;
+    try {
+        await app.request('/pay/vip-buy', { method: 'POST', body: { level: walBuyCtx.level, use_points: usePts } });
+        walCloseModal();
+        await walLoadAll();
+        walLoadLogs();
+        app.showToast('开通成功');
+    } catch (e) {
+        app.showToast(e.message || '开通失败');
+    }
+}
+
+// 内置默认档位（与后端 VIP_DAYS/默认价一致）——授权模块未解锁（vip-info 402）时兜底展示
+const WAL_DEFAULT_PLANS = [
+    { level: 1, days: 30, price: 20, current: false },
+    { level: 2, days: 90, price: 50, current: false },
+    { level: 3, days: 365, price: 180, current: false }
+];
+
+async function walLoadAll() {
+    // 余额/积分：优先钱包接口；授权未解锁（402）时兜底 /auth/me
+    try {
+        const w = await app.request('/pay/wallet?limit=5');
+        WAL.points = Number(w.points || 0);
+        WAL.rate = Number(w.point_rate || 10);
+        WAL.balance = Number(w.balance || 0);
+        WAL.vipLevel = Number(w.vip_level || 0);
+    } catch (e) {
+        try {
+            const me = await app.request('/auth/me');
+            WAL.points = Number(me.points || 0);
+            WAL.balance = Number(me.balance || 0);
+            WAL.vipLevel = Number(me.vip_level || 0);
+        } catch (e2) { /* 保持默认值 */ }
+    }
+    walText('wal-bene-rate', WAL.rate || 10);
+    walText('wal-balance', WAL.balance.toFixed(2));
+    walText('wal-points', WAL.points);
+    walText('wal-points-yuan', Math.floor(WAL.points / (WAL.rate || 10)));
+
+    // 会员档位与权益：优先 vip-info；402 时用内置档位兜底
+    let infoOk = false;
+    try {
+        const v = await app.request('/pay/vip-info');
+        WAL.plans = v.plans || [];
+        WAL.vipLevel = Number(v.vip_level || WAL.vipLevel);
+        WAL.points = Number(v.points != null ? v.points : WAL.points);
+        WAL.rate = Number(v.point_rate || WAL.rate);
+        const pr = v.privileges || {};
+        walText('wal-quota-post', pr.post_daily != null ? pr.post_daily : 10);
+        walText('wal-quota-circle', pr.circle_create != null ? pr.circle_create : 1);
+        infoOk = WAL.plans.length > 0;
+    } catch (e) { /* 402 兜底 */ }
+    if (!infoOk) {
+        WAL.plans = WAL_DEFAULT_PLANS.map((p) => Object.assign({}, p, { current: p.level === WAL.vipLevel }));
+        walText('wal-quota-post', 10);
+        walText('wal-quota-circle', 1);
+    }
+    document.getElementById('wal-modal-use-pts').disabled = WAL.points <= 0;
+    walRenderPlans();
+
+    try {
+        const o = await app.request('/pay/vip-orders');
+        walRenderOrders(o);
+    } catch (e) { walRenderOrders([]); }
+}
+
+// ==================== V178：钱包流水 / 积分流水 ====================
+function walRenderLogs() {
+    const box = document.getElementById('wal-logs');
+    if (!box) return;
+    if (!walLog.rows.length) {
+        box.innerHTML = '<div class="wal-empty">还没有钱包流水</div>';
+    } else {
+        box.innerHTML = walLog.rows.map((l) => {
+            const n = Number(l.amount);
+            return '<div class="wal-log"><div class="wal-log-main"><span class="wal-log-t">' + (l.remark || walTypeText(l.type)) + '</span>' +
+                '<small>' + walTypeText(l.type) + ' · ' + walFmtTime(l.created_at) + '</small></div>' +
+                '<span class="wal-log-amt' + (n < 0 ? ' minus' : '') + '">' + (n >= 0 ? '+' : '') + n.toFixed(2) + '</span></div>';
+        }).join('');
+    }
+    const s = walLog.summary || {};
+    walText('wal-count', s.count != null ? s.count + ' 笔' : '—');
+    walText('wal-income', '+¥' + Number(s.income || 0).toFixed(2));
+    walText('wal-expense', '-¥' + Number(s.expense || 0).toFixed(2));
+    const more = document.getElementById('wal-more');
+    if (more) more.style.display = (walLog.rows.length && walLog.rows.length < Number(s.count || 0) && walLog.limit < LOG_PAGE_MAX) ? '' : 'none';
+    walChips('wal-dir-chips', DIRS, walLog.dir, (k) => { if (k !== walLog.dir) { walLog.dir = k; walLog.limit = 20; walLoadLogs(); } });
+    walChips('wal-type-chips', WAL_TYPES, walLog.type, (k) => { if (k !== walLog.type) { walLog.type = k; walLog.limit = 20; walLoadLogs(); } });
+}
+
+async function walLoadLogs() {
+    try {
+        const qs = 'limit=' + walLog.limit + '&direction=' + encodeURIComponent(walLog.dir) +
+            (walLog.type ? '&type=' + encodeURIComponent(walLog.type) : '');
+        const w = await app.request('/pay/wallet?' + qs);
+        walLog.rows = Array.isArray(w.logs) ? w.logs : [];
+        walLog.summary = w.summary || null;
+        // 筛选请求同样返回余额/积分，顺手同步卡头
+        if (w.balance != null) { WAL.balance = Number(w.balance); walText('wal-balance', WAL.balance.toFixed(2)); }
+        if (w.points != null) {
+            WAL.points = Number(w.points);
+            walText('wal-points', WAL.points);
+            walText('wal-points-yuan', Math.floor(WAL.points / (WAL.rate || 10)));
+        }
+    } catch (e) {
+        walLog.rows = [];
+        walLog.summary = null;
+    }
+    walRenderLogs();
+}
+
+function plRenderLogs() {
+    const box = document.getElementById('pl-logs');
+    if (!box) return;
+    if (!plLog.rows.length) {
+        box.innerHTML = '<div class="wal-empty">还没有积分流水</div>';
+    } else {
+        box.innerHTML = plLog.rows.map((l) => {
+            const n = Number(l.points);
+            return '<div class="wal-log"><div class="wal-log-main"><span class="wal-log-t">' + (l.remark || plTypeText(l.type)) + '</span>' +
+                '<small>' + plTypeText(l.type) + ' · ' + walFmtTime(l.created_at) + '</small></div>' +
+                '<span class="wal-log-amt' + (n < 0 ? ' minus' : '') + '">' + (n > 0 ? '+' : '') + n + '</span></div>';
+        }).join('');
+    }
+    const s = plLog.summary || {};
+    walText('pl-count', s.count != null ? s.count + ' 笔' : '—');
+    walText('pl-earned', '+' + Number(s.earned || 0));
+    walText('pl-spent', '-' + Number(s.spent || 0));
+    const more = document.getElementById('pl-more');
+    if (more) more.style.display = (plLog.rows.length && plLog.rows.length < Number(s.count || 0) && plLog.limit < LOG_PAGE_MAX) ? '' : 'none';
+    walChips('pl-dir-chips', DIRS, plLog.dir, (k) => { if (k !== plLog.dir) { plLog.dir = k; plLog.limit = 20; plLoadLogs(); } });
+    walChips('pl-type-chips', PL_TYPES, plLog.type, (k) => { if (k !== plLog.type) { plLog.type = k; plLog.limit = 20; plLoadLogs(); } });
+}
+
+async function plLoadLogs() {
+    try {
+        const qs = 'limit=' + plLog.limit + '&direction=' + encodeURIComponent(plLog.dir) +
+            (plLog.type ? '&type=' + encodeURIComponent(plLog.type) : '');
+        const d = await app.request('/points/logs?' + qs);
+        plLog.rows = Array.isArray(d && d.list) ? d.list : (Array.isArray(d) ? d : []);
+        plLog.summary = (d && d.summary) || null;
+    } catch (e) {
+        plLog.rows = [];
+        plLog.summary = null;
+    }
+    plRenderLogs();
+}
+
+function walMore() { if (walLog.limit < LOG_PAGE_MAX) { walLog.limit = LOG_PAGE_MAX; walLoadLogs(); } }
+function plMore() { if (plLog.limit < LOG_PAGE_MAX) { plLog.limit = LOG_PAGE_MAX; plLoadLogs(); } }
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const wait = async () => { for (let i = 0; i < 50; i++) { if (window.app && app.siteConfig !== null) return; await new Promise((r) => setTimeout(r, 100)); } };
+    await wait();
+    if (!window.app) return;
+    const box = document.getElementById('wal-plans');
+    if (app.authed === false) {
+        if (box) box.innerHTML = '<div class="wal-empty">请先登录后再查看会员与余额</div>';
+        document.getElementById('wal-orders').innerHTML = '<div class="wal-empty">请先登录</div>';
+        document.getElementById('wal-logs').innerHTML = '<div class="wal-empty">请先登录</div>';
+        document.getElementById('pl-logs').innerHTML = '<div class="wal-empty">请先登录</div>';
+        document.getElementById('wal-count').textContent = '—';
+        document.getElementById('pl-count').textContent = '—';
+        return;
+    }
+    document.getElementById('wal-modal-use-pts').addEventListener('change', walModalCalc);
+    await walLoadAll();
+    walLoadLogs();
+    plLoadLogs();
+});
+
+</script>
+
+<script type="module" src="assets/js/app.js?v=20261117.1"></script>
+</body>
+</html>

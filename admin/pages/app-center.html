@@ -1,0 +1,82 @@
+        <div id="page-app-center" class="hidden">
+            <div class="card">
+                <div class="tab-bar">
+                    <button class="ext-tab active" data-ext-tab="ac-market" data-action="switch-appcenter-tab"><i data-icon="store"></i> 应用市场</button>
+                    <button class="ext-tab" data-ext-tab="ac-installed" data-action="switch-appcenter-tab"><i data-icon="puzzle"></i> 已安装</button>
+                    <button class="ext-tab" data-ext-tab="ac-license" data-action="switch-appcenter-tab"><i data-icon="key"></i> 购买码</button>
+                    <button class="ext-tab" data-ext-tab="ac-settings" data-action="switch-appcenter-tab"><i data-icon="settings"></i> 设置与校验</button>
+                </div>
+
+                <!-- 应用市场 -->
+                <div id="ac-market">
+                    <div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <input type="text" id="ac-search" class="form-input" placeholder="搜索主题 / 插件" style="max-width:260px;" data-input="ac-search">
+                        <button class="btn" data-action="ac-refresh-apps">刷新列表</button>
+                        <button class="btn" data-action="ac-check-updates">检查更新</button>
+                        <span id="ac-market-status" style="font-size:12px;color:var(--text-muted,#888);"></span>
+                    </div>
+                    <div id="ac-apps" style="display:flex;flex-wrap:wrap;gap:14px;">
+                        <div style="font-size:13px;color:var(--text-muted,#888);">加载中…</div>
+                    </div>
+                    <div id="ac-updates" class="hidden" style="margin-top:18px;padding:12px;background:var(--notice-bg);border-radius:6px;font-size:13px;"></div>
+                </div>
+
+                <!-- 已安装 -->
+                <div id="ac-installed" class="hidden">
+                    <div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;">
+                        <button class="btn" data-action="ac-refresh-installed">刷新</button>
+                        <span style="font-size:12px;color:var(--text-muted,#888);">来自应用中心安装的扩展可在线卸载；卸载前自动备份到 cache 目录。</span>
+                    </div>
+                    <table>
+                        <thead><tr><th>名称</th><th>类型</th><th>版本</th><th>来源</th><th>完整性</th><th>操作</th></tr></thead>
+                        <tbody id="ac-installed-table"><tr><td colspan="6" style="color:var(--text-muted,#888);">加载中…</td></tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 购买码 -->
+                <div id="ac-license" class="hidden">
+                    <div style="padding:14px;background:var(--notice-bg);border-radius:6px;font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px;">
+                        在应用中心购买主题或插件后，会得到一个购买码。在此激活后，本站即可下载安装该应用。
+                        一个购买码可激活的站点数由购买时决定。
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:20px;">
+                        <input type="text" id="ac-license-key" class="form-input" placeholder="输入购买码，如 LIC-XXXX-XXXX" style="max-width:320px;">
+                        <button class="btn btn-primary" data-action="ac-activate">激活购买码</button>
+                    </div>
+                    <h3 style="font-size:14px;margin:0 0 10px;">本站已激活授权</h3>
+                    <table>
+                        <thead><tr><th>应用</th><th>购买码</th><th>到期时间</th><th>状态</th></tr></thead>
+                        <tbody id="ac-licenses-table"><tr><td colspan="4" style="color:var(--text-muted,#888);">加载中…</td></tr></tbody>
+                    </table>
+                </div>
+
+                <!-- 设置与校验 -->
+                <div id="ac-settings" class="hidden">
+                    <div style="padding:14px;background:var(--notice-bg);border-radius:6px;font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px;">
+                        <strong>接入设置</strong><br>
+                        填写应用中心 API 地址（形如 http://你的域名/api.php），再点「注册新站点」。
+                        注册成功后本站会拿到 site_key / site_secret 并保存在本机 settings 中，之后即可浏览市场、在线安装。
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+                        <input type="text" id="ac-api" class="form-input" placeholder="http://127.0.0.1:8080/api.php" style="width:340px;max-width:100%;">
+                        <button class="btn" data-action="ac-save-api">保存地址</button>
+                        <button class="btn" data-action="ac-ping">测试连接</button>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+                        <input type="text" id="ac-site-name" class="form-input" placeholder="站点名称（注册用）" style="max-width:240px;">
+                        <button class="btn btn-primary" data-action="ac-register">注册新站点</button>
+                    </div>
+                    <div id="ac-config-info" style="font-size:13px;color:var(--text-secondary);line-height:1.9;padding:12px;border:1px solid var(--border);border-radius:6px;margin-bottom:20px;"></div>
+
+                    <h3 style="font-size:14px;margin:0 0 10px;">源码完整性校验</h3>
+                    <div style="font-size:12px;color:var(--text-muted,#888);margin-bottom:12px;line-height:1.7;">
+                        对已安装扩展建立 sha256 基线后，可随时校验文件是否被修改 / 新增 / 删除。首次使用请先「建立基线」。
+                    </div>
+                    <table>
+                        <thead><tr><th>类型</th><th>标识</th><th>文件数</th><th>建立时间</th><th>操作</th></tr></thead>
+                        <tbody id="ac-baselines-table"><tr><td colspan="5" style="color:var(--text-muted,#888);">加载中…</td></tr></tbody>
+                    </table>
+                    <div id="ac-verify-result" class="hidden" style="margin-top:14px;padding:12px;border-radius:6px;font-size:13px;line-height:1.8;"></div>
+                </div>
+            </div>
+        </div>

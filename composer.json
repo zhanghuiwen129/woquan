@@ -1,0 +1,26 @@
+{
+    "name": "aiwoquan/hublog",
+    "description": "Hublog - a PHP community system with zero runtime dependencies",
+    "license": "Apache-2.0",
+    "repositories": {
+        "packagist": {
+            "type": "composer",
+            "url": "https://repo.huaweicloud.com/repository/php"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5"
+    },
+    "scripts": {
+        "ci": "@php scripts/ci.php",
+        "lint": "@php scripts/ci.php --lint-only",
+        "test": "@php vendor/bin/phpunit -c phpunit.xml.dist --testsuite unit --no-coverage",
+        "test:behavior": "@php vendor/bin/phpunit -c phpunit.xml.dist --testsuite behavior --no-coverage",
+        "test:integration": "@php vendor/bin/phpunit -c phpunit.xml.dist --testsuite integration --no-coverage",
+        "docs:routes": "@php scripts/parse_routes.php --pretty",
+        "docs:check": "@php scripts/check_route_docs.php"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

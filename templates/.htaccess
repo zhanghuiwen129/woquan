@@ -1,0 +1,13 @@
+# 禁止直接访问模板 HTML/PHP 文件，静态资源（CSS/JS/图片）仍可正常加载
+<IfModule mod_authz_core.c>
+    <FilesMatch "\.(html|php)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+    <FilesMatch "\.(html|php)$">
+        Order deny,allow
+        Deny from all
+    </FilesMatch>
+</IfModule>

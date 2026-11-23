@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  woquan favicon · 同心圆环
+  设计语言：与 .user-cover .cover-bg 同色系（#667eea → #764ba2），
+  两个交叠圆环象征"圈子 · 社交连接"。
+  viewBox 0 0 64 64，浏览器在 16x16 / 32x32 / 180x180 等任意尺寸下都能保持清晰。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="woquan">
+    <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#667eea"/>
+            <stop offset="100%" stop-color="#764ba2"/>
+        </linearGradient>
+    </defs>
+    <!-- 圆角矩形底 -->
+    <rect width="64" height="64" rx="14" ry="14" fill="url(#bg)"/>
+    <!-- 两个交叠圆环：左环更深白、右环半透，重叠处自然形成韦恩图风格的"交集" -->
+    <circle cx="26" cy="32" r="14" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-opacity="0.95"/>
+    <circle cx="38" cy="32" r="14" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-opacity="0.65"/>
+</svg>

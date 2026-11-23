@@ -1,0 +1,37 @@
+        <div id="page-stats" class="hidden">
+            <div class="card">
+                <div class="card-head">
+                    <h3><i data-icon="chart"></i>数据统计</h3>
+                </div>
+                <div class="toolbar stats-date-bar">
+                    <label>开始</label>
+                    <input type="date" class="form-input" id="stats-start-date">
+                    <label>结束</label>
+                    <input type="date" class="form-input" id="stats-end-date">
+                    <button class="btn btn-primary" data-action="load-stats"><i data-icon="search"></i>查询</button>
+                </div>
+                <div class="stats-grid" id="stats-summary-grid"></div>
+            </div>
+            <div class="card">
+                <h3><i data-icon="activity"></i>动态发布趋势</h3>
+                <div id="stats-chart-container" style="width:100%;overflow-x:auto;">
+                    <svg id="stats-trend-chart" viewBox="0 0 680 300" style="width:100%;min-width:400px;height:300px;"></svg>
+                </div>
+            </div>
+            <div class="section-grid stats-two-col">
+                <div class="card">
+                    <h3><i data-icon="pie"></i>分类分布</h3>
+                    <table>
+                        <thead><tr><th>分类名称</th><th>动态数</th><th>占比</th></tr></thead>
+                        <tbody id="stats-category-table"></tbody>
+                    </table>
+                </div>
+                <div class="card">
+                    <h3><i data-icon="star"></i>热门话题 TOP 10</h3>
+                    <table>
+                        <thead><tr><th>排名</th><th>话题</th><th>动态数</th></tr></thead>
+                        <tbody id="stats-topics-table"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>

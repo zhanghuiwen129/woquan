@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>登录 · 一根竿</title>
+<style>
+  :root{
+    --bg:#F3F5F4;--card:#FFF;--ink:#17211E;--sub:#66726E;--line:#E6EAE8;
+    --brand:#0E7C6B;--brand-soft:#E3F1EE;--accent:#E8833A;--radius:12px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;min-height:100vh}
+  button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
+  input{font-family:inherit}
+
+  .page{min-height:100vh;display:grid;grid-template-columns:1fr}
+  @media(min-width:960px){.page{grid-template-columns:1.1fr 1fr}}
+
+  /* 左侧品牌区（PC） */
+  .brand-side{position:relative;display:none;overflow:hidden}
+  @media(min-width:960px){.brand-side{display:block}}
+  .brand-side img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .brand-mask{position:absolute;inset:0;background:linear-gradient(160deg,rgba(14,124,107,.55),rgba(10,40,35,.82))}
+  .brand-content{position:relative;z-index:1;padding:48px 44px;color:#fff;display:flex;flex-direction:column;height:100%}
+  .brand-logo{display:flex;align-items:center;gap:10px;font-size:24px;font-weight:700}
+  .brand-mark{width:38px;height:38px;border-radius:10px;background:#fff;color:var(--brand);display:flex;align-items:center;justify-content:center}
+  .brand-mark svg{width:22px;height:22px}
+  .brand-slogan{margin-top:auto}
+  .brand-slogan h2{font-size:30px;font-weight:700;line-height:1.4;margin-bottom:14px}
+  .brand-slogan p{font-size:15px;opacity:.88;max-width:380px}
+  .brand-points{margin-top:24px;display:flex;gap:26px;font-size:13px;opacity:.9}
+  .brand-points b{display:block;font-size:20px}
+
+  /* 右侧表单区 */
+  .form-side{display:flex;align-items:center;justify-content:center;padding:24px 16px}
+  .form-card{width:100%;max-width:400px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:30px 26px}
+  .form-logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:20px;margin-bottom:6px}
+  .form-logo .brand-mark{width:32px;height:32px;border-radius:8px}
+  .form-sub{font-size:14px;color:var(--sub);margin-bottom:24px}
+
+  /* 方式切换 */
+  .method{display:flex;gap:20px;border-bottom:1px solid var(--line);margin-bottom:22px}
+  .method-btn{font-size:15px;color:var(--sub);padding-bottom:10px;position:relative}
+  .method-btn.active{color:var(--ink);font-weight:700}
+  .method-btn.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;border-radius:3px;background:var(--brand)}
+
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:13px;color:var(--sub);margin-bottom:7px}
+  .field-box{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:0 14px;background:var(--bg)}
+  .field-box:focus-within{border-color:var(--brand);background:#fff}
+  .field-box svg{width:18px;height:18px;color:var(--sub);flex:none}
+  .field-box input{flex:1;border:none;background:none;outline:none;font-size:15px;padding:12px 0;min-width:0}
+  .code-btn{flex:none;font-size:13px;color:var(--brand);padding-left:10px;border-left:1px solid var(--line);white-space:nowrap}
+  .code-btn:disabled{color:var(--sub)}
+
+  .row{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-bottom:20px}
+  .agree{display:flex;align-items:center;gap:7px;color:var(--sub)}
+  .agree input{accent-color:var(--brand);width:15px;height:15px}
+  .agree a{color:var(--brand)}
+  .link{color:var(--brand);font-size:13px}
+
+  .btn-main{width:100%;background:var(--brand);color:#fff;font-size:16px;font-weight:600;padding:13px;border-radius:12px}
+  .btn-main:disabled{opacity:.5}
+
+  .divider{display:flex;align-items:center;gap:12px;margin:24px 0 18px;color:var(--sub);font-size:12px}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  .third{display:flex;justify-content:center;gap:22px}
+  .third-btn{width:44px;height:44px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center}
+  .third-btn svg{width:22px;height:22px}
+
+  .form-foot{text-align:center;font-size:13px;color:var(--sub);margin-top:22px}
+  .form-foot a{color:var(--brand);font-weight:600}
+
+  .toast{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);background:rgba(23,33,30,.88);color:#fff;font-size:14px;padding:10px 18px;border-radius:20px;z-index:100;opacity:0;pointer-events:none;transition:opacity .25s}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <!-- 品牌区 -->
+  <section class="brand-side">
+    <img src="https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/DYjQb0CJCoiJCvxnv9Fc5WwIn6f" alt="钓场背景">
+    <div class="brand-mask"></div>
+    <div class="brand-content">
+      <div class="brand-logo">
+        <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#0E7C6B" stroke-width="2" stroke-linecap="round"><path d="M4 20C8 14 12 10 20 5"/><circle cx="6" cy="18" r="1.6" fill="#0E7C6B" stroke="none"/></svg></span>
+        一根竿
+      </div>
+      <div class="brand-slogan">
+        <h2>记录每一次出钓，<br>和八万钓友一起交流</h2>
+        <p>钓位分享、渔获记录、装备评测、鱼种图鉴，属于钓鱼人的内容社区。</p>
+        <div class="brand-points">
+          <span><b>8.7万</b>钓友</span>
+          <span><b>12.6万</b>篇攻略</span>
+          <span><b>3200+</b>实测钓点</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 表单区 -->
+  <section class="form-side">
+    <div class="form-card">
+      <div class="form-logo">
+        <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 20C8 14 12 10 20 5"/><circle cx="6" cy="18" r="1.6" fill="#fff" stroke="none"/></svg></span>
+        一根竿
+      </div>
+      <div class="form-sub" id="formSub">登录后查看钓位、收藏攻略与渔获记录</div>
+
+      <div class="method" id="method">
+        <button class="method-btn active" data-method="code">验证码登录</button>
+        <button class="method-btn" data-method="pwd">密码登录</button>
+      </div>
+
+      <form id="loginForm">
+        <div class="field">
+          <label>手机号</label>
+          <div class="field-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+            <input type="tel" id="phone" placeholder="请输入手机号" maxlength="11">
+          </div>
+        </div>
+
+        <div class="field" id="codeField">
+          <label>验证码</label>
+          <div class="field-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <input type="text" id="code" placeholder="6 位验证码" maxlength="6">
+            <button type="button" class="code-btn" id="codeBtn">获取验证码</button>
+          </div>
+        </div>
+
+        <div class="field" id="pwdField" style="display:none">
+          <label>密码</label>
+          <div class="field-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <input type="password" id="pwd" placeholder="请输入密码">
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="agree"><input type="checkbox" id="agree"> 我已阅读并同意 <a href="javascript:;" data-toast="用户协议（演示）">《用户协议》</a> 和 <a href="javascript:;" data-toast="隐私政策（演示）">《隐私政策》</a></label>
+        </div>
+
+        <button type="submit" class="btn-main" id="submitBtn">登录</button>
+      </form>
+
+      <div class="divider">其他登录方式</div>
+      <div class="third">
+        <button class="third-btn" data-toast="微信登录（演示）"><svg viewBox="0 0 24 24" fill="#2E86AB"><path d="M8.7 4C4.9 4 2 6.6 2 9.9c0 1.9 1 3.5 2.6 4.7l-.7 2.1 2.4-1.2c.8.2 1.5.3 2.4.3h.4a5.4 5.4 0 0 1-.2-1.5c0-3 2.9-5.3 6.3-5.3h.3C14.9 5.9 12.1 4 8.7 4zM6.6 8.6a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8zm4.3 0a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8zM22 14.3c0-2.7-2.5-4.9-5.6-4.9s-5.6 2.2-5.6 4.9 2.5 4.9 5.6 4.9c.7 0 1.4-.1 2-.3l1.9 1-.5-1.7A4.7 4.7 0 0 0 22 14.3zm-7.5-.7a.8.8 0 1 1 0-1.6.8.8 0 0 1 0 1.6zm3.8 0a.8.8 0 1 1 0-1.6.8.8 0 0 1 0 1.6z"/></svg></button>
+        <button class="third-btn" data-toast="QQ 登录（演示）"><svg viewBox="0 0 24 24" fill="#4A6FA5"><path d="M12 2C8.7 2 6 4.7 6 8c0 .6.1 1.2.3 1.7C5 10.8 4 12.6 4 14.6c0 .5.1 1 .3 1.4l-.9 2.6 2.6-1.3c1.2.7 2.6 1.1 4 1.1s2.8-.4 4-1.1l2.6 1.3-.9-2.6c.2-.4.3-.9.3-1.4 0-2-1-3.8-2.3-4.9.2-.5.3-1.1.3-1.7 0-3.3-2.7-6-6-6z"/></svg></button>
+        <button class="third-btn" data-toast="微博登录（演示）"><svg viewBox="0 0 24 24" fill="#E8833A"><path d="M10.1 20.5c-3.6.4-6.7-1.3-7-3.8-.3-2.5 2.5-4.8 6.1-5.2 3.6-.4 6.7 1.3 7 3.8.3 2.5-2.5 4.8-6.1 5.2zm4.9-9.4c-.4-.1-.6-.2-.4-.7.4-1.1.4-2.1 0-2.8-.7-1.2-2.7-1.2-4.9-.1 0 0-.7.3-.5-.3.3-1 .2-1.9-.3-2.4-1.2-1.2-4.4.1-7.1 3.1C.8 10.1.2 11.6.2 13c0 2.7 3.5 4.4 6.9 4.4 4.5 0 7.5-2.6 7.5-4.7 0-1.3-1.1-2-1.6-2.2zM19.4 6.1A4.6 4.6 0 0 0 15 3.6c-.4 0-.8.3-.8.7 0 .4.3.7.7.8 1.2.1 2.2.7 2.9 1.7.2.4.7.5 1 .3.4-.1.5-.6.6-1zM21.6 10.2c-.4-.5-1-.8-1.5-.6-.4.1-.6.6-.5 1 .2.6.1 1.3-.2 1.8-.3.4-.2 1 .2 1.3.5.3 1.1.2 1.5-.3 1-1.3 1-2.9.5-3.2z"/></svg></button>
+      </div>
+
+      <div class="form-foot" id="formFoot">还没有账号？<a href="javascript:;" id="toggleReg">立即注册</a></div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+let t;function toast(m){const el=$("#toast");el.textContent=m;el.classList.add("show");clearTimeout(t);t=setTimeout(()=>el.classList.remove("show"),1600)}
+
+/* 方式切换 */
+$("#method").addEventListener("click",e=>{
+  const btn=e.target.closest(".method-btn");if(!btn)return;
+  $$(".method-btn").forEach(x=>x.classList.remove("active"));btn.classList.add("active");
+  const isCode=btn.dataset.method==="code";
+  $("#codeField").style.display=isCode?"block":"none";
+  $("#pwdField").style.display=isCode?"none":"block";
+});
+function $$(s){return document.querySelectorAll(s)}
+
+/* 验证码倒计时 */
+let counting=false;
+$("#codeBtn").addEventListener("click",()=>{
+  const phone=$("#phone").value.trim();
+  if(!/^1\d{10}$/.test(phone)){toast("请输入正确的手机号");return;}
+  if(counting)return;
+  let n=60;counting=true;
+  const btn=$("#codeBtn");btn.disabled=true;
+  const timer=setInterval(()=>{
+    n--;btn.textContent=`${n}s 后重发`;
+    if(n<=0){clearInterval(timer);counting=false;btn.disabled=false;btn.textContent="获取验证码";}
+  },1000);
+  toast("验证码已发送（演示）");
+});
+
+/* 注册/登录切换 */
+let isReg=false;
+function toggleMode(){
+  isReg=!isReg;
+  $("#formSub").textContent=isReg?"注册账号，记录你的每一次出钓":"登录后查看钓位、收藏攻略与渔获记录";
+  $("#submitBtn").textContent=isReg?"注册":"登录";
+  $("#formFoot").innerHTML=isReg?'已有账号？<a href="javascript:;" id="toggleReg">返回登录</a>':'还没有账号？<a href="javascript:;" id="toggleReg">立即注册</a>';
+  $("#toggleReg").onclick=toggleMode;
+}
+$("#toggleReg").addEventListener("click",toggleMode);
+
+/* 提交校验 */
+$("#loginForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const phone=$("#phone").value.trim();
+  if(!/^1\d{10}$/.test(phone)){toast("请输入正确的手机号");return;}
+  if(!$("#agree").checked){toast("请先勾选同意用户协议");return;}
+  toast(isReg?"注册成功，欢迎加入一根竿（演示）":"登录成功（演示）");
+});
+
+document.addEventListener("click",e=>{const el=e.target.closest("[data-toast]");if(el){e.stopPropagation();toast(el.dataset.toast);}});
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="{{PAGE_DESCRIPTION}}">
+    <meta name="keywords" content="{{PAGE_KEYWORDS}}">
+    <title>{{PAGE_TITLE}}</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <script>
+        window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/';
+        window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+    </script>
+</head>
+<body class="page-ranking">
+    <h1 class="sr-only">热榜排行</h1>
+
+<!-- 榜单页顶栏无频道栏、搜索占位文案不同，保留页面内联 -->
+<header class="topbar">
+    <div class="topbar-inner">
+        <a class="logo" href="/" data-home>
+            <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 20C8 14 12 10 20 5"/><circle cx="6" cy="18" r="1.6" fill="#fff" stroke="none"/></svg></span>
+            <span id="brandName">woquan</span>
+        </a>
+        <label class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input type="text" id="searchInput" placeholder="搜索热榜内容">
+        </label>
+        <div class="topbar-right">
+            <button class="btn-login" id="loginBtn">登录</button>
+            <span class="topbar-avatar" id="topbarAvatar" style="display:none"><img alt=""></span>
+        </div>
+    </div>
+</header>
+
+<div class="wrap">
+    <main>
+        <div class="board-tabs" id="boardTabs">
+            <button class="board-tab active" data-board="" data-label="全站热榜">全站热榜</button>
+        </div>
+
+        <section class="board">
+            <div class="board-head">
+                <div class="board-head-main">
+                    <h2 id="boardTitle">全站热榜</h2>
+                    <p class="board-sub" id="boardSub">综合热度排序 · TOP 20</p>
+                </div>
+                <span class="time" id="boardTime">实时更新</span>
+            </div>
+            <div id="boardList">{{SSR_FEED}}</div>
+        </section>
+    </main>
+
+    <aside class="aside">
+        <section class="panel">
+            <div class="panel-title">24 小时飙升</div>
+            <div class="rise-list" id="riseList">{{SSR_SIDE}}</div>
+        </section>
+        <section class="panel">
+            <div class="panel-title">热议话题</div>
+            <div class="chips" id="topicChips">{{SSR_CHIPS}}</div>
+        </section>
+    </aside>
+</div>
+
+<!-- @include partials/tabbar.html -->
+
+<!-- @include partials/page-tail.html -->
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

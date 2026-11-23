@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>视频 · 一根竿</title>
+<style>
+  :root{
+    --bg:#F3F5F4;--card:#FFF;--ink:#17211E;--sub:#66726E;--line:#E6EAE8;
+    --brand:#0E7C6B;--brand-soft:#E3F1EE;--accent:#E8833A;--radius:12px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+  button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
+  img{display:block;width:100%;height:100%;object-fit:cover}
+
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topbar-inner{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:14px}
+  .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:19px}
+  .logo-mark{width:30px;height:30px;border-radius:8px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center}
+  .logo-mark svg{width:18px;height:18px}
+  .search{flex:1;max-width:420px;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:7px 14px;color:var(--sub)}
+  .search svg{width:16px;height:16px;flex:none}
+  .search input{border:none;background:none;outline:none;flex:1;font-size:14px;min-width:0}
+  .topbar-right{margin-left:auto}
+  .btn-login{background:var(--brand);color:#fff;font-size:14px;padding:8px 18px;border-radius:20px}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:16px 16px 96px}
+
+  .v-tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px}
+  .v-tabs::-webkit-scrollbar{display:none}
+  .v-tab{flex:none;font-size:14px;padding:8px 16px;border-radius:16px;background:var(--card);border:1px solid var(--line);color:var(--sub)}
+  .v-tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+
+  /* 推荐横条 */
+  .feature{position:relative;border-radius:var(--radius);overflow:hidden;aspect-ratio:21/9;margin-bottom:16px;cursor:pointer}
+  .feature img{width:100%;height:100%;object-fit:cover}
+  .feature-mask{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.1) 30%,rgba(0,0,0,.72))}
+  .feature-text{position:absolute;left:18px;right:18px;bottom:16px;color:#fff}
+  .feature-tag{display:inline-block;font-size:12px;background:var(--accent);border-radius:4px;padding:2px 9px;margin-bottom:8px}
+  .feature-title{font-size:18px;font-weight:700;max-width:600px}
+  .feature-play{position:absolute;inset:0;margin:auto;width:56px;height:56px;border-radius:50%;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center}
+  .feature-play svg{width:26px;height:26px;fill:#fff;margin-left:3px}
+
+  /* 双列网格 */
+  .v-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(min-width:768px){.v-grid{grid-template-columns:repeat(3,1fr)}}
+  @media(min-width:1024px){.v-grid{grid-template-columns:repeat(4,1fr)}}
+  .v-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;cursor:pointer}
+  .v-thumb{position:relative;aspect-ratio:16/10;overflow:hidden}
+  .v-thumb img{width:100%;height:100%;object-fit:cover}
+  .v-play{position:absolute;inset:0;margin:auto;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center}
+  .v-play svg{width:18px;height:18px;fill:#fff;margin-left:2px}
+  .duration{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;padding:2px 7px;border-radius:4px}
+  .v-info{padding:11px 12px}
+  .v-title{font-size:14px;font-weight:600;line-height:1.5;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .v-meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub)}
+  .v-avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex:none}
+  .v-meta .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .v-meta .stat{display:flex;align-items:center;gap:4px}
+  .v-meta svg{width:14px;height:14px}
+
+  .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;border-top:1px solid var(--line);display:flex}
+  .tabbar-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;font-size:11px;color:var(--sub)}
+  .tabbar-item svg{width:22px;height:22px}
+  .tabbar-item.active{color:var(--brand)}
+  @media(min-width:960px){.tabbar{display:none}}
+
+  .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:rgba(23,33,30,.88);color:#fff;font-size:14px;padding:10px 18px;border-radius:20px;z-index:100;opacity:0;pointer-events:none;transition:opacity .25s}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="logo" href="javascript:;" data-toast="一根竿 · 首页"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 20C8 14 12 10 20 5"/><circle cx="6" cy="18" r="1.6" fill="#fff" stroke="none"/></svg></span>一根竿</a>
+    <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="text" placeholder="搜钓点、鱼种、装备攻略"></label>
+    <div class="topbar-right"><button class="btn-login" data-toast="登录（演示）">登录</button></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="v-tabs" id="vTabs">
+    <button class="v-tab active" data-cat="推荐">推荐</button>
+    <button class="v-tab" data-cat="路亚">路亚</button>
+    <button class="v-tab" data-cat="台钓">台钓</button>
+    <button class="v-tab" data-cat="野钓">野钓</button>
+    <button class="v-tab" data-cat="装备">装备</button>
+  </div>
+
+  <section class="feature" data-toast="演示：播放推荐视频">
+    <img src="https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/Cew1bGDkLo5Kt5xpc2Icf5gUnGd" alt="推荐视频封面">
+    <div class="feature-mask"></div>
+    <span class="feature-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+    <div class="feature-text">
+      <span class="feature-tag">置顶推荐</span>
+      <div class="feature-title">实拍：清晨路亚翘嘴，三本钩中鱼瞬间拉力拉满</div>
+    </div>
+  </section>
+
+  <section class="v-grid" id="vGrid"></section>
+</div>
+
+<nav class="tabbar">
+  <button class="tabbar-item" data-toast="首页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>首页</button>
+  <button class="tabbar-item active" data-toast="视频"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5l5 2.5-5 2.5z" fill="currentColor" stroke="none"/></svg>视频</button>
+  <button class="tabbar-item" data-toast="消息（演示）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/></svg>消息</button>
+  <button class="tabbar-item" data-toast="我的（演示）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></svg>我的</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const IMG={
+  purple:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/Cew1bGDkLo5Kt5xpc2Icf5gUnGd",
+  hero:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/DGMIbCWygoEvWRxGelHcpaMqnxc",
+  fisherBack:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/YolHb2VNhowWiYxkqetcKZn6ngv",
+  lakeBack:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/D0KhbsPuKovu7HxKZfccatMinIe",
+  reed:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/JapFbukAYoUn0fxuqbccorXVnDg",
+  three:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/AC5kbXKWZoVmI5xnlNPcgzBInHd",
+  lure:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/X9HqbJndjoT1cBxADttc6sdznKf",
+  calm:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/DYjQb0CJCoiJCvxnv9Fc5WwIn6f"
+};
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+let t;function toast(m){const el=$("#toast");el.textContent=m;el.classList.add("show");clearTimeout(t);t=setTimeout(()=>el.classList.remove("show"),1600)}
+
+const VIDEOS=[
+  {cat:"路亚",img:IMG.purple,title:"实拍清晨路亚翘嘴，三本钩中鱼瞬间拉力拉满",author:"路亚小课堂",color:"#7A5EA6",ch:"路",duration:"02:47",likes:287,comments:94},
+  {cat:"野钓",img:IMG.hero,title:"晨雾里站水中抛竿，第一杆就上鲫鱼",author:"川北老钓手",color:"#0E7C6B",ch:"川",duration:"03:12",likes:346,comments:128},
+  {cat:"野钓",img:IMG.fisherBack,title:"雾天出钓找深浅交界，下竿半小时见口",author:"水边的阿强",color:"#2E86AB",ch:"水",duration:"01:58",likes:219,comments:86},
+  {cat:"台钓",img:IMG.lakeBack,title:"静水湖长竿短线守草边，七星钩实战演示",author:"静水湖客",color:"#3E7C59",ch:"静",duration:"04:05",likes:158,comments:61},
+  {cat:"野钓",img:IMG.reed,title:"芦苇荡草洞找鱼，打窝后二十分钟开始逗钓",author:"芦苇岸边",color:"#6B8E23",ch:"芦",duration:"02:33",likes:132,comments:55},
+  {cat:"野钓",img:IMG.three,title:"周末连竿实拍：30条鲫鱼一盆鲤鱼入护",author:"渔获日记",color:"#C26B2E",ch:"渔",duration:"05:20",likes:512,comments:203},
+  {cat:"装备",img:IMG.lure,title:"新手路亚套装开箱：竿轮饵线全套搭配讲解",author:"装备评测室",color:"#4A6FA5",ch:"装",duration:"06:11",likes:176,comments:78},
+  {cat:"台钓",img:IMG.calm,title:"秋季湖库钓鲤鱼线组搭配与调漂实操",author:"调漂研究所",color:"#B5495B",ch:"调",duration:"03:44",likes:398,comments:142}
+];
+
+function render(cat){
+  const list=cat==="推荐"?VIDEOS:VIDEOS.filter(v=>v.cat===cat);
+  $("#vGrid").innerHTML=list.map(v=>`
+    <article class="v-card">
+      <div class="v-thumb">
+        <img src="${v.img}" alt="${v.title}" loading="lazy">
+        <span class="v-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="duration">${v.duration}</span>
+      </div>
+      <div class="v-info">
+        <div class="v-title">${v.title}</div>
+        <div class="v-meta">
+          <span class="v-avatar" style="background:${v.color}">${v.ch}</span>
+          <span class="name">${v.author}</span>
+          <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v10H4V10h3zm0 0l4.2-6a2.4 2.4 0 0 1 3.4 1.6L15 8h3a2 2 0 0 1 2 2.4l-1.7 8A2 2 0 0 1 16.3 20H7"/></svg>${v.likes}</span>
+          <span class="stat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H4l2-3a8 8 0 1 1 15-5z"/></svg>${v.comments}</span>
+        </div>
+      </div>
+    </article>`).join("");
+}
+render("推荐");
+
+$("#vTabs").addEventListener("click",e=>{
+  const tab=e.target.closest(".v-tab");if(!tab)return;
+  $$(".v-tab").forEach(x=>x.classList.remove("active"));tab.classList.add("active");
+  render(tab.dataset.cat);
+});
+
+document.addEventListener("click",e=>{const el=e.target.closest("[data-toast]");if(el){e.stopPropagation();toast(el.dataset.toast);}});
+</script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>搜索「鲫鱼」 · 一根竿</title>
+<style>
+  :root{
+    --bg:#F3F5F4;--card:#FFF;--ink:#17211E;--body:#2A3330;--sub:#66726E;--line:#E6EAE8;
+    --brand:#0E7C6B;--brand-soft:#E3F1EE;--accent:#E8833A;--radius:12px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+  button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
+  input{font-family:inherit}
+  img{display:block;width:100%;height:100%;object-fit:cover}
+
+  .topbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line)}
+  .topbar-inner{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
+  .back-btn{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
+  .back-btn svg{width:20px;height:20px}
+  .search{flex:1;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:8px 14px}
+  .search svg{width:16px;height:16px;flex:none;color:var(--sub)}
+  .search input{border:none;background:none;outline:none;flex:1;font-size:14px;min-width:0}
+  .search .clear{color:var(--sub);font-size:16px;flex:none}
+  .search-btn{color:var(--brand);font-size:14px;flex:none}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:16px 16px 96px;display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:960px){.wrap{grid-template-columns:minmax(0,1fr) 320px;gap:20px}}
+
+  /* 结果统计 + Tab */
+  .result-meta{font-size:13px;color:var(--sub);margin-bottom:12px}
+  .result-meta b{color:var(--ink)}
+  .tabs{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);display:flex;gap:4px;padding:6px;margin-bottom:12px}
+  .tab{flex:1;text-align:center;font-size:14px;color:var(--sub);padding:8px 0;border-radius:9px}
+  .tab.active{background:var(--brand-soft);color:var(--brand);font-weight:600}
+
+  /* 结果卡 */
+  .feed{display:flex;flex-direction:column;gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;cursor:pointer}
+  .side-body{display:flex;gap:12px}
+  .thumb{flex:none;width:130px;border-radius:10px;overflow:hidden;aspect-ratio:4/3}
+  @media(min-width:960px){.thumb{width:170px}}
+  .side-content{flex:1;min-width:0;display:flex;flex-direction:column}
+  .card-title{font-size:16px;font-weight:700;line-height:1.5;margin-bottom:6px}
+  .hl{color:var(--accent)}
+  .card-desc{font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .card-foot{margin-top:auto;display:flex;align-items:center;gap:14px;font-size:12px;color:var(--sub)}
+  .tag{display:inline-block;font-size:12px;color:var(--brand);background:var(--brand-soft);border-radius:4px;padding:2px 8px;margin-right:6px}
+  .type-video{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--sub)}
+  .type-video svg{width:13px;height:13px}
+
+  /* 空态 */
+  .empty{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:56px 20px;text-align:center}
+  .empty svg{width:48px;height:48px;color:#C9D2CE;margin-bottom:12px}
+  .empty p{font-size:14px;color:var(--sub);margin-bottom:16px}
+
+  /* 侧栏 */
+  .aside{display:none;flex-direction:column;gap:16px}
+  @media(min-width:960px){.aside{display:flex}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .panel-title{font-size:16px;font-weight:700;margin-bottom:14px}
+  .hot-words{display:flex;flex-wrap:wrap;gap:8px}
+  .hot-word{font-size:13px;background:var(--bg);border-radius:15px;padding:6px 12px;color:var(--sub);cursor:pointer}
+  .rank-list{display:flex;flex-direction:column;gap:13px}
+  .rank-item{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+  .rank-no{flex:none;width:20px;height:20px;border-radius:5px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--sub);background:var(--bg)}
+  .rank-item:nth-child(1) .rank-no,.rank-item:nth-child(2) .rank-no,.rank-item:nth-child(3) .rank-no{background:var(--accent);color:#fff}
+  .rank-text{font-size:14px;line-height:1.45}
+  .rank-hot{font-size:12px;color:var(--sub)}
+
+  .toast{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);background:rgba(23,33,30,.88);color:#fff;font-size:14px;padding:10px 18px;border-radius:20px;z-index:100;opacity:0;pointer-events:none;transition:opacity .25s}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <button class="back-btn" data-toast="返回上一页（演示）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <label class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input type="text" id="searchInput" value="冬季钓鲫鱼">
+      <button class="clear" data-toast="清空关键词（演示）">×</button>
+    </label>
+    <button class="search-btn" data-toast="重新搜索（演示）">搜索</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <main>
+    <div class="result-meta">共找到 <b>128</b> 篇与「<b id="metaKw">冬季钓鲫鱼</b>」相关的内容</div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="综合">综合</button>
+      <button class="tab" data-tab="最新">最新</button>
+      <button class="tab" data-tab="最热">最热</button>
+      <button class="tab" data-tab="视频">视频</button>
+      <button class="tab" data-tab="用户">用户</button>
+    </div>
+
+    <section class="feed" id="feed"></section>
+    <div id="emptyState" style="display:none">
+      <div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/><path d="M8.5 11h5"/></svg>
+        <p>没有找到相关内容，换个关键词试试</p>
+        <button class="search-btn" style="background:var(--brand);color:#fff;padding:9px 22px;border-radius:18px" data-toast="返回综合结果">查看全部内容</button>
+      </div>
+    </div>
+  </main>
+
+  <aside class="aside">
+    <section class="panel">
+      <div class="panel-title">相关搜索</div>
+      <div class="hot-words" id="relatedWords"></div>
+    </section>
+    <section class="panel">
+      <div class="panel-title">大家都在搜</div>
+      <div class="rank-list" id="rankList"></div>
+    </section>
+  </aside>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const IMG={
+  carp:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/Y2wfbpb1aoFE5nxCtB5cX9nJnjb",
+  fisherBack:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/YolHb2VNhowWiYxkqetcKZn6ngv",
+  lakeBack:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/D0KhbsPuKovu7HxKZfccatMinIe",
+  calm:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/DYjQb0CJCoiJCvxnv9Fc5WwIn6f",
+  three:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/AC5kbXKWZoVmI5xnlNPcgzBInHd",
+  purple:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/Cew1bGDkLo5Kt5xpc2Icf5gUnGd"
+};
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+let t;function toast(m){const el=$("#toast");el.textContent=m;el.classList.add("show");clearTimeout(t);t=setTimeout(()=>el.classList.remove("show"),1600)}
+
+const KW="鲫鱼";
+function hl(str){return str.split(KW).join(`<span class="hl">${KW}</span>`);}
+
+const RESULTS=[
+  {type:"article",tag:"野钓",author:"川北老钓手",time:"2小时前",comments:128,likes:346,title:"一斤半大板鲫上岸：冬季守钓浅滩的实战记录",desc:"水温下降后鲫鱼扎堆浅滩草边，分享找湾、打窝、调漂的完整过程，附当日渔获实拍。",img:IMG.carp},
+  {type:"article",tag:"钓位",author:"水边的阿强",time:"3小时前",comments:86,likes:219,title:"晨雾出钓全攻略：看水色辨风向，找鲫鱼藏身的深浅交界",desc:"起雾天鱼口反而活跃，顺着芦苇边找深浅交界，下竿半小时就见口。",img:IMG.fisherBack},
+  {type:"article",tag:"台钓",author:"静水湖客",time:"8小时前",comments:61,likes:158,title:"森林静水湖探钓：长竿短线守草边，窝料这样配留鱼更久",desc:"湖底草区多容易挂底，线组放细一号，酒米打窝主攻底层鲫鱼。",img:IMG.lakeBack},
+  {type:"video",tag:"视频",author:"路亚小课堂",time:"6小时前",comments:94,likes:287,duration:"02:47",title:"实拍清晨路亚截口，大板鲫咬钩瞬间拉力拉满",desc:"窗口期六点半到七点半，浮水饵匀速收线，截口那一记闷顿直接弯弓。",img:IMG.purple},
+  {type:"article",tag:"渔获",author:"渔获日记",time:"昨天 18:02",comments:203,likes:512,title:"周末渔获合集：30条鲫鱼一盆鲤鱼，老塘口连竿不断",desc:"从上午七点钓到下午三点，中途换了两次饵，发一组当天的鱼获实拍。",img:IMG.three},
+  {type:"article",tag:"线组",author:"调漂研究所",time:"昨天 15:20",comments:142,likes:398,title:"秋季湖库钓鲤鱼线组搭配，兼钓鲫鱼大小通吃不跑鱼",desc:"主线、子线、钩号怎么选？走水和静水两种情况分别调几目？一篇讲清楚。",img:IMG.calm}
+];
+
+function renderFeed(tab){
+  const feed=$("#feed"),empty=$("#emptyState");
+  if(tab==="用户"){feed.innerHTML="";empty.style.display="block";return;}
+  empty.style.display="none";
+  const list = tab==="视频"?RESULTS.filter(r=>r.type==="video"):RESULTS;
+  feed.innerHTML=list.map(r=>`
+    <article class="card">
+      <div class="side-body">
+        <div class="thumb"><img src="${r.img}" alt="${r.title}" loading="lazy"></div>
+        <div class="side-content">
+          <div class="card-title"><span class="tag">${r.tag}</span>${hl(r.title)}</div>
+          <div class="card-desc">${hl(r.desc)}</div>
+          <div class="card-foot">
+            <span>${r.author}</span><span>${r.time}</span>
+            ${r.type==="video"?`<span class="type-video"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>${r.duration}</span>`:`<span>评论 ${r.comments}</span>`}
+            <span>赞 ${r.likes}</span>
+          </div>
+        </div>
+      </div>
+    </article>`).join("");
+}
+renderFeed("综合");
+
+$("#tabs").addEventListener("click",e=>{
+  const tab=e.target.closest(".tab");if(!tab)return;
+  $$(".tab").forEach(x=>x.classList.remove("active"));tab.classList.add("active");
+  renderFeed(tab.dataset.tab);
+});
+
+const RELATED=["鲫鱼饵料","鲫鱼线组","冬季钓鲫鱼","鲫鱼窝料","草洞钓鲫鱼","大板鲫钓位"];
+$("#relatedWords").innerHTML=RELATED.map(w=>`<span class="hot-word" data-toast="搜索：${w}">${w}</span>`).join("");
+
+const RANKS=[
+  {t:"降温后鲫鱼开口变差？饵料味型这样调",hot:"3.2万"},
+  {t:"今年秋冬季禁渔期公布，这些水域严禁垂钓",hot:"2.8万"},
+  {t:"抄网选购避坑：尺寸、网眼、支架怎么挑",hot:"2.1万"},
+  {t:"野钓遇到走水，铅坠和调漂的应急办法",hot:"1.7万"},
+  {t:"鲤鱼窝料配方：酒米、玉米、菜籽饼实测对比",hot:"1.5万"}
+];
+$("#rankList").innerHTML=RANKS.map((r,i)=>`
+  <div class="rank-item" data-toast="演示：打开热榜文章"><span class="rank-no">${i+1}</span><div><div class="rank-text">${r.t}</div><div class="rank-hot">热度 ${r.hot}</div></div></div>`).join("");
+
+document.addEventListener("click",e=>{const el=e.target.closest("[data-toast]");if(el){e.stopPropagation();toast(el.dataset.toast);}});
+</script>
+</body>
+</html>

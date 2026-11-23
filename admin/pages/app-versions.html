@@ -1,0 +1,57 @@
+        <div id="page-app-versions" class="hidden">
+            <div class="card">
+                <div class="card-head">
+                    <h3><i data-icon="package"></i>App 版本列表</h3>
+                    <button class="btn btn-primary" data-action="open-app-version-form">+ 发布新版本</button>
+                </div>
+                <table>
+                    <thead><tr><th>平台</th><th>版本名</th><th>版本号</th><th>更新类型</th><th>下载地址</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+                    <tbody id="app-versions-table"></tbody>
+                </table>
+                <div id="app-version-form" class="hidden" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+                    <h3 style="font-size:16px;margin-bottom:16px;" id="app-version-form-title"><i data-icon="package"></i>发布新版本</h3>
+                    <input type="hidden" id="app-version-id">
+                    <div class="form-group">
+                        <label>平台</label>
+                        <select class="form-input" id="app-version-platform">
+                            <option value="android">Android</option>
+                            <option value="ios">iOS</option>
+                            <option value="h5">H5</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>版本号（整数，递增，如 106）</label>
+                        <input type="number" class="form-input" id="app-version-code" placeholder="106">
+                    </div>
+                    <div class="form-group">
+                        <label>版本名（展示用，如 1.0.6）</label>
+                        <input type="text" class="form-input" id="app-version-name" placeholder="1.0.6">
+                    </div>
+                    <div class="form-group">
+                        <label>更新类型</label>
+                        <select class="form-input" id="app-version-update-type">
+                            <option value="0">建议更新</option>
+                            <option value="1">强制更新</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>更新说明</label>
+                        <textarea class="form-input" id="app-version-changelog" rows="3" placeholder="本次更新包含…"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>下载地址（APK 直链或 AppStore 地址）</label>
+                        <input type="text" class="form-input" id="app-version-download" placeholder="https://woquan.top/downloads/woquan-1.0.6.apk">
+                    </div>
+                    <div class="form-group">
+                        <label><input type="checkbox" id="app-version-status" checked> 启用（关闭后该版本不参与更新检测）</label>
+                    </div>
+                    <div style="display:flex;gap:12px;">
+                        <button class="btn btn-primary" data-action="save-app-version">保存</button>
+                        <button class="btn btn-default" data-action="close-app-version-form">取消</button>
+                    </div>
+                </div>
+                <p style="margin-top:16px;color:var(--text-3);font-size:12px;">
+                    提示：发版时先在 HBuilderX 把 manifest 的 versionCode 各 +1（现 105 → 下次 106），导出包后传到服务器 <code>/downloads/</code> 目录，再把下载直链填到上面的「下载地址」。
+                </p>
+            </div>
+        </div>

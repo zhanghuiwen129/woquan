@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>一斤半大板鲫上岸：冬季守钓浅滩实战记录 · 一根竿</title>
+<style>
+  :root{
+    --bg:#F3F5F4; --card:#FFFFFF; --ink:#17211E; --body:#2A3330;
+    --sub:#66726E; --line:#E6EAE8; --brand:#0E7C6B; --brand-soft:#E3F1EE;
+    --accent:#E8833A; --radius:12px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.6;
+  }
+  a{color:inherit;text-decoration:none}
+  img{display:block;width:100%;height:100%;object-fit:cover}
+  button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
+
+  /* ===== 顶部导航（与首页一致） ===== */
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topbar-inner{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:14px}
+  .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:19px}
+  .logo-mark{width:30px;height:30px;border-radius:8px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center}
+  .logo-mark svg{width:18px;height:18px}
+  .search{flex:1;max-width:420px;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:7px 14px;color:var(--sub)}
+  .search svg{width:16px;height:16px;flex:none}
+  .search input{border:none;background:none;outline:none;flex:1;font-size:14px;min-width:0}
+  .search input::placeholder{color:#9AA6A2}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .btn-login{background:var(--brand);color:#fff;font-size:14px;padding:8px 18px;border-radius:20px}
+  .back-btn{display:none;width:38px;height:38px;border-radius:50%;align-items:center;justify-content:center}
+  .back-btn svg{width:20px;height:20px}
+  @media(max-width:767px){
+    .search{display:none}
+    .back-btn{display:flex}
+  }
+
+  /* ===== 面包屑 ===== */
+  .crumb{max-width:1080px;margin:0 auto;padding:14px 16px 0;font-size:13px;color:var(--sub)}
+  .crumb a:hover{color:var(--brand)}
+  .crumb span{margin:0 6px}
+
+  /* ===== 主体 ===== */
+  .wrap{max-width:1080px;margin:0 auto;padding:16px 16px 120px;display:grid;grid-template-columns:1fr;gap:20px}
+  @media(min-width:960px){.wrap{grid-template-columns:minmax(0,680px) 280px;gap:28px}}
+
+  /* ===== 文章卡片 ===== */
+  .article{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 18px}
+  @media(min-width:960px){.article{padding:28px 32px}}
+
+  .tags{display:flex;gap:8px;margin-bottom:14px}
+  .tag{font-size:12px;color:var(--brand);background:var(--brand-soft);border-radius:4px;padding:3px 10px}
+  .tag.hot{color:var(--accent);background:#FBEFE6}
+
+  h1.title{font-size:22px;font-weight:700;line-height:1.45;margin-bottom:16px}
+  @media(min-width:960px){h1.title{font-size:29px;line-height:1.4}}
+
+  .author-row{display:flex;align-items:center;gap:10px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  .avatar{width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:700}
+  .author-info{flex:1;min-width:0}
+  .author-name{font-size:15px;font-weight:600}
+  .author-meta{font-size:12px;color:var(--sub)}
+  .follow{flex:none;font-size:13px;color:var(--brand);border:1px solid var(--brand);border-radius:16px;padding:6px 16px}
+  .follow.followed{color:var(--sub);border-color:var(--line)}
+
+  .cover{border-radius:10px;overflow:hidden;aspect-ratio:16/9;margin:20px 0}
+  .cover figcaption{font-size:12px;color:var(--sub);text-align:center;padding:8px 0 0}
+
+  /* 正文排版 */
+  .content{font-size:16px;color:var(--body);line-height:1.85}
+  .content p{margin:0 0 18px}
+  .content h2{font-size:18px;font-weight:700;margin:28px 0 14px;padding-left:12px;border-left:3px solid var(--brand)}
+  .content ul{margin:0 0 18px;padding-left:22px}
+  .content li{margin-bottom:8px}
+  .content figure{margin:22px 0;border-radius:10px;overflow:hidden;aspect-ratio:16/9}
+  .content figure img{width:100%;height:100%;object-fit:cover}
+  .content .note{background:var(--bg);border-radius:10px;padding:14px 16px;font-size:14px;color:var(--sub);margin:0 0 18px}
+  .content .note strong{color:var(--ink)}
+
+  /* 文末互动条（PC） */
+  .action-bar{display:flex;align-items:center;gap:10px;margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
+  .action-btn{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--sub);padding:8px 14px;border-radius:20px;background:var(--bg)}
+  .action-btn svg{width:18px;height:18px}
+  .action-btn.liked{color:var(--brand);background:var(--brand-soft)}
+  .action-btn.collected{color:var(--accent);background:#FBEFE6}
+  .action-btn.share{margin-left:auto}
+
+  /* 作者卡片 */
+  .author-card{margin-top:20px;background:var(--bg);border-radius:var(--radius);padding:16px;display:flex;align-items:center;gap:12px}
+  .author-card .info{flex:1;min-width:0}
+  .author-card .desc{font-size:12px;color:var(--sub)}
+
+  /* ===== 评论区 ===== */
+  .comments{margin-top:20px}
+  .comment-head{display:flex;align-items:center;gap:18px;margin-bottom:16px}
+  .comment-head h3{font-size:17px;font-weight:700}
+  .comment-tab{font-size:14px;color:var(--sub);cursor:pointer}
+  .comment-tab.active{color:var(--ink);font-weight:700}
+  .comment-input{display:flex;gap:10px;margin-bottom:20px}
+  .comment-input .avatar{width:36px;height:36px}
+  .comment-input input{flex:1;border:1px solid var(--line);border-radius:18px;padding:10px 16px;font-size:14px;outline:none;background:var(--bg)}
+  .comment-input input:focus{border-color:var(--brand)}
+  .comment-send{flex:none;background:var(--brand);color:#fff;font-size:14px;border-radius:18px;padding:0 18px}
+  .comment-list{display:flex;flex-direction:column;gap:18px}
+  .comment{display:flex;gap:10px}
+  .comment .avatar{width:36px;height:36px;font-size:13px}
+  .comment-body{flex:1;min-width:0}
+  .comment-name{font-size:13px;font-weight:600}
+  .comment-time{font-size:12px;color:var(--sub);margin-left:8px}
+  .comment-text{font-size:14px;margin:4px 0 6px}
+  .comment-acts{display:flex;gap:16px;font-size:12px;color:var(--sub)}
+  .comment-acts span{cursor:pointer}
+  .comment-acts .liked{color:var(--brand)}
+
+  /* ===== 相关推荐 ===== */
+  .related{margin-top:28px}
+  .related h3{font-size:17px;font-weight:700;margin-bottom:14px}
+  .related-grid{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:600px){.related-grid{grid-template-columns:repeat(3,1fr)}}
+  .rel-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;cursor:pointer}
+  .rel-card .thumb{aspect-ratio:16/10;overflow:hidden}
+  .rel-card .info{padding:12px}
+  .rel-card .rel-title{font-size:14px;font-weight:600;line-height:1.5;margin-bottom:6px}
+  .rel-card .rel-meta{font-size:12px;color:var(--sub)}
+
+  /* ===== 右侧栏 ===== */
+  .aside{display:none;flex-direction:column;gap:16px}
+  @media(min-width:960px){.aside{display:flex}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .panel-title{font-size:16px;font-weight:700;margin-bottom:14px}
+  .rank-list{display:flex;flex-direction:column;gap:13px}
+  .rank-item{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+  .rank-no{flex:none;width:20px;height:20px;border-radius:5px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--sub);background:var(--bg)}
+  .rank-item:nth-child(1) .rank-no,.rank-item:nth-child(2) .rank-no,.rank-item:nth-child(3) .rank-no{background:var(--accent);color:#fff}
+  .rank-text{font-size:14px;line-height:1.45}
+  .rank-hot{font-size:12px;color:var(--sub)}
+
+  /* ===== 移动端底部互动栏 ===== */
+  .mobile-bar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:#fff;border-top:1px solid var(--line);display:flex;align-items:center;gap:6px;padding:8px 12px calc(8px + env(safe-area-inset-bottom))}
+  .mobile-bar .comment-field{flex:1;display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:18px;padding:8px 14px;color:var(--sub);font-size:13px}
+  .mobile-bar .comment-field svg{width:16px;height:16px}
+  .m-action{flex:none;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--sub);padding:4px 8px}
+  .m-action svg{width:21px;height:21px}
+  .m-action.liked{color:var(--brand)}
+  @media(min-width:960px){.mobile-bar{display:none}}
+
+  .toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:rgba(23,33,30,.88);color:#fff;font-size:14px;padding:10px 18px;border-radius:20px;z-index:100;opacity:0;pointer-events:none;transition:opacity .25s}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ===== 顶部导航 ===== -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <button class="back-btn" data-toast="返回上一页（演示）">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <a class="logo" href="javascript:;" data-toast="一根竿 · 首页">
+      <span class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 20C8 14 12 10 20 5"/><circle cx="6" cy="18" r="1.6" fill="#fff" stroke="none"/></svg>
+      </span>
+      一根竿
+    </a>
+    <label class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input type="text" placeholder="搜钓点、鱼种、装备攻略">
+    </label>
+    <div class="topbar-right">
+      <button class="btn-login" data-toast="登录（演示）">登录</button>
+    </div>
+  </div>
+</header>
+
+<div class="crumb">
+  <a href="javascript:;" data-toast="返回首页">首页</a><span>/</span><a href="javascript:;" data-toast="野钓频道">野钓</a><span>/</span>正文
+</div>
+
+<div class="wrap">
+  <!-- ===== 阅读栏 ===== -->
+  <article class="article">
+    <div class="tags">
+      <span class="tag hot">热文</span>
+      <span class="tag">野钓</span>
+      <span class="tag">鲫鱼</span>
+      <span class="tag">冬季作钓</span>
+    </div>
+
+    <h1 class="title">一斤半大板鲫上岸：冬季守钓浅滩的实战记录，窝料和钓位全记录</h1>
+
+    <div class="author-row">
+      <span class="avatar" style="background:#0E7C6B">川</span>
+      <div class="author-info">
+        <div class="author-name">川北老钓手</div>
+        <div class="author-meta">2小时前发布 · 阅读 1.2万 · 达州</div>
+      </div>
+      <button class="follow" data-follow>关注</button>
+    </div>
+
+    <figure class="cover">
+      <img src="https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/Y2wfbpb1aoFE5nxCtB5cX9nJnjb" alt="手捧大板鲫">
+    </figure>
+
+    <div class="content">
+      <p>连续三天守同一片老塘口，水温降到十度上下之后，鲫鱼反而扎堆到了浅滩草边。这篇把出钓时段、钓位选择、窝料饵料和线组调漂完整记录下来，供冬季作钓的钓友参考。</p>
+
+      <h2>一、出钓时段：选晴天上午到午后</h2>
+      <p>冬季鱼活性低，开口窗口短。连续晴两天、气温稳定的天气最适合出钓；大风降温当天和寒潮过后第一天尽量别出门。一天当中，<strong>上午九点到下午三点</strong>水温回升，是鲫鱼最容易开口的时段，早晚口反而偏轻。</p>
+      <div class="note"><strong>提示：</strong>雾天不代表不能钓，但要等雾散、水面见光后再下竿；浓雾期鱼口闷，打窝也容易死窝。</div>
+
+      <figure>
+        <img src="https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/DYjQb0CJCoiJCvxnv9Fc5WwIn6f" alt="平静湖库钓场">
+      </figure>
+
+      <h2>二、钓位怎么找：深浅交界的草边</h2>
+      <p>冬季鲫鱼不会待在开阔深水，而是贴在有遮挡、能缓口气的位置。优先找这几类地方：</p>
+      <ul>
+        <li>浅滩与深水区交界的坎位，水深一米五到两米五之间；</li>
+        <li>芦苇、枯草边缘的草洞和草缝，下风向一侧；</li>
+        <li>回水湾、铧尖两侧，水流平缓、食物容易沉积；</li>
+        <li>避开正对大风的北岸，选背风向阳的南岸或东南岸。</li>
+      </ul>
+
+      <figure>
+        <img src="https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/JapFbukAYoUn0fxuqbccorXVnDg" alt="芦苇荡雾中钓位">
+      </figure>
+
+      <h2>三、窝料与饵料：味型偏腥，少量勤补</h2>
+      <p>水温低，鱼对高蛋白腥味更敏感。窝料以酒米加碎玉米为主，提前半小时到四十分钟打下去，<strong>一次打拳头大小一团即可</strong>，冬季发窝慢，切忌一次打满窝。中途有口停了，再用酒米少量补窝。</p>
+      <p>饵料方面，红虫、蚯蚓等活饵在低温天优势明显；用商品饵就选腥香偏重的配方，饵团搓小、挂实，方便鱼入口。拉饵要控制雾化，避免招来上层白条。</p>
+
+      <h2>四、线组与调漂：放细一号，钓钝一点</h2>
+      <ul>
+        <li>主线 1.0–1.2 号，子线 0.4–0.6 号，袖钩 3–4 号；</li>
+        <li>浮漂选吃铅 1.5 克左右的细尾漂，便于观察轻微口；</li>
+        <li>调平水钓两目到三目，抓稳口，避免频繁空竿；</li>
+        <li>鱼口轻时换小钩、细线，比硬等大鱼更实际。</li>
+      </ul>
+
+      <figure>
+        <img src="https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/AC5kbXKWZoVmI5xnlNPcgzBInHd" alt="当日渔获鲫鱼">
+      </figure>
+
+      <h2>五、实战注意事项</h2>
+      <p>下竿后先守二十分钟，没口再轻逗；冬季鱼蹭线多，浮漂小幅度上下蹭不要急着提竿，等出现清晰下顿或顶漂再扬竿。中大鱼后先把鱼带出草区，别让它钻进草缝切线。渔获如果是留大放小，偏小的鲫鱼建议当场放流。</p>
+    </div>
+
+    <!-- 文末互动条（PC） -->
+    <div class="action-bar">
+      <button class="action-btn" data-like>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v10H4V10h3zm0 0l4.2-6a2.4 2.4 0 0 1 3.4 1.6L15 8h3a2 2 0 0 1 2 2.4l-1.7 8A2 2 0 0 1 16.3 20H7"/></svg>
+        <span>346</span>
+      </button>
+      <button class="action-btn" data-toast="跳转到评论区">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H4l2-3a8 8 0 1 1 15-5z"/></svg>
+        <span>128</span>
+      </button>
+      <button class="action-btn" data-collect>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        收藏
+      </button>
+      <button class="action-btn share" data-toast="分享链接已复制（演示）">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+        分享
+      </button>
+    </div>
+
+    <!-- 作者卡片 -->
+    <div class="author-card">
+      <span class="avatar" style="background:#0E7C6B">川</span>
+      <div class="info">
+        <div class="author-name">川北老钓手</div>
+        <div class="desc">野钓八年 · 12.6万粉丝 · 专注川东塘库鲫鱼作钓</div>
+      </div>
+      <button class="follow" data-follow>关注</button>
+    </div>
+
+    <!-- ===== 评论区 ===== -->
+    <section class="comments">
+      <div class="comment-head">
+        <h3>评论 128</h3>
+        <button class="comment-tab active" data-tab="hot">最热</button>
+        <button class="comment-tab" data-tab="new">最新</button>
+      </div>
+      <div class="comment-input">
+        <span class="avatar" style="background:#2E86AB">我</span>
+        <input type="text" id="commentInput" placeholder="写下你的钓鱼心得…">
+        <button class="comment-send" id="commentSend">发送</button>
+      </div>
+      <div class="comment-list" id="commentList"></div>
+    </section>
+
+    <!-- ===== 相关推荐 ===== -->
+    <section class="related">
+      <h3>相关推荐</h3>
+      <div class="related-grid" id="relatedGrid"></div>
+    </section>
+  </article>
+
+  <!-- ===== 右侧栏 ===== -->
+  <aside class="aside">
+    <section class="panel">
+      <div class="panel-title">热门阅读</div>
+      <div class="rank-list" id="rankList"></div>
+    </section>
+  </aside>
+</div>
+
+<!-- ===== 移动端底部互动栏 ===== -->
+<nav class="mobile-bar">
+  <div class="comment-field" data-toast="跳转到评论区">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H4l2-3a8 8 0 1 1 15-5z"/></svg>
+    写评论…
+  </div>
+  <button class="m-action" data-like>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v10H4V10h3zm0 0l4.2-6a2.4 2.4 0 0 1 3.4 1.6L15 8h3a2 2 0 0 1 2 2.4l-1.7 8A2 2 0 0 1 16.3 20H7"/></svg>
+    <span>346</span>
+  </button>
+  <button class="m-action" data-collect>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+    收藏
+  </button>
+  <button class="m-action" data-toast="分享链接已复制（演示）">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+    分享
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const IMG = {
+  fisherBack:"https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/YolHb2VNhowWiYxkqetcKZn6ngv",
+  calm:      "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/DYjQb0CJCoiJCvxnv9Fc5WwIn6f",
+  reed:      "https://media.doubao.com/space/api/box/stream/download/all_by_mount_point/JapFbukAYoUn0fxuqbccorXVnDg"
+};
+
+const $ = s => document.querySelector(s);
+let toastTimer;
+function toast(msg){
+  const t = $("#toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"),1600);
+}
+
+/* ===== 评论数据 ===== */
+const COMMENTS = [
+  {name:"水边的阿强", color:"#2E86AB", time:"1小时前", text:"这个钓位思路很实在，浅滩草边确实是冬季鲫鱼藏身的地方，周末去试试。", likes:42},
+  {name:"渔获日记", color:"#C26B2E", time:"2小时前", text:"子线 0.6 会不会偏细？碰到一斤以上的鲤鱼会不会切线？", likes:18},
+  {name:"静水湖客", color:"#3E7C59", time:"3小时前", text:"赞同少量勤补窝，冬季一次打满基本就死窝了，酒米比玉米留鱼更久。", likes:26}
+];
+
+function renderComments(){
+  $("#commentList").innerHTML = COMMENTS.map((c,i)=>`
+    <div class="comment">
+      <span class="avatar" style="background:${c.color}">${c.name[0]}</span>
+      <div class="comment-body">
+        <div class="comment-name">${c.name}<span class="comment-time">${c.time}</span></div>
+        <div class="comment-text">${c.text}</div>
+        <div class="comment-acts">
+          <span data-like-comment>赞 ${c.likes}</span>
+          <span data-toast="回复评论（演示）">回复</span>
+        </div>
+      </div>
+    </div>`).join("");
+}
+
+$("#commentSend").onclick = ()=>{
+  const input = $("#commentInput");
+  const val = input.value.trim();
+  if(!val){ toast("先写点内容再发送"); return; }
+  COMMENTS.unshift({name:"我", color:"#2E86AB", time:"刚刚", text:val, likes:0});
+  input.value = "";
+  renderComments();
+  toast("评论已发布");
+};
+
+/* 评论点赞 */
+$("#commentList").addEventListener("click", e=>{
+  const btn = e.target.closest("[data-like-comment]");
+  if(btn){
+    btn.classList.toggle("liked");
+    const n = parseInt(btn.textContent.replace(/\D/g,""));
+    btn.textContent = btn.classList.contains("liked") ? `赞 ${n+1}` : `赞 ${n}`;
+  }
+});
+
+/* 评论 Tab 切换（演示） */
+document.querySelectorAll(".comment-tab").forEach(tab=>{
+  tab.onclick = ()=>{
+    document.querySelectorAll(".comment-tab").forEach(t=>t.classList.remove("active"));
+    tab.classList.add("active");
+    toast(tab.dataset.tab==="hot"?"按最热排序（演示）":"按最新排序（演示）");
+  };
+});
+
+/* ===== 点赞 / 收藏 全局联动 ===== */
+function bindAction(sel, cls, toastMsg){
+  document.querySelectorAll(sel).forEach(btn=>{
+    btn.onclick = e=>{
+      e.stopPropagation();
+      const on = btn.classList.toggle(cls);
+      if(sel==="[data-like]"){
+        const num = btn.querySelector("span");
+        num.textContent = +num.textContent + (on?1:-1);
+      }
+      if(toastMsg) toast(on?toastMsg[0]:toastMsg[1]);
+    };
+  });
+}
+bindAction("[data-like]", "liked", ["已点赞","已取消点赞"]);
+bindAction("[data-collect]", "collected", ["已收藏","已取消收藏"]);
+
+/* 关注按钮 */
+document.querySelectorAll("[data-follow]").forEach(btn=>{
+  btn.onclick = e=>{
+    e.stopPropagation();
+    const on = btn.classList.toggle("followed");
+    btn.textContent = on?"已关注":"关注";
+    if(on) toast("已关注该钓手");
+  };
+});
+
+/* ===== 相关推荐 ===== */
+const RELATED = [
+  {img:IMG.fisherBack, title:"晨雾出钓全攻略：看水色、辨风向、选钓位", meta:"水边的阿强 · 86评论"},
+  {img:IMG.calm, title:"秋季湖库钓鲤鱼的线组搭配与调漂思路", meta:"调漂研究所 · 142评论"},
+  {img:IMG.reed, title:"芦苇荡里藏大鱼：秋季找湾子、读草缝技巧", meta:"芦苇岸边 · 55评论"}
+];
+$("#relatedGrid").innerHTML = RELATED.map(r=>`
+  <div class="rel-card" data-toast="演示：打开相关文章">
+    <div class="thumb"><img src="${r.img}" alt="${r.title}" loading="lazy"></div>
+    <div class="info">
+      <div class="rel-title">${r.title}</div>
+      <div class="rel-meta">${r.meta}</div>
+    </div>
+  </div>`).join("");
+
+/* ===== 右侧热门阅读 ===== */
+const RANKS = [
+  {t:"降温后鲫鱼开口变差？饵料味型这样调", hot:"3.2万"},
+  {t:"今年秋冬季禁渔期公布，这些水域严禁垂钓", hot:"2.8万"},
+  {t:"抄网选购避坑：尺寸、网眼、支架怎么挑", hot:"2.1万"},
+  {t:"野钓遇到走水，铅坠和调漂的应急办法", hot:"1.7万"},
+  {t:"鲤鱼窝料配方：酒米、玉米、菜籽饼实测对比", hot:"1.5万"}
+];
+$("#rankList").innerHTML = RANKS.map((r,i)=>`
+  <div class="rank-item" data-toast="演示：打开热榜文章">
+    <span class="rank-no">${i+1}</span>
+    <div><div class="rank-text">${r.t}</div><div class="rank-hot">热度 ${r.hot}</div></div>
+  </div>`).join("");
+
+/* ===== 全局 toast ===== */
+document.addEventListener("click", e=>{
+  const el = e.target.closest("[data-toast]");
+  if(el){ e.stopPropagation(); toast(el.dataset.toast); }
+});
+
+renderComments();
+</script>
+</body>
+</html>

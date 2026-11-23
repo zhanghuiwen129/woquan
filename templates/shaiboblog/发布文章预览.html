@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>发布文章 · 赛博博客 SHAIBOBLOG</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2300e5ff' d='M12 2l8.66 5v10L12 22l-8.66-5V7z'/%3E%3C/svg%3E">
+<style>
+:root{
+  --primary:#00e5ff; --primary-dark:#00b8d4; --primary-light:#66f0ff;
+  --bg:#0d1321; --card-bg:#131c2e; --panel:#101827; --text:#e6f1ff; --text-secondary:#8aa0bf;
+  --border:#24334d; --link:#5ee7ff; --danger:#ff4d6d; --magenta:#ff2d95;
+  --grid:rgba(0,229,255,.055); --glow:0 0 14px rgba(0,229,255,.22);
+  --font-mono:'JetBrains Mono','SF Mono',Consolas,'Courier New',monospace;
+  --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',Helvetica,Arial,sans-serif;
+  background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:42px 42px;background-attachment:fixed;
+  color:var(--text);line-height:1.6;min-height:100vh;
+}
+::selection{background:rgba(0,229,255,.32);color:#fff}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,229,255,.25);border-radius:8px}
+a{color:var(--link);text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+svg{display:block}
+
+.topbar{position:sticky;top:0;z-index:50;background:rgba(13,19,33,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.topbar-inner{max-width:1280px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:20px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-mark{width:30px;height:30px;flex-shrink:0}
+.brand-name{font-weight:700;font-size:17px;letter-spacing:.5px;white-space:nowrap}
+.brand-name em{font-style:normal;color:var(--primary);font-family:var(--font-mono);font-size:12px;margin-left:6px}
+.main-nav{display:flex;gap:4px;margin-left:auto}
+.main-nav a{padding:8px 12px;border-radius:9px;color:var(--text-secondary);font-size:14px}
+.main-nav a.active,.main-nav a:hover{color:var(--primary);background:rgba(0,229,255,.08)}
+.nav-search{display:none}
+.nav-search input{width:180px;padding:9px 12px;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;outline:none}
+@media(min-width:900px){.nav-search{display:block}}
+
+.page-head{max-width:1080px;margin:24px auto 0;padding:0 20px}
+.breadcrumb{font-size:13px;color:var(--text-secondary);margin-bottom:14px}
+.breadcrumb a:hover{color:var(--primary)}
+.page-head h1{font-size:28px;line-height:1.3;margin-bottom:6px}
+.page-head .head-meta{color:var(--text-secondary);font-size:13px}
+
+.composer{max-width:1080px;margin:0 auto;padding:24px 20px 40px;display:grid;gap:24px;grid-template-columns:1fr}
+@media(min-width:1024px){
+  .composer{grid-template-columns:1fr 280px}
+}
+
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+.side-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.card-title{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12px;letter-spacing:1.6px;color:var(--text-secondary);margin-bottom:14px}
+.card-title .icon{width:17px;height:17px;color:var(--primary)}
+
+.field{margin-bottom:18px}
+.field:last-child{margin-bottom:0}
+.field-label{display:block;font-size:13px;color:var(--text-secondary);margin-bottom:8px}
+.field-label .req{color:var(--magenta)}
+.input-title{width:100%;padding:14px 16px;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:20px;font-weight:600;outline:none}
+.input-title::placeholder{color:var(--text-secondary);font-weight:400}
+.input-title:focus{border-color:var(--primary)}
+.form-select{width:100%;padding:11px 14px;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none}
+.form-select:focus{border-color:var(--primary)}
+.form-select option{background:var(--card-bg)}
+
+.md-toolbar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+.md-btn{width:34px;height:34px;border:1px solid var(--border);background:rgba(255,255,255,.04);border-radius:9px;color:var(--text-secondary);font-size:14px;display:inline-flex;align-items:center;justify-content:center}
+.md-btn:hover{border-color:rgba(0,229,255,.35);color:var(--primary)}
+.md-btn svg{width:16px;height:16px}
+.md-editor{width:100%;min-height:300px;padding:14px 16px;background:#0b1220;border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font-mono);font-size:14px;line-height:1.8;outline:none;resize:vertical}
+.md-editor::placeholder{color:var(--text-secondary)}
+.md-editor:focus{border-color:var(--primary)}
+
+/* 工具栏 */
+.tool-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--border)}
+.tool-btn{width:38px;height:38px;border:1px solid var(--border);background:rgba(255,255,255,.04);border-radius:10px;color:var(--text-secondary);display:inline-flex;align-items:center;justify-content:center}
+.tool-btn:hover{border-color:rgba(0,229,255,.35);color:var(--primary)}
+.tool-btn.active{color:var(--primary);border-color:rgba(0,229,255,.45);background:rgba(0,229,255,.1)}
+.tool-btn svg{width:18px;height:18px}
+.tool-btn .tag{font-family:var(--font-mono);font-size:11px}
+.schedule-row{display:none;align-items:center;gap:10px;margin-left:auto;flex-wrap:wrap}
+.schedule-row.show{display:flex}
+.schedule-row input{padding:9px 12px;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;outline:none}
+
+.publish-foot{display:flex;align-items:center;gap:14px;margin-top:18px;flex-wrap:wrap}
+.word-count{font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);margin-left:auto}
+.word-count.over{color:var(--danger)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 18px;border-radius:10px;font-size:14px;font-weight:500;border:1px solid transparent}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#04121a;box-shadow:var(--glow);font-weight:600}
+.btn-primary:hover{filter:brightness(1.12)}
+.btn-ghost{background:rgba(255,255,255,.05);color:var(--text);border-color:var(--border)}
+.btn-ghost:hover{border-color:rgba(0,229,255,.35);color:var(--primary)}
+
+.tips{list-style:none;display:flex;flex-direction:column;gap:10px}
+.tips li{font-size:13px;color:var(--text-secondary);padding-left:18px;position:relative}
+.tips li::before{content:"";position:absolute;left:0;top:9px;width:6px;height:6px;border-radius:50%;background:var(--primary)}
+.tips li strong{color:var(--text);font-weight:600}
+
+.site-footer{border-top:1px solid var(--border);margin-top:28px;padding:24px 20px;text-align:center;color:var(--text-secondary);font-family:var(--font-mono);font-size:11px;letter-spacing:.4px}
+.site-footer .links{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin-bottom:10px}
+
+.toast{position:fixed;left:50%;bottom:64px;transform:translateX(-50%) translateY(8px);background:var(--card-bg);border:1px solid var(--primary);color:var(--text);padding:10px 16px;border-radius:10px;font-size:13px;box-shadow:var(--glow);opacity:0;pointer-events:none;transition:all .25s;z-index:100}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:767px){
+  .page-head h1{font-size:23px}
+  .topbar-inner{flex-wrap:wrap;gap:10px}
+  .main-nav{order:3;width:100%;overflow-x:auto;gap:2px;margin-left:0}
+  .main-nav a{white-space:nowrap;flex-shrink:0;padding:8px 10px;font-size:13px}
+  .schedule-row{margin-left:0;width:100%}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="1.6" stroke-linejoin="round">
+        <path d="M12 2l8.66 5v10L12 22l-8.66-5V7z" fill="rgba(0,229,255,.12)"/>
+        <circle cx="12" cy="12" r="3" fill="#00e5ff"/>
+      </svg>
+      <div class="brand-name">赛博博客<em>SHAIBOBLOG</em></div>
+    </div>
+    <nav class="main-nav" aria-label="主导航">
+      <a href="赛博博客主题预览.html">首页</a>
+      <a href="赛博博客主题预览.html" class="active">文章</a>
+      <a href="分类页预览.html">分类</a>
+      <a href="话题页预览.html">标签</a>
+      <a href="javascript:void(0)">关于</a>
+    </nav>
+    <div class="nav-search">
+      <input type="search" placeholder="搜索文章…" aria-label="搜索文章" id="site-search">
+    </div>
+  </div>
+</header>
+
+<section class="page-head">
+  <nav class="breadcrumb" aria-label="面包屑">
+    <a href="赛博博客主题预览.html">首页</a> / 发布文章
+  </nav>
+  <h1>发布文章</h1>
+  <div class="head-meta">用 Markdown 记录文章、心得与技术笔记，发布后按分类与标签归档。</div>
+</section>
+
+<div class="composer">
+
+  <!-- 主编辑区 -->
+  <main class="card">
+    <div class="field">
+      <label class="field-label" for="publish-title">标题 <span class="req">*</span></label>
+      <input class="input-title" id="publish-title" type="text" maxlength="255" placeholder="起一个清楚的标题，方便日后检索回看">
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="publish-category">所属分类</label>
+      <select class="form-select" id="publish-category">
+        <option value="">选择分类</option>
+        <option value="lure">路亚随笔</option>
+        <option value="gear">装备测评</option>
+        <option value="night">夜钓笔记</option>
+        <option value="qa">钓鱼问答</option>
+        <option value="trip">行程记录</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="publish-content">正文 <span class="req">*</span> · 支持 Markdown</label>
+      <div class="md-toolbar" role="toolbar" aria-label="Markdown 工具">
+        <button class="md-btn" type="button" data-md="heading" title="小标题">H</button>
+        <button class="md-btn" type="button" data-md="bold" title="加粗"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg></button>
+        <button class="md-btn" type="button" data-md="link" title="链接"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+        <button class="md-btn" type="button" data-md="image" title="图片"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
+        <button class="md-btn" type="button" data-md="list" title="列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+      </div>
+      <textarea class="md-editor" id="publish-content" placeholder="用 Markdown 写正文：小标题、列表、引用、代码块、配图都支持。"></textarea>
+    </div>
+
+    <div class="tool-row">
+      <button class="tool-btn" type="button" id="btn-media" title="添加图片">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      </button>
+      <button class="tool-btn" type="button" id="btn-video" title="添加视频">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      </button>
+      <button class="tool-btn" type="button" id="btn-emoji" title="表情">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      </button>
+      <button class="tool-btn" type="button" id="btn-original" title="原创声明">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </button>
+      <input type="checkbox" id="publish-pin" style="display:none;">
+      <button class="tool-btn" type="button" id="btn-pin" title="置顶文章">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 3h6l1 7 3 3H5l3-3z"/></svg>
+      </button>
+      <button class="tool-btn" type="button" id="btn-schedule" title="定时发布">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </button>
+      <div class="schedule-row" id="schedule-row">
+        <span class="field-label" style="margin:0;">定时发布</span>
+        <input type="datetime-local" id="schedule-time">
+      </div>
+    </div>
+
+    <div class="publish-foot">
+      <button class="btn btn-ghost" type="button" id="btn-cancel">取消</button>
+      <span class="word-count" id="word-count">0 / 2000</span>
+      <button class="btn btn-primary" type="button" id="btn-publish">发布文章</button>
+    </div>
+  </main>
+
+  <!-- 右侧说明 -->
+  <aside>
+    <div class="side-card">
+      <h4 class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>写作提示</h4>
+      <ul class="tips">
+        <li><strong>标题清楚具体</strong>，便于日后按分类与标签检索。</li>
+        <li>正文用小标题分段，长文配列表与配图，阅读更轻松。</li>
+        <li>勾选原创声明后，文章会标注「原创」。</li>
+        <li>勾选置顶后，文章长期显示在文章列表顶部。</li>
+        <li>未选择分类时，文章默认归入未分类。</li>
+      </ul>
+    </div>
+    <div class="side-card">
+      <h4 class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>发布规则</h4>
+      <ul class="tips">
+        <li>正文不超过 <strong>2000</strong> 字。</li>
+        <li>发布后可在文章页继续编辑或删除。</li>
+        <li>涉及他人作品请注明来源。</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+
+<footer class="site-footer">
+  <div class="links">
+    <a href="赛博博客主题预览.html">返回首页</a>
+    <a href="javascript:void(0)">归档</a>
+    <a href="javascript:void(0)">友情链接</a>
+  </div>
+  <div>© <span id="year">2026</span> 赛博博客 SHAIBOBLOG · 主题预览稿，页面数据均为示例 · 不代表线上真实内容</div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  var MAX = 2000;
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  var titleEl = document.getElementById('publish-title');
+  var contentEl = document.getElementById('publish-content');
+  var countEl = document.getElementById('word-count');
+  var categoryEl = document.getElementById('publish-category');
+
+  // 字数统计
+  function refreshCount(){
+    var n = contentEl.value.length;
+    countEl.textContent = n + ' / ' + MAX;
+    countEl.classList.toggle('over', n > MAX);
+  }
+  contentEl.addEventListener('input', refreshCount);
+
+  // Markdown 插入片段
+  var snippets = {
+    heading: '\n## 小标题\n\n',
+    bold: '**加粗文字**',
+    link: '[链接文字](https://)',
+    image: '\n![配图说明](assets/cover-lake.jpg)\n',
+    list: '\n- 列表项一\n- 列表项二\n'
+  };
+  document.querySelectorAll('.md-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var snip = snippets[btn.dataset.md] || '';
+      var start = contentEl.selectionStart, end = contentEl.selectionEnd;
+      contentEl.value = contentEl.value.slice(0, start) + snip + contentEl.value.slice(end);
+      contentEl.focus();
+      refreshCount();
+    });
+  });
+
+  // 开关按钮（原创 / 置顶 / 定时）
+  function bindToggle(id, rowId, checkboxId){
+    var btn = document.getElementById(id);
+    var checkbox = checkboxId ? document.getElementById(checkboxId) : null;
+    btn.addEventListener('click', function(){
+      var on = !btn.classList.contains('active');
+      btn.classList.toggle('active', on);
+      if (rowId) document.getElementById(rowId).classList.toggle('show', on);
+      if (checkbox) checkbox.checked = on;
+      toast(on ? '已开启' : '已关闭');
+    });
+  }
+  bindToggle('btn-original');
+  bindToggle('btn-pin', null, 'publish-pin');
+  bindToggle('btn-schedule', 'schedule-row');
+
+  // 其它工具栏按钮（演示）
+  [['btn-media','上传图片（演示）'],['btn-video','上传视频（演示）'],['btn-emoji','表情选择（演示）']]
+    .forEach(function(pair){
+      document.getElementById(pair[0]).addEventListener('click', function(){ toast(pair[1]); });
+    });
+
+  // 取消 / 发布
+  document.getElementById('btn-cancel').addEventListener('click', function(){
+    location.href = '赛博博客主题预览.html';
+  });
+  document.getElementById('btn-publish').addEventListener('click', function(){
+    if (!titleEl.value.trim()) { toast('请先填写文章标题'); return; }
+    if (!contentEl.value.trim()) { toast('正文内容不能为空'); return; }
+    if (contentEl.value.length > MAX) { toast('正文超过 2000 字，请精简后再发布'); return; }
+    toast('演示预览页：文章未接入真实发布');
+  });
+
+  var search = document.getElementById('site-search');
+  search.addEventListener('keydown', function(e){ if (e.key === 'Enter') { location.href = '搜索页预览.html'; } });
+
+  var toastEl = document.getElementById('toast');
+  var timer = null;
+  window.toast = function(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(timer);
+    timer = setTimeout(function(){ toastEl.classList.remove('show'); }, 1600);
+  };
+})();
+</script>
+</body>
+</html>

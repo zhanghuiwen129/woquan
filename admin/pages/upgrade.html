@@ -1,0 +1,35 @@
+        <div id="page-upgrade" class="hidden">
+            <div class="card">
+                <h3 style="margin-bottom:16px;"><i data-icon="rocket"></i>版本检测</h3>
+                <div id="upgrade-version-info" style="margin-bottom:16px;font-size:14px;line-height:1.8;">
+                    <div>当前版本：<span id="current-version">检测中...</span></div>
+                    <div>最新版本：<span id="latest-version">-</span></div>
+                    <div id="version-message" style="color:var(--text-secondary);"></div>
+                </div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                    <button class="btn btn-primary" data-action="check-version">重新检测</button>
+                    <a id="download-link" class="btn btn-default" href="https://gitee.com/aiwoquan/hubloggaidewoquanjiapp/releases" target="_blank" style="text-decoration:none;display:none;">前往 Gitee 下载</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom:16px;"><i data-icon="rocket"></i>在线升级</h3>
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">上传从 Gitee 下载的最新版本 zip 安装包，系统将自动备份数据库与代码文件，然后执行升级与数据库迁移。</p>
+                <form id="upgrade-form">
+                    <div class="form-group">
+                        <input type="file" id="upgrade-package" accept=".zip" style="font-size:14px;">
+                    </div>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                        <button class="btn btn-primary" data-action="do-upgrade" id="btn-upgrade">立即升级</button>
+                    </div>
+                </form>
+                <div id="upgrade-result" style="margin-top:16px;font-size:14px;"></div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom:16px;"><i data-icon="refresh"></i>回滚恢复</h3>
+                <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px;">如果升级后出现问题，可一键回滚到最近一次升级前的数据库与代码备份。</p>
+                <button class="btn btn-danger" data-action="do-rollback" id="btn-rollback">执行回滚</button>
+                <div id="rollback-result" style="margin-top:16px;font-size:14px;"></div>
+            </div>
+        </div>

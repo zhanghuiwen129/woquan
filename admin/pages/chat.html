@@ -1,0 +1,181 @@
+        <div id="page-chat" class="hidden">
+            <!-- 顶部 Tab 切换 -->
+            <div class="card tab-card">
+                <div class="tab-bar">
+                    <button class="setting-tab active" data-action="chat-switch-tab" data-tab="stats"><i data-icon="chart"></i>存储统计</button>
+                    <button class="setting-tab" data-action="chat-switch-tab" data-tab="conversations"><i data-icon="comment"></i>会话管理</button>
+                    <button class="setting-tab" data-action="chat-switch-tab" data-tab="messages"><i data-icon="file-text"></i>消息管理</button>
+                    <button class="setting-tab" data-action="chat-switch-tab" data-tab="deletions"><i data-icon="search"></i>删除审计</button>
+                    <button class="setting-tab" data-action="chat-switch-tab" data-tab="cleanup"><i data-icon="broom"></i>清理工具</button>
+                    <button class="setting-tab" data-action="chat-switch-tab" data-tab="settings"><i data-icon="settings"></i>上传设置</button>
+                </div>
+            </div>
+
+            <!-- === 存储统计 === -->
+            <div id="chat-tab-stats">
+                <div class="stats-grid" id="chat-stats-grid"></div>
+                <div class="card">
+                    <h3 style="margin-bottom:16px;"><i data-icon="folder"></i> 目录空间分布</h3>
+                    <div id="chat-dir-stats" style="font-size:14px;"></div>
+                </div>
+                <div class="card">
+                    <h3 style="margin-bottom:16px;"><i data-icon="alert"></i> 孤儿文件（未被引用的物理文件）</h3>
+                    <div id="chat-orphan-info" style="font-size:14px;"></div>
+                </div>
+            </div>
+
+            <!-- === 会话管理 === -->
+            <div id="chat-tab-conversations" class="hidden">
+                <div class="card">
+                    <div class="search-bar" style="flex-wrap:wrap;">
+                        <input type="text" id="chat-conv-search" placeholder="搜索会话内容/用户名/昵称..." data-keydown="enter-chat-conversations">
+                        <button class="btn btn-primary" data-action="load-chat-conversations">搜索</button>
+                        <label style="font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;">
+                            <input type="checkbox" id="chat-conv-include-deleted" data-change="load-chat-conversations"> 含已下架会话
+                        </label>
+                    </div>
+                    <div class="notice">
+                        <i data-icon="lock"></i>
+                        <div>会话与消息<strong>永不物理删除</strong>：「下架」只是打标记，内容与附件完整保留，随时可在「删除审计」里翻出来取证。</div>
+                    </div>
+                    <table>
+                        <thead><tr><th>ID</th><th>成员</th><th>消息数</th><th>已删消息</th><th>最后消息</th><th>创建时间</th><th>操作</th></tr></thead>
+                        <tbody id="chat-convs-table"></tbody>
+                    </table>
+                    <div class="pagination" id="chat-convs-pagination"></div>
+                </div>
+            </div>
+
+            <!-- === 消息管理 === -->
+            <div id="chat-tab-messages" class="hidden">
+                <div class="card">
+                    <div class="search-bar" style="flex-wrap:wrap;">
+                        <input type="text" id="chat-msg-keyword" placeholder="搜索消息内容..." style="flex:1;min-width:150px;" data-keydown="enter-chat-messages">
+                        <select id="chat-msg-type" style="padding:10px;border:1px solid var(--border);border-radius:4px;">
+                            <option value="">全部类型</option>
+                            <option value="text">文本</option>
+                            <option value="image">图片</option>
+                            <option value="video">视频</option>
+                            <option value="file">文件</option>
+                        </select>
+                        <input type="text" id="chat-msg-conv" placeholder="会话ID" style="max-width:110px;padding:10px;border:1px solid var(--border);border-radius:4px;">
+                        <input type="date" id="chat-msg-from" style="padding:10px;border:1px solid var(--border);border-radius:4px;">
+                        <input type="date" id="chat-msg-to" style="padding:10px;border:1px solid var(--border);border-radius:4px;">
+                        <button class="btn btn-primary" data-action="load-chat-messages">搜索</button>
+                        <button class="btn btn-default" data-action="chat-msg-batch-delete">批量下架选中</button>
+                        <button class="btn btn-default" data-action="chat-export-csv"><i data-icon="upload"></i> 导出 CSV（取证）</button>
+                        <label style="font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;">
+                            <input type="checkbox" id="chat-msg-include-deleted" data-change="load-chat-messages"> 含已删除
+                        </label>
+                        <label style="font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;">
+                            <input type="checkbox" id="chat-msg-deleted-only" data-change="load-chat-messages"> 只看已删除
+                        </label>
+                    </div>
+                    <table>
+                        <thead><tr><th><input type="checkbox" id="chat-msg-check-all" data-change="chat-check-all-msgs"></th><th>ID</th><th>会话</th><th>发送者</th><th>类型</th><th>内容</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+                        <tbody id="chat-msgs-table"></tbody>
+                    </table>
+                    <div class="pagination" id="chat-msgs-pagination"></div>
+                </div>
+            </div>
+
+            <!-- === 删除审计 === -->
+            <div id="chat-tab-deletions" class="hidden">
+                <div class="card">
+                    <h3 style="margin-bottom:8px;"><i data-icon="search"></i> 删除流水（含原文快照）</h3>
+                    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;">
+                        每一次删除/恢复操作都留痕：谁、什么时候、删了哪条消息、原文是什么。消息本体也仍在库中，可作为证据链。
+                    </p>
+                    <div class="search-bar" style="flex-wrap:wrap;">
+                        <input type="text" id="chat-del-keyword" placeholder="搜索被删内容..." data-keydown="enter-chat-deletions">
+                        <input type="text" id="chat-del-conv" placeholder="会话ID" style="max-width:120px;">
+                        <input type="text" id="chat-del-operator" placeholder="操作人ID" style="max-width:120px;">
+                        <select id="chat-del-scope" style="padding:10px;border:1px solid var(--border);border-radius:4px;">
+                            <option value="">全部类型</option>
+                            <option value="self">用户自己删除</option>
+                            <option value="admin">管理员下架</option>
+                            <option value="purge">系统清理</option>
+                            <option value="restore">恢复</option>
+                        </select>
+                        <button class="btn btn-primary" data-action="load-chat-deletions">搜索</button>
+                    </div>
+                    <table>
+                        <thead><tr><th>ID</th><th>消息ID</th><th>会话</th><th>操作人</th><th>类型</th><th>原文快照</th><th>操作时间</th></tr></thead>
+                        <tbody id="chat-dels-table"></tbody>
+                    </table>
+                    <div class="pagination" id="chat-dels-pagination"></div>
+                </div>
+            </div>
+
+            <!-- === 清理工具 === -->
+            <div id="chat-tab-cleanup" class="hidden">
+                <div class="card">
+                    <h3 style="margin-bottom:12px;"><i data-icon="trash"></i> 清理过期消息</h3>
+                    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;">
+                        把指定天数之前的私信消息标记为「已删」，从用户端隐藏。<strong>记录仍完整保留</strong>，可在「删除审计」中查到（附件文件不再删除）。
+                    </p>
+                    <div class="form-group">
+                        <label>清理多少天前的消息</label>
+                        <input type="number" class="form-input" id="chat-cleanup-days" value="90" min="1" placeholder="例如：90">
+                    </div>
+                    <div class="form-group">
+                        <label>仅清理以下类型（不选=全部类型）</label>
+                        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;">
+                            <label><input type="checkbox" class="chat-cleanup-type" value="image" checked> 图片</label>
+                            <label><input type="checkbox" class="chat-cleanup-type" value="video" checked> 视频</label>
+                            <label><input type="checkbox" class="chat-cleanup-type" value="file"> 文件</label>
+                            <label><input type="checkbox" class="chat-cleanup-type" value="text"> 纯文本</label>
+                        </div>
+                    </div>
+                    <button class="btn btn-danger" data-action="chat-cleanup-expired"><i data-icon="dot"></i> 执行清理</button>
+                    <div id="chat-cleanup-result" style="margin-top:12px;font-size:14px;"></div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom:12px;"><i data-icon="search"></i> 清理孤儿文件</h3>
+                    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;">
+                        扫描 uploads 目录，删除所有物理存在但未被任何消息/动态/头像引用的文件。释放被浪费的磁盘空间。
+                    </p>
+                    <button class="btn btn-primary" data-action="chat-cleanup-orphan"><i data-icon="refresh"></i> 扫描并清理孤儿文件</button>
+                    <div id="chat-orphan-result" style="margin-top:12px;font-size:14px;"></div>
+                </div>
+            </div>
+
+            <!-- === 上传设置 === -->
+            <div id="chat-tab-settings" class="hidden">
+                <div class="card">
+                    <h3 style="margin-bottom:16px;"><i data-icon="settings"></i> 私信上传限制</h3>
+                    <div style="margin-bottom:16px;padding:12px;background:var(--notice-bg);border-radius:6px;font-size:13px;color:var(--text-secondary);">
+                        <i data-icon="bulb"></i> 这些设置只影响<strong>新上传</strong>的私信媒体文件，不会对已有文件重新处理。
+                    </div>
+
+                    <div class="form-group">
+                        <label>图片最大尺寸（MB）</label>
+                        <input type="number" class="form-input" id="chat-set-max-image" min="1" max="50" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label>图片压缩最大宽度（像素，越小压缩越狠）</label>
+                        <input type="number" class="form-input" id="chat-set-image-width" min="800" max="4000" step="100">
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">默认 1600px，动态管理用 1920px。小尺寸可节省更多空间。</div>
+                    </div>
+                    <div class="form-group">
+                        <label>视频最大尺寸（MB）</label>
+                        <input type="number" class="form-input" id="chat-set-max-video" min="5" max="500" step="5">
+                    </div>
+                    <div class="form-group">
+                        <label><input type="checkbox" id="chat-set-video-compress"> 启用 FFmpeg 视频自动压缩（需服务器安装 FFmpeg）</label>
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">压缩策略：720p / H.264 / CRF 28 / 25fps，约为原体积的 30%-50%</div>
+                    </div>
+                    <div class="form-group">
+                        <label>自动清理过期消息（天，0=不自动清理）</label>
+                        <input type="number" class="form-input" id="chat-set-cleanup-days" min="0" max="3650" step="1">
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">设定后需配合定时任务使用，或手动在「清理工具」页面执行。</div>
+                    </div>
+
+                    <div style="display:flex;gap:12px;">
+                        <button class="btn btn-primary" data-action="chat-save-settings"><i data-icon="save"></i> 保存设置</button>
+                        <button class="btn btn-default" data-action="chat-load-settings"><i data-icon="refresh"></i> 重新加载</button>
+                    </div>
+                </div>
+            </div>
+        </div>

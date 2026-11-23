@@ -1,0 +1,11 @@
+# 管理后台专属配置（覆盖根 .htaccess）：资源禁强缓存 + 严格 CSP（内联脚本已清零）
+<IfModule mod_expires.c>
+    ExpiresActive Off
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header set Cache-Control "no-cache"
+    Header always set Content-Security-Policy "object-src 'none'; frame-ancestors 'none'; base-uri 'self'; script-src 'self'"
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>

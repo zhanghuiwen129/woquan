@@ -1,0 +1,96 @@
+        <div id="page-content-pay" class="hidden">
+            <div class="notice"><i data-icon="info"></i><div>内容付费：单篇买断永久解锁，专栏订阅限时解锁。站内钱包余额 + 积分抵扣结算，不新增资金通道。价格只在这里配置，接口不接受前端传价。</div></div>
+            <div class="card">
+                <div class="tab-bar">
+                    <button class="content-pay-tab active" data-action="content-pay-tab" data-value="product"><i data-icon="file-text"></i>内容定价</button>
+                    <button class="content-pay-tab" data-action="content-pay-tab" data-value="column"><i data-icon="list"></i>专栏管理</button>
+                    <button class="content-pay-tab" data-action="content-pay-tab" data-value="orders"><i data-icon="clipboard"></i>订单查询</button>
+                    <button class="btn btn-primary" data-action="load-content-pay" data-refresh="1" style="margin-left:auto;flex-shrink:0;"><i data-icon="refresh"></i>刷新</button>
+                </div>
+
+                <!-- 内容定价 -->
+                <div id="panel-content-pay-product">
+                    <p style="font-size:13px;color:var(--text-muted,#888);margin:0 0 12px;">给单篇帖子或专栏商品定价。试读比例 0=不试读，30=只显示前 30% 正文。状态关闭后付费墙自动放行。</p>
+                    <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;">
+                        <label style="font-size:13px;">类型
+                            <select class="form-input" id="cp-product-type" style="display:block;width:auto;margin-top:4px;">
+                                <option value="post">单篇帖子</option>
+                                <option value="column">专栏</option>
+                            </select>
+                        </label>
+                        <label style="font-size:13px;">目标 ID
+                            <input type="number" class="form-input" id="cp-target-id" placeholder="帖子/专栏 ID" style="display:block;width:130px;margin-top:4px;">
+                        </label>
+                        <label style="font-size:13px;">帖型
+                            <input type="text" class="form-input" id="cp-post-type" value="normal" style="display:block;width:110px;margin-top:4px;">
+                        </label>
+                        <label style="font-size:13px;">价格(¥)
+                            <input type="number" step="0.01" class="form-input" id="cp-price" placeholder="0.00" style="display:block;width:110px;margin-top:4px;">
+                        </label>
+                        <label style="font-size:13px;">试读(%)
+                            <input type="number" class="form-input" id="cp-ratio" value="30" style="display:block;width:90px;margin-top:4px;">
+                        </label>
+                        <label style="font-size:13px;">有效期(天,仅专栏)
+                            <input type="number" class="form-input" id="cp-valid-days" value="0" style="display:block;width:120px;margin-top:4px;">
+                        </label>
+                        <button class="btn btn-primary" data-action="cp-save-product">保存定价</button>
+                    </div>
+                    <p style="font-size:13px;color:var(--text-muted,#888);margin:0 0 8px;">已定价商品</p>
+                    <table>
+                        <thead><tr><th>类型</th><th>目标ID</th><th>帖型</th><th>价格</th><th>试读</th><th>有效期</th><th>状态</th><th>销量</th></tr></thead>
+                        <tbody id="cp-products-table"></tbody>
+                    </table>
+                </div>
+
+                <!-- 专栏管理 -->
+                <div id="panel-content-pay-column" class="hidden">
+                    <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;">
+                        <label style="font-size:13px;">标题
+                            <input type="text" class="form-input" id="cp-col-title" placeholder="专栏标题" style="display:block;width:180px;margin-top:4px;">
+                        </label>
+                        <label style="font-size:13px;">作者ID
+                            <input type="number" class="form-input" id="cp-col-owner" placeholder="默认当前管理员" style="display:block;width:130px;margin-top:4px;">
+                        </label>
+                        <label style="font-size:13px;">有效期(天)
+                            <input type="number" class="form-input" id="cp-col-days" value="365" style="display:block;width:110px;margin-top:4px;">
+                        </label>
+                        <button class="btn btn-primary" data-action="cp-save-column">新建专栏</button>
+                    </div>
+                    <p style="font-size:13px;color:var(--text-muted,#888);margin:0 0 8px;">专栏列表（往专栏里加文章用「加入条目」：填专栏 ID + 帖子 ID）</p>
+                    <table>
+                        <thead><tr><th>ID</th><th>标题</th><th>作者</th><th>有效期</th><th>条目数</th><th>状态</th></tr></thead>
+                        <tbody id="cp-columns-table"></tbody>
+                    </table>
+                    <div style="display:flex;gap:8px;align-items:flex-end;margin:16px 0;flex-wrap:wrap;">
+                        <label style="font-size:13px;">专栏ID
+                            <input type="number" class="form-input" id="cp-item-column" style="display:block;width:100px;margin-top:4px;">
+                        </label>
+                        <label style="font-size:13px;">帖子ID
+                            <input type="number" class="form-input" id="cp-item-post" style="display:block;width:100px;margin-top:4px;">
+                        </label>
+                        <label style="font-size:13px;">排序
+                            <input type="number" class="form-input" id="cp-item-sort" value="0" style="display:block;width:80px;margin-top:4px;">
+                        </label>
+                        <button class="btn btn-primary" data-action="cp-save-item">加入条目</button>
+                    </div>
+                </div>
+
+                <!-- 订单查询 -->
+                <div id="panel-content-pay-orders" class="hidden">
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+                        <select class="form-input" id="cp-order-status" style="width:auto;" data-change="load-content-pay" data-refresh="1">
+                            <option value="">全部状态</option>
+                            <option value="paid">已支付</option>
+                            <option value="closed">已关闭</option>
+                            <option value="refunded">已退款</option>
+                        </select>
+                        <button class="btn btn-primary" data-action="load-content-pay" data-refresh="1">查询</button>
+                    </div>
+                    <table>
+                        <thead><tr><th>ID</th><th>用户</th><th>类型</th><th>目标</th><th>原价</th><th>积分抵扣</th><th>实付</th><th>状态</th><th>订单号</th><th>时间</th></tr></thead>
+                        <tbody id="cp-orders-table"></tbody>
+                    </table>
+                    <div id="cp-orders-pagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;"></div>
+                </div>
+            </div>
+        </div>

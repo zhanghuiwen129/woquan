@@ -1,0 +1,40 @@
+{
+  "name": "DemoExtension",
+  "title": "演示扩展",
+  "description": "最小二开示例：演示清单建表、设置页配置与业务钩子的完整链路，不含任何垂直业务逻辑。",
+  "version": "1.0.0",
+  "author": "woquan",
+  "link": "",
+  "core_version": ">=2.16.0",
+  "permissions": [],
+  "hooks": ["post_created"],
+  "required_tables": [
+    {
+      "name": "plugin_demo_notes",
+      "columns": [
+        { "name": "id", "type": "int", "unsigned": true, "auto_increment": true, "comment": "演示记录主键" },
+        { "name": "post_id", "type": "int", "unsigned": true, "default": 0, "comment": "触发钩子时的帖子 ID" },
+        { "name": "user_id", "type": "int", "unsigned": true, "default": 0, "comment": "触发钩子时的用户 ID" },
+        { "name": "note", "type": "varchar", "length": 255, "default": "", "comment": "演示备注文本" },
+        { "name": "created_at", "type": "datetime", "comment": "记录创建时间" }
+      ],
+      "primary_key": "id",
+      "indexes": [
+        { "name": "idx_demo_note_post", "columns": ["post_id"], "unique": false }
+      ]
+    }
+  ],
+  "required_columns": [],
+  "drop_tables_on_uninstall": false,
+  "admin_menu": [
+    { "group": "content", "title": "演示笔记", "page": "plugin-demo-notes", "icon": "note", "sort": 100 }
+  ],
+  "admin_settings": {
+    "page": "settings.html",
+    "config_scope": "demo",
+    "title": "演示扩展设置"
+  },
+  "install_hook": true,
+  "uninstall_hook": true,
+  "upgrade_hook": true
+}

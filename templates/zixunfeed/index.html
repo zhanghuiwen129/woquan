@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="{{PAGE_DESCRIPTION}}">
+    <meta name="keywords" content="{{PAGE_KEYWORDS}}">
+    <title>{{PAGE_TITLE}}</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <script>
+        window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/';
+        window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+    </script>
+</head>
+<body>
+    <h1 class="sr-only">{{SITE_NAME}}</h1>
+
+<!-- ===== 顶部导航 ===== -->
+<!-- @include partials/topbar.html -->
+
+<div class="wrap">
+    <!-- ===== 主信息流 ===== -->
+    <main>
+        <section class="hero" id="hero">{{SSR_HERO}}</section>
+
+        <section class="flash" id="flash">
+            <span class="flash-label">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>
+                快讯
+            </span>
+            <div class="flash-track"><div class="flash-text" id="flashTrack">{{SSR_FLASH}}</div></div>
+        </section>
+
+        <section class="feed" id="feed">{{SSR_FEED}}</section>
+        <div class="load-more" id="load-more">上滑加载更多</div>
+    </main>
+
+    <!-- ===== 侧边栏 ===== -->
+    <aside class="aside">
+        <section class="panel">
+            <div class="panel-title">热榜 <a href="{{PAGE_BASE}}/ranking" id="rankMore">更多</a></div>
+            <div class="rank-list" id="rankList">{{SSR_SIDE}}</div>
+        </section>
+        <section class="panel">
+            <div class="panel-title">热门话题</div>
+            <div class="chips" id="topicChips">{{SSR_CHIPS}}</div>
+        </section>
+        <section class="panel">
+            <div class="panel-title">关注作者</div>
+            <div id="asideAuthors"></div>
+        </section>
+    </aside>
+</div>
+
+<!-- ===== 移动端底部 Tab ===== -->
+<!-- @include partials/tabbar.html -->
+
+<!-- @include partials/page-tail.html -->
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

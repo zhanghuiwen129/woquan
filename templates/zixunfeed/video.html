@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="{{PAGE_DESCRIPTION}}">
+    <meta name="keywords" content="{{PAGE_KEYWORDS}}">
+    <title>{{PAGE_TITLE}}</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <script>
+        window.HUBLOG_BASE_URL = window.HUBLOG_BASE_URL || '/';
+        window.HUBLOG_PAGE_BASE = window.HUBLOG_PAGE_BASE || '';
+    </script>
+</head>
+<body class="page-video">
+    <h1 class="sr-only">视频专区</h1>
+
+<!-- 视频页顶栏无频道栏、搜索占位文案不同，保留页面内联 -->
+<header class="topbar">
+    <div class="topbar-inner">
+        <a class="logo" href="/" data-home>
+            <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 20C8 14 12 10 20 5"/><circle cx="6" cy="18" r="1.6" fill="#fff" stroke="none"/></svg></span>
+            <span id="brandName">woquan</span>
+        </a>
+        <label class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input type="text" id="searchInput" placeholder="搜索视频、作者">
+        </label>
+        <div class="topbar-right">
+            <button class="btn-login" id="loginBtn">登录</button>
+            <span class="topbar-avatar" id="topbarAvatar" style="display:none"><img alt=""></span>
+        </div>
+    </div>
+</header>
+
+<div class="wrap">
+    <section class="page-hero">
+        <div class="page-eyebrow">VIDEO</div>
+        <h2 class="page-hero-title">视频专区</h2>
+        <p class="page-hero-sub">精选视频内容，按频道浏览，点开即看</p>
+    </section>
+
+    <div class="v-tabs" id="vTabs">
+        <button class="v-tab active" data-cat="">推荐</button>
+    </div>
+
+    <section class="feature" id="feature" style="display:none">
+        <img id="featureImg" alt="置顶推荐视频封面">
+        <div class="feature-mask"></div>
+        <span class="feature-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="feature-dur" id="featureDur"></span>
+        <div class="feature-text">
+            <span class="feature-tag">置顶推荐</span>
+            <div class="feature-title" id="featureTitle"></div>
+            <div class="feature-hint">点击立即播放</div>
+        </div>
+    </section>
+
+    <div class="section-head">
+        <h3>最新视频</h3>
+        <span id="videoCount">持续更新</span>
+    </div>
+
+    <section class="v-grid" id="vGrid">{{SSR_FEED}}</section>
+    <div class="load-more" id="load-more" style="display:none">加载更多</div>
+</div>
+
+<!-- @include partials/tabbar.html -->
+
+<!-- @include partials/page-tail.html -->
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,447 @@
+{
+  "info": {
+    "_postman_id": "hublog-app-phase0",
+    "name": "Hublog App 端接口联调（Phase 0 验收）",
+    "description": "App 端全接口联调脚本。\n\n使用方式：\n1. 导入 Postman / ApiPost\n2. 修改变量 baseUrl 为你的站点地址（如 http://127.0.0.1）\n3. 按顺序执行「认证」目录：login 会自动把 token / refresh_token 写入环境变量\n4. 其余目录依赖 {{token}}，登录后即可直接跑\n\n说明：登录后接口走 Authorization: Bearer，后端自动豁免 CSRF；login/token-refresh 在后端 CSRF 白名单内可不带 token，此处取 token 仅作演示。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1" },
+    { "key": "token", "value": "" },
+    { "key": "refresh_token", "value": "" },
+    { "key": "device_id", "value": "postman-device-0001" },
+    { "key": "csrf", "value": "" },
+    { "key": "username", "value": "admin" },
+    { "key": "password", "value": "123456" },
+    { "key": "postId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "0. 获取 CSRF Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  const j = pm.response.json();",
+              "  if (j.code === 200 && j.data && j.data.token) {",
+              "    pm.collectionVariables.set('csrf', j.data.token);",
+              "  }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/csrf", "host": ["{{baseUrl}}"], "path": ["api", "csrf"] }
+      }
+    },
+    {
+      "name": "1. 认证",
+      "item": [
+        {
+          "name": "登录（下发双令牌）",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const j = pm.response.json();",
+                  "if (j.code === 200 && j.data) {",
+                  "  pm.collectionVariables.set('token', j.data.token);",
+                  "  if (j.data.refresh_token) pm.collectionVariables.set('refresh_token', j.data.refresh_token);",
+                  "  pm.test('登录成功且下发 refresh_token', () => pm.expect(j.data.refresh_token).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Client-Type", "value": "app" },
+              { "key": "x-csrf-token", "value": "{{csrf}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\",\n  \"device_id\": \"{{device_id}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "刷新 Token（refresh_token 轮换）",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "Key": "Content-Type", "value": "application/json" },
+              { "key": "x-csrf-token", "value": "{{csrf}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/token-refresh", "host": ["{{baseUrl}}"], "path": ["api", "auth", "token-refresh"] }
+          }
+        },
+        {
+          "name": "获取当前用户",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "auth", "me"] }
+          }
+        },
+        {
+          "name": "退出登录（注销令牌）",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. App 专属",
+      "item": [
+        {
+          "name": "版本检查",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/app/version?platform=android&code=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "app", "version"],
+              "query": [
+                { "key": "platform", "value": "android" },
+                { "key": "code", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "启动配置中心",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/app/config", "host": ["{{baseUrl}}"], "path": ["api", "app", "config"] }
+          }
+        },
+        {
+          "name": "用户协议 / 隐私政策",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/app/agreements?type=privacy",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "app", "agreements"],
+              "query": [{ "key": "type", "value": "privacy" }]
+            }
+          }
+        },
+        {
+          "name": "公开分类列表",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/app/categories", "host": ["{{baseUrl}}"], "path": ["api", "app", "categories"] }
+          }
+        },
+        {
+          "name": "微信 JS-SDK 配置",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/app/wx-jsapi-config?url={{baseUrl}}/h5/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "app", "wx-jsapi-config"],
+              "query": [{ "key": "url", "value": "{{baseUrl}}/h5/" }]
+            }
+          }
+        },
+        {
+          "name": "行为埋点",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"events\": [\n    { \"event\": \"launch\", \"props\": { \"app\": \"hublog\" } }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/app/track", "host": ["{{baseUrl}}"], "path": ["api", "app", "track"] }
+          }
+        },
+        {
+          "name": "登记推送令牌",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"unipush\",\n  \"token\": \"test-cid-0123456789abcdef\",\n  \"device_id\": \"{{device_id}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/app/push-token", "host": ["{{baseUrl}}"], "path": ["api", "app", "push-token"] }
+          }
+        },
+        {
+          "name": "登录设备列表",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/app/devices?device_id={{device_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "app", "devices"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. 动态",
+      "item": [
+        {
+          "name": "时间线",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/posts/timeline?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "posts", "timeline"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "置顶动态",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/posts/pinned", "host": ["{{baseUrl}}"], "path": ["api", "posts", "pinned"] }
+          }
+        },
+        {
+          "name": "新内容检测（红点）",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/posts/check-new", "host": ["{{baseUrl}}"], "path": ["api", "posts", "check-new"] }
+          }
+        },
+        {
+          "name": "发布动态",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const j = pm.response.json();",
+                  "if (j.code === 200 && j.data && j.data.id) {",
+                  "  pm.collectionVariables.set('postId', j.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"来自 Postman 的联调动态 #Hublog\",\n  \"images\": [],\n  \"videos\": []\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/posts", "host": ["{{baseUrl}}"], "path": ["api", "posts"] }
+          }
+        },
+        {
+          "name": "动态详情",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/posts/detail?id={{postId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "posts", "detail"],
+              "query": [{ "key": "id", "value": "{{postId}}" }]
+            }
+          }
+        },
+        {
+          "name": "点赞 / 取消",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"post_id\": {{postId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/posts/like", "host": ["{{baseUrl}}"], "path": ["api", "posts", "like"] }
+          }
+        },
+        {
+          "name": "评论（楼中楼用 parent_id）",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"post_id\": {{postId}},\n  \"content\": \"联调评论\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/posts/comment", "host": ["{{baseUrl}}"], "path": ["api", "posts", "comment"] }
+          }
+        },
+        {
+          "name": "删除动态",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"post_id\": {{postId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/posts", "host": ["{{baseUrl}}"], "path": ["api", "posts"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. 直传上传",
+      "item": [
+        {
+          "name": "① 取直传签名",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"image\",\n  \"filename\": \"test.jpg\",\n  \"content_length\": \"10240\",\n  \"content_type\": \"image/jpeg\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/upload/sign", "host": ["{{baseUrl}}"], "path": ["api", "upload", "sign"] }
+          }
+        },
+        {
+          "name": "② 登记（云存储模式才需要）",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"image\",\n  \"object_key\": \"hublog/images/202609/xxx_test.jpg\",\n  \"final_url\": \"https://your-cdn.com/hublog/images/202609/xxx_test.jpg\",\n  \"file_size\": \"10240\",\n  \"orig_filename\": \"test.jpg\",\n  \"mime_type\": \"image/jpeg\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/upload/register", "host": ["{{baseUrl}}"], "path": ["api", "upload", "register"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. 消息与通知",
+      "item": [
+        {
+          "name": "会话列表",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/chat/conversations", "host": ["{{baseUrl}}"], "path": ["api", "chat", "conversations"] }
+          }
+        },
+        {
+          "name": "未读数",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/chat/unread-count", "host": ["{{baseUrl}}"], "path": ["api", "chat", "unread-count"] }
+          }
+        },
+        {
+          "name": "通知列表",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/notifications", "host": ["{{baseUrl}}"], "path": ["api", "notifications"] }
+          }
+        },
+        {
+          "name": "通知未读数",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/notifications/unread-count", "host": ["{{baseUrl}}"], "path": ["api", "notifications", "unread-count"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. 合规",
+      "item": [
+        {
+          "name": "举报",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_type\": \"post\",\n  \"target_id\": {{postId}},\n  \"reason\": \"spam\",\n  \"description\": \"联调测试\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/reports", "host": ["{{baseUrl}}"], "path": ["api", "reports"] }
+          }
+        },
+        {
+          "name": "黑名单列表",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/follow/blocks", "host": ["{{baseUrl}}"], "path": ["api", "follow", "blocks"] }
+          }
+        },
+        {
+          "name": "注销账号（谨慎！会真删数据）",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"{{password}}\",\n  \"confirm\": \"1\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/app/account", "host": ["{{baseUrl}}"], "path": ["api", "app", "account"] }
+          }
+        }
+      ]
+    }
+  ]
+}

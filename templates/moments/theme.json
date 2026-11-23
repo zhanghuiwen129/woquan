@@ -1,0 +1,17 @@
+{
+  "id": "moments",
+  "name": "经典朋友圈",
+  "version": "1.0.0",
+  "author": "woquan",
+  "description": "官方默认主题：原生 HTML + CSS + ES Modules 骨架，微信朋友圈风格。作为其它主题的契约基准与 JS/图片复用源。",
+  "preview": "preview.svg",
+  "contract": "1.0",
+  "inherits_js": "moments",
+  "content_format": "markdown",
+  "inline_media": false,
+  "skin": {
+    "variables": ["--primary", "--primary-dark", "--bg", "--card-bg", "--text", "--text-secondary", "--border", "--link", "--danger", "--shadow"],
+    "dark_mode": true,
+    "custom_color": true
+  }
+}
