@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: woquan API
-  version: v2.16.29
+  version: v2.17.00
   description: |
     woquan 轻量级多用户朋友圈博客系统 API 规范。
 
@@ -106,7 +106,12 @@ components:
   schemas:
     HeartbeatReportPayload:
       type: object
-      description: 授权统计上报请求体（POST /remote_verify.php，X-Site-Report: heartbeat）。server_ip 由服务端自行记录，客户端绝不发送。
+      description: >-
+        授权统计上报请求体（POST /remote_verify.php，X-Site-Report: heartbeat）。server_ip 由服务端自行记录，客户端绝不发送。
+        【签名用途边界】signature 仅作数据完整性痕迹，供服务端识别篡改与统计告警；
+        它不是身份认证，服务端不得将其作为授权、配额或 entitlement 判定的输入。
+        因 license_code 与 fingerprint 随包明文传输、派生 seed 随公开源码发布，该 HMAC 可被离线重算，
+        只能证明数据未被中间人改动，不能证明上报方身份；防伪须依赖服务端侧证据（IP/域名白名单、速率、异常告警）。
       required: [installation_id, fingerprint, site_host, version, timestamp, nonce, signature]
       properties:
         installation_id:
@@ -141,7 +146,9 @@ components:
           description: 一次性随机串（32 位 hex），防重放
         signature:
           type: string
-          description: 请求签名，64 位小写 hex HMAC-SHA256
+          description: >-
+            请求签名，64 位小写 hex HMAC-SHA256。仅用于完整性校验与统计告警，
+            不作为授权/配额判定依据（详见 schema description 的签名用途边界）。
     SuccessResponse:
       type: object
       properties:

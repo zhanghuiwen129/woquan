@@ -132,6 +132,12 @@ if ($step === 'install' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = '站点名称过长（≤100字符）';
             $step = 'config';
         } else {
+            // 安装耗时诊断：各阶段计时（写入根目录 .install_bench.log，install.php 自删后仍可查看）
+            $benchT0 = microtime(true);
+            $benchMarks = [];
+            $benchMark = function (string $label) use (&$benchMarks, $benchT0): void {
+                $benchMarks[$label] = round((microtime(true) - $benchT0) * 1000, 1);
+            };
             try {
                 $dsn = "mysql:host={$dbHost};port={$dbPort};charset=utf8mb4";
                 $pdo = new PDO($dsn, $dbUser, $dbPass, [
@@ -145,6 +151,7 @@ if ($step === 'install' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 // 强制升级已有数据库的 charset（防止 my.ini 默认 utf8 导致 IF NOT EXISTS 跳过 charset 变更）
                 $pdo->exec("ALTER DATABASE `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
                 $pdo->exec("USE `{$dbName}`");
+                $benchMark('1_db_connect_create');
 
                 // S8：重放安装请求不能在覆写 config.php 之后才被拦。
                 // 原流程先写 config.php（含新 JWT_SECRET 与本次提交的 DB 凭据），
@@ -184,7 +191,7 @@ if ($step === 'install' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     "define('DB_PASS', '{$esc($dbPass)}');\n" .
                     "define('DB_CHARSET', 'utf8mb4');\n\n" .
                     "define('APP_NAME', '{$esc($siteName)}');\n" .
-                    "define('APP_VERSION', 'v2.16.29');\n" .
+                    "define('APP_VERSION', 'v2.17.00');\n" .
                     "define('APP_DEBUG', false);\n" .
                     "define('APP_URL', '');\n" .
                     "define('TIMEZONE', 'Asia/Shanghai');\n\n" .
@@ -215,6 +222,7 @@ if ($step === 'install' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 file_put_contents(__DIR__ . '/config.php', $configContent);
                 // 限制 config.php 仅本进程可读，防止同主机其他用户窃取 JWT_SECRET 与 DB 密码
                 @chmod(__DIR__ . '/config.php', 0600);
+                $benchMark('2_config_written');
 
                 // 加载配置和自动加载器，调用 Migration 完成全部建表
                 require_once __DIR__ . '/config.php';
@@ -234,10 +242,32 @@ if ($step === 'install' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 // 只删 .schema_version 是不够的：残留的 .schema_verified 会让 run() 直接走
                 // 稳态快路径返回，装完却没建表（迁移治理修复）。
                 \Hublog\Core\Migration::resetState();
+                $benchMark('3_state_reset');
 
-                // 执行迁移（全新安装无 users 表 + 无版本文件，run() 会走 buildFullSchema()
-                // 一次性创建全部 20 张表 + 默认配置 + ai_assistant 用户（id=2），跳过 30 个增量迁移）
-                \Hublog\Core\Migration::run();
+                // 执行迁移：若 Migration.php 已更新则开启内核细分计时（建表/迁移/校验分别打点）。
+                // method_exists 守卫：即使只传了 install.php、Migration.php 未同步更新，也能正常安装（仅少细分项）。
+                $benchInner = method_exists(\Hublog\Core\Migration::class, 'enableBench');
+                if ($benchInner) {
+                    \Hublog\Core\Migration::enableBench();
+                }
+                // 全新安装走终态 DDL 基线快速路径；若 Migration.php 还是旧版（未同步上传），
+                // 自动回退到原 run() 增量迁移，保证不会因为只传了 install.php 而装不上。
+                $benchFast = method_exists(\Hublog\Core\Migration::class, 'runFreshInstall')
+                    && class_exists(\Hublog\Core\FreshInstallSchema::class)
+                    && method_exists(\Hublog\Core\Database::class, 'enableSchemaSnapshot')
+                    && method_exists(\Hublog\Core\Database::class, 'disableSchemaSnapshot');
+                $benchMarks['4.x_path'] = $benchFast ? 'baseline' : 'legacy';
+                if ($benchFast) {
+                    \Hublog\Core\Migration::runFreshInstall();
+                } else {
+                    \Hublog\Core\Migration::run();
+                }
+                $benchMark('4_migration_total');
+                if ($benchInner) {
+                    foreach (\Hublog\Core\Migration::benchResult() as $k => $v) {
+                        $benchMarks['4.x_' . $k] = $v;
+                    }
+                }
 
                 // P1-11：管理员插入前先判断 users 表是否有 admin 角色记录
                 // - 0 个管理员（全新安装）→ 正常插入 id=1
@@ -268,6 +298,7 @@ if ($step === 'install' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
                 // 重置自增指针，避免后续插入冲突（id=1 管理员，id=2 ai_assistant）
                 $db->exec("ALTER TABLE `users` AUTO_INCREMENT = 3");
+                $benchMark('5_admin_created');
 
                 // 更新站点名称
                 \Hublog\Core\Database::update('settings', ['value' => $siteName], "`key` = 'site_name'");
@@ -280,19 +311,27 @@ if ($step === 'install' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                         'installed_at' => date('Y-m-d H:i:s'),
                         'token' => bin2hex(random_bytes(16)),
                         'php_version' => PHP_VERSION,
-                        'app_version' => 'v2.0',
+                        'app_version' => 'v2.17.00',
                     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
                     LOCK_EX
                 );
                 @chmod($installLockFile, 0600);
 
-                // 授权统计上报：首次握手（失败完全静默，不渲染任何提示、不阻断安装完成）。
-                // getOrCreateId() 在此生成并持久化 installation_id，随后立即上报一次全量元数据。
+                // 授权身份：安装阶段只生成并持久化 installation_id（纯本地 DB 写入，毫秒级）。
+                // getOrCreateId() 首次生成会写 settings.license_installation_pending='1'，
+                // 首次 API 请求由 api/index.php 的 maybeReport() 补发握手（pending 态 isDue() 立即触发）。
+                // 不再在安装请求内同步发 2s curl，避免网络差时阻塞安装完成页。
                 try {
-                    \Hublog\Core\HeartbeatReporter::reportNow();
+                    \Hublog\Core\InstallationIdentity::getOrCreateId();
                 } catch (\Throwable $e) {
-                    error_log('[Hublog Install] 首次授权上报失败（已忽略）: ' . $e->getMessage());
+                    error_log('[Hublog Install] installation_id 生成失败（已忽略，将由首次请求补发）: ' . $e->getMessage());
                 }
+                $benchMark('6_identity_done');
+
+                // 写出耗时诊断日志（自删之前；根目录隐藏文件，Web 需拒绝 . 开头文件访问）
+                $benchMarks['TOTAL'] = round((microtime(true) - $benchT0) * 1000, 1);
+                $logLine = '[' . date('Y-m-d H:i:s') . "] 安装耗时诊断(ms): " . json_encode($benchMarks, JSON_UNESCAPED_UNICODE) . "\n";
+                @file_put_contents(__DIR__ . '/.install_bench.log', $logLine, FILE_APPEND | LOCK_EX);
 
                 // P1-11：安装成功后自删 install.php，阻止重复执行
                 // 如果删除失败，写入提示文件并记录日志
@@ -378,13 +417,24 @@ $allWritable = !in_array(false, $dirStatus, true);
         .finish-box h2 { margin-bottom:12px; }
         .finish-box p { color:#666; margin-bottom:24px; }
         .finish-box a { display:inline-block; padding:10px 32px; background:#07c160; color:#fff; text-decoration:none; border-radius:6px; }
+        .install-mask { display:none; position:absolute; inset:0; background:rgba(255,255,255,0.97); z-index:10; border-radius:12px; padding:36px 28px; flex-direction:column; justify-content:center; }
+        .install-mask.show { display:flex; }
+        .install-mask h3 { font-size:18px; color:#1a1a1a; margin-bottom:6px; text-align:center; }
+        .install-mask .hint { font-size:13px; color:#999; text-align:center; margin-bottom:26px; }
+        .install-mask .phase { display:flex; align-items:center; gap:12px; padding:12px 14px; margin-bottom:8px; border-radius:8px; background:#f7f7f7; font-size:14px; color:#999; transition:background .3s,color .3s; }
+        .install-mask .phase .dot { width:18px; height:18px; border-radius:50%; border:2px solid #d9d9d9; flex:none; }
+        .install-mask .phase.active { background:#f6ffed; color:#07c160; font-weight:500; }
+        .install-mask .phase.active .dot { border-color:#07c160; border-top-color:transparent; animation:spin .8s linear infinite; }
+        .install-mask .phase.done { background:#f6ffed; color:#52c41a; }
+        .install-mask .phase.done .dot { border-color:#52c41a; background:#52c41a; }
+        @keyframes spin { to { transform:rotate(360deg); } }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="logo">
         <h1>我圈</h1>
-        <p>轻量级多用户社区博客系统 V1.0</p>
+        <p>轻量级多用户社区博客系统 v2.17.00</p>
     </div>
 
     <div class="step-bar">
@@ -441,9 +491,9 @@ $allWritable = !in_array(false, $dirStatus, true);
     </button>
 
     <?php elseif ($step === 'config'): ?>
-    <div class="card">
+    <div class="card" style="position:relative;">
         <h2>数据库配置</h2>
-        <form method="POST" action="?step=install">
+        <form method="POST" action="?step=install" onsubmit="return startInstall();">
             <input type="hidden" name="install_token" value="<?php echo htmlspecialchars($installToken); ?>">
             <div class="form-group">
                 <label>数据库主机 <span class="required">*</span></label>
@@ -481,8 +531,41 @@ $allWritable = !in_array(false, $dirStatus, true);
                 <label>确认密码 <span class="required">*</span></label>
                 <input type="password" class="form-input" name="admin_pass_confirm" placeholder="请再次输入管理员密码" required>
             </div>
-            <button type="submit" class="btn">开始安装</button>
+            <button type="submit" class="btn" id="installSubmit">开始安装</button>
+            <div class="install-mask" id="installMask">
+                <h3>正在安装</h3>
+                <p class="hint">请勿关闭页面或刷新，整个过程通常需要几秒</p>
+                <div class="phase" data-phase="0"><span class="dot"></span>连接数据库并写入配置</div>
+                <div class="phase" data-phase="1"><span class="dot"></span>创建数据表与初始化</div>
+                <div class="phase" data-phase="2"><span class="dot"></span>创建管理员与站点配置</div>
+                <div class="phase" data-phase="3"><span class="dot"></span>即将完成</div>
+            </div>
         </form>
+        <script>
+        function startInstall() {
+            var btn = document.getElementById('installSubmit');
+            var mask = document.getElementById('installMask');
+            if (!btn || !mask) return true;
+            btn.disabled = true;
+            btn.textContent = '正在安装，请稍候…';
+            mask.classList.add('show');
+            var phases = mask.querySelectorAll('.phase');
+            var idx = 0;
+            phases[0].classList.add('active');
+            // 进度为示意（无法读取真实阶段），按时间推进点亮；完成时页面会整体跳转到完成页
+            var timer = setInterval(function () {
+                if (idx < phases.length - 1) {
+                    phases[idx].classList.remove('active');
+                    phases[idx].classList.add('done');
+                    idx++;
+                    phases[idx].classList.add('active');
+                } else {
+                    clearInterval(timer);
+                }
+            }, 1200);
+            return true; // 放行表单真正提交
+        }
+        </script>
     </div>
 
     <?php elseif ($step === 'finish'): ?>
@@ -492,6 +575,64 @@ $allWritable = !in_array(false, $dirStatus, true);
         <p>我圈 已成功安装，请登录后台进行管理。</p>
         <p style="font-size:13px;color:#999;margin-top:8px;">管理员账号: <?php echo htmlspecialchars($_POST['admin_user'] ?? 'admin'); ?></p>
         <a href="<?php echo $baseUrl; ?>/">进入首页</a>
+        <?php if (!empty($benchMarks)): ?>
+        <?php
+            $bm = $benchMarks;
+            $val = function (string $k) use ($bm): string {
+                return isset($bm[$k]) ? number_format((float)$bm[$k], 1) . ' ms' : '—';
+            };
+            $seg = function (string $a, string $b) use ($bm): string {
+                if (!isset($bm[$a], $bm[$b])) return '—';
+                return number_format(max(0, (float)$bm[$b] - (float)$bm[$a]), 1) . ' ms';
+            };
+            $fast = (($bm['4.x_path'] ?? '') === 'baseline');
+            $timingRows = [
+                '连接数据库 / 创建库'      => $val('1_db_connect_create'),
+                '写入 config.php'          => $seg('1_db_connect_create', '2_config_written'),
+                '清理迁移状态'             => $seg('2_config_written', '3_state_reset'),
+                '<b>数据库迁移（合计）</b>' => '<b>' . $seg('3_state_reset', '4_migration_total') . '</b>',
+            ];
+            if ($fast) {
+                $timingRows['　├ 终态 DDL 基线（85 表）'] = $val('4.x_schema_built');
+                $timingRows['　├ 基础种子 settings / AI账号'] = $seg('4.x_schema_built', '4.x_base_seeded');
+                $timingRows['　├ 增量迁移补种子（快照）'] = $seg('4.x_base_seeded', '4.x_migrations_done');
+            } else {
+                $timingRows['　├ 建基础表 buildFullSchema'] = $val('4.x_schema_built');
+                $timingRows['　├ 66 个增量迁移循环'] = $seg('4.x_schema_built', '4.x_migrations_done');
+            }
+            $timingRows['　├ 终态契约自检 schemaDiff'] = $seg('4.x_migrations_done', '4.x_schema_checked');
+            $timingRows['　└ 写入版本号等'] = $seg('4.x_schema_checked', '4.x_version_saved');
+            $timingRows['创建管理员（bcrypt）'] = $seg('4_migration_total', '5_admin_created');
+            $timingRows['站点配置 / 锁文件 / 授权ID'] = $seg('5_admin_created', '6_identity_done');
+            $timingRows['<b>总耗时</b>'] = '<b>' . $val('TOTAL') . '</b>';
+            // 优化生效诊断：snap_version 存在 = 新 Database.php 已加载；否则是旧代码/OPcache 未刷新
+            $snapOn = isset($bm['4.x_snap_version']);
+            $snapStatsRaw = $snapOn ? ($bm['4.x_snap_stats'] ?? '') : '';
+            $snapStats = json_decode((string)$snapStatsRaw, true);
+            if (!$fast) {
+                $optRow = '旧迁移路径（Migration.php 未同步上传，请确认已上传并重启 PHP）';
+            } elseif ($snapOn) {
+                $optRow = '快照 ' . htmlspecialchars((string)$bm['4.x_snap_version']) . '：命中 '
+                    . (int)($snapStats['hits'] ?? 0) . '/' . (int)($snapStats['probes'] ?? 0)
+                    . ' 次探测（省掉这些 information_schema 查询）';
+            } else {
+                $optRow = '未生效（仍是旧代码，请重启 PHP 清缓存后重装）';
+            }
+            $timingRows['<b>快照优化状态</b>'] = '<b style="color:' . (($fast && $snapOn) ? '#07c160' : '#ff4d4f') . ';">' . $optRow . '</b>';
+        ?>
+        <div style="margin-top:26px;text-align:left;max-width:460px;margin-left:auto;margin-right:auto;">
+            <div style="font-size:13px;color:#333;font-weight:600;margin-bottom:8px;">安装耗时明细（诊断用）</div>
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <?php foreach ($timingRows as $label => $time): ?>
+                <tr style="border-bottom:1px solid #f0f0f0;">
+                    <td style="padding:6px 4px;color:#555;"><?php echo $label; ?></td>
+                    <td style="padding:6px 4px;text-align:right;color:#07c160;font-variant-numeric:tabular-nums;"><?php echo $time; ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </table>
+            <p style="font-size:11px;color:#bbb;margin-top:10px;line-height:1.6;">明细已同时写入根目录 .install_bench.log（install.php 自删后仍保留）。请把此表截图或日志内容发给开发者，用于定位慢的阶段。</p>
+        </div>
+        <?php endif; ?>
         <p style="margin-top:16px;font-size:12px;color:#999;">已生成根目录 .installed.lock 锁文件防止重复安装，如需重新安装请删除该文件</p>
     </div>
     <?php endif; ?>

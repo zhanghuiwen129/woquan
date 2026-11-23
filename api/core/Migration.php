@@ -90,6 +90,21 @@ class Migration
     // V101: 扩展闭环基础设施三表（plugin_states/plugin_configs/pages）+ 协议占位种子
     private static int $currentVersion = 101;
     private static bool $checked = false;
+    /** 全新安装快速路径同请求只跑一次（install.php 只调用一次，这里防重放） */
+    private static bool $freshChecked = false;
+
+    // 安装诊断计时：默认关闭，仅 install.php 在全新安装时开启，生产请求零开销。
+    // 用于在真实部署环境（如跨境服务器）定位全新安装各阶段耗时，避免本地数据外推失真。
+    private static float $benchStart = 0.0;
+    private static array $benchTimes = [];
+    public static function enableBench(): void { self::$benchStart = microtime(true); self::$benchTimes = []; }
+    private static function benchMark(string $label): void
+    {
+        if (self::$benchStart > 0.0) {
+            self::$benchTimes[$label] = round((microtime(true) - self::$benchStart) * 1000, 1);
+        }
+    }
+    public static function benchResult(): array { return self::$benchTimes; }
     // 注意：不要写成 `private const string XXX`。类型化类常量是 PHP 8.3 才支持的语法，
     // 在 PHP 8.2 及以下会导致解析期致命错误（syntax error, unexpected identifier），
     // 且发生在类加载阶段，try/catch 完全兜不住，直接表现为整站 500 / 安装失败。
@@ -171,6 +186,7 @@ class Migration
             if ($installedVersion < 0) {
                 // ① 一次性建出 V1~V35 的基础表 + 默认配置 + ai_assistant 用户
                 self::buildFullSchema();
+                self::benchMark('schema_built');
 
                 // ② 补跑 36 到当前版本的全部增量迁移。
                 //    旧实现这里写死只跑 migrate36~43，结果 V44 之后新建的 25 张表
@@ -185,13 +201,29 @@ class Migration
                 //    安全性：buildFullSchema 建的是最终态表结构，而每个 migrateNN 都是幂等的
                 //    （CREATE TABLE IF NOT EXISTS + information_schema 先判列/判索引），
                 //    在已经是最终态的表上再跑一遍等于 no-op，不会重复加列或报错。
-                for ($v = 36; $v <= self::$currentVersion; $v++) {
-                    self::applyMigration($v);
+                // 元数据快照加速：全新安装的 66 个迁移会发 ~131 次 information_schema
+                // 存在性探测（本地小库 0.19ms/次，数据字典大的服务器可达上百ms/次，
+                // 是实测 16.6 秒的主因）。迁移期间开启快照，一次性批量拉全库元数据，
+                // fetchOne/fetchColumn 的存在性探测直接命中内存。只缓存"存在"结论，
+                // "不存在"一律走真实查询兜底，保证迁移中途新建的对象能被正确探测到。
+                // try/finally 保证无论成功或异常都关闭，不影响后续请求。
+                \Hublog\Core\Database::enableSchemaSnapshot();
+                try {
+                    for ($v = 36; $v <= self::$currentVersion; $v++) {
+                        self::applyMigration($v);
+                    }
+                } finally {
+                    // 快照命中统计写入诊断结果：完成页可见，用于判断是否加载到新代码
+                    self::$benchTimes['snap_version'] = \Hublog\Core\Database::SNAP_VERSION;
+                    self::$benchTimes['snap_stats'] = json_encode(\Hublog\Core\Database::snapshotStats());
+                    \Hublog\Core\Database::disableSchemaSnapshot();
                 }
+                self::benchMark('migrations_done');
 
                 // ③ 装完立刻用终态契约自检：223 个 catch 吞掉的 DDL 失败会在这里被兜住，
                 //    绝不把「半残库」写成已安装版本
                 $diff = self::schemaDiff();
+                self::benchMark('schema_checked');
                 if (!MigrationContract::isComplete($diff)) {
                     self::saveVersion(0);
                     throw new \RuntimeException(
@@ -209,6 +241,7 @@ class Migration
 
                 self::saveVersion(self::$currentVersion);
                 self::clearFailureMarker();
+                self::benchMark('version_saved');
                 return;
             }
 
@@ -255,6 +288,88 @@ class Migration
                 self::releaseLock();
             }
         }
+    }
+
+    /**
+     * 全新安装快速路径（install.php 专用）。
+     *
+     * 原来的新装流程是 buildFullSchema() 建 18 张基础表 + 循环跑 66 个 migrateNN。
+     * 每个 migrateNN 都要先探测 information_schema（133 次），在数据字典大的服务器上
+     * 实测占安装耗时 90%（18 秒里 16.6 秒）。
+     *
+     * 新流程：
+     *   ① 一次性执行终态 DDL 基线（85 张表，CREATE TABLE IF NOT EXISTS，无数据）；
+     *   ② 补基础种子（V1~V35 默认 settings + ai_assistant），与老路径共用 seedFreshBase()；
+     *   ③ 开启元数据快照后补跑 migrate36~101 —— 这一步只为写种子数据（V36+ 的
+     *      settings / 徽章 / 插件协议等散落在各 migrateNN 里，保持代码单一数据源），
+     *      所有「对象已存在就跳过 DDL」的判断都被快照在内存里回答；
+     *   ④ 终态契约自检（表 / 列 / 幂等唯一键）+ 写入版本号。
+     *
+     * 老库升级完全不走这里，仍用 run() 的按版本增量迁移，行为零变化。
+     * 计时打点沿用 enableBench()，完成页耗时明细不受影响。
+     */
+    public static function runFreshInstall(): void
+    {
+        if (self::$freshChecked) {
+            return;
+        }
+        self::$freshChecked = true;
+
+        if (FreshInstallSchema::SCHEMA_VERSION !== self::$currentVersion) {
+            throw new \RuntimeException(
+                '终态 DDL 基线版本 ' . FreshInstallSchema::SCHEMA_VERSION
+                . ' 与迁移版本 ' . self::$currentVersion . ' 不一致，请在终态库重跑 scripts/build_fresh_schema.php'
+            );
+        }
+
+        // ① 终态 DDL：19 张表带外键，先关外键检查；finally 保证恢复
+        $pdo = Database::getInstance();
+        try {
+            $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
+            foreach (FreshInstallSchema::STATEMENTS as $sql) {
+                $pdo->exec($sql);
+            }
+        } finally {
+            $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
+        }
+        self::benchMark('schema_built');
+
+        // ② 基础种子（settings 默认值 + ai_assistant）
+        self::seedFreshBase();
+        self::benchMark('base_seeded');
+
+        // ③ 补跑增量迁移拿 V36+ 种子。快照在终态 DDL 之后拍，
+        //    迁移里「表/列/索引已存在」的探测几乎全部内存命中，只剩真实种子 INSERT。
+        Database::enableSchemaSnapshot();
+        try {
+            for ($v = 36; $v <= self::$currentVersion; $v++) {
+                self::applyMigration($v);
+            }
+        } finally {
+            self::$benchTimes['snap_version'] = Database::SNAP_VERSION;
+            self::$benchTimes['snap_stats'] = json_encode(Database::snapshotStats());
+            Database::disableSchemaSnapshot();
+        }
+        self::benchMark('migrations_done');
+
+        // ④ 终态自检：DDL 被吞 / 基线过期都会在这里暴露，绝不把半残库标成成功
+        $diff = self::schemaDiff();
+        self::benchMark('schema_checked');
+        if (!MigrationContract::isComplete($diff)) {
+            self::saveVersion(0);
+            throw new \RuntimeException(
+                '全新安装后终态契约未满足: ' . MigrationContract::describe($diff)
+            );
+        }
+        if (!MigrationContract::isFullyComplete($diff)) {
+            throw new \RuntimeException(
+                '全新安装后幂等唯一键未满足: ' . MigrationContract::describe($diff)
+            );
+        }
+
+        self::saveVersion(self::$currentVersion);
+        self::clearFailureMarker();
+        self::benchMark('version_saved');
     }
 
     /**
@@ -1258,6 +1373,19 @@ class Migration
         // 无论走到哪一级都不能让安装失败，所以这里全程 try/catch 且不抛异常。
         self::ensurePostsFulltextIndex();
 
+        self::seedFreshBase();
+    }
+
+    /**
+     * 全新安装的「基础种子」：V1~V35 默认配置 + 虚拟 AI 用户。
+     *
+     * 从 buildFullSchema() 中原样抽出，供两条新装路径共用：
+     *   - 老路径：buildFullSchema() 建基础表后调用；
+     *   - 快速路径：runFreshInstall() 由终态 DDL 基线建完 85 张表后调用。
+     * 种子数据只在这里维护一份，避免两条路径漂移。
+     */
+    private static function seedFreshBase(): void
+    {
         // 插入默认配置（幂等）— 合并 V1-V30 所有设置项的最终值
         $defaults = [
             // V1+V9+V10: 站点基础
@@ -1351,18 +1479,21 @@ class Migration
                 $id2Taken = Database::fetchColumn("SELECT id FROM users WHERE id = 2 LIMIT 1");
                 if (!$id2Taken) {
                     // id=2 未被占用，显式指定 id=2（全新安装路径）
+                    // ai_assistant 是虚拟机器人账号：密码随机生成后随即丢弃，全库无任何登录路径验证它，
+                    // 用最低 cost 只保留合法的 bcrypt 字段格式，避免安装时浪费 239ms；真人账号仍走 Auth::hashPassword(cost12)。
                     Database::getInstance()->exec(
                         "INSERT INTO `users` (`id`, `username`, `password`, `email`, `nickname`, `avatar`, `bio`, `role`, `status`, `token_version`, `created_at`, `updated_at`) VALUES (2, 'ai_assistant', "
-                        . Database::getInstance()->quote(Auth::hashPassword(bin2hex(random_bytes(16))))
+                        . Database::getInstance()->quote(password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT, ['cost' => 4]))
                         . ", 'ai_assistant@hublog.local', 'AI评论家', '/templates/moments/assets/images/default-avatar.svg', "
                         . Database::getInstance()->quote('我是 Hublog 内置的 AI 评论家，会自动对动态发表评论～')
                         . ", 'user', 1, 1, '" . self::now() . "', '" . self::now() . "')"
                     );
                 } else {
                     // id=2 已被占用（重装场景），回退到自增
+                    // 同上：机器人账号密码无人验证，最低 cost 保留合法 bcrypt 格式即可
                     Database::insert('users', [
                         'username' => 'ai_assistant',
-                        'password' => Auth::hashPassword(bin2hex(random_bytes(16))),
+                        'password' => password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT, ['cost' => 4]),
                         'email' => 'ai_assistant@hublog.local',
                         'nickname' => 'AI评论家',
                         'avatar' => '/templates/moments/assets/images/default-avatar.svg',

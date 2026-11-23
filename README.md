@@ -5,7 +5,7 @@
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)
 ![PHP](https://img.shields.io/badge/PHP-%3E%3D8.0-777bb4.svg)
 ![MySQL](https://img.shields.io/badge/MySQL-%3E%3D5.7-4479A1.svg)
-![Version](https://img.shields.io/badge/version-v2.16.29-brightgreen.svg)
+![Version](https://img.shields.io/badge/version-v2.17.00-brightgreen.svg)
 
 - **官网**：<https://woquan.com.cn>
 - **Gitee 仓库**：<https://gitee.com/aiwoquan/woquan>

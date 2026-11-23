@@ -779,4 +779,12 @@ final class HeartbeatReportingQATest
     }
 }
 
+// H-1：本脚本依赖授权中心同目录（D:/woquanma/woquanshouquan）+ 真 DB + 本地 8899 server，
+// 属手工 E2E，不进 run_tests.php 门禁。缺环境时明确跳过而非报错。
+// 需要执行时显式设置环境变量 HEARTBEAT_E2E=1。
+if (getenv('HEARTBEAT_E2E') !== '1') {
+    fwrite(STDERR, "[SKIP] HeartbeatReportingQATest 是手工 E2E（依赖授权中心 + DB + 本地 server）；"
+        . "设置 HEARTBEAT_E2E=1 才执行。门禁请跑 run_tests.php 的 HeartbeatGateTest。\n");
+    exit(0);
+}
 HeartbeatReportingQATest::run();

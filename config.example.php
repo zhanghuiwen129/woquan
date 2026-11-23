@@ -31,7 +31,7 @@ define('DB_PASS', '');
 define('DB_CHARSET', 'utf8mb4');
 
 defined('APP_NAME') || define('APP_NAME', '我圈');
-define('APP_VERSION', 'v2.16.29');
+define('APP_VERSION', 'v2.17.00');
 // 运行环境：production（默认）/ development / testing。
 // 用于区分「错误是否外显」「日志级别」「缓存/调试行为」等环境相关差异，
 // 替代散落的 APP_DEBUG 布尔。development 下 APP_DEBUG 自动视为 true。

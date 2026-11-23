@@ -414,27 +414,32 @@ class Cache
      * Redis 驱动：走跨机共享的分布式锁（withRedisLock），使多机部署下锁真正互斥。
      * file 驱动：仍用本机 flock（下方逻辑逐字保留，零行为变化）。
      * 两种驱动在「拿不到锁」时的降级语义一致：直接执行回调（非原子，功能仍可用）+ 告警。
+     *
+     * @param string $onContention 'run'（默认，保持所有存量调用行为不变）= 拿不到锁仍执行回调；
+     *                             'skip' = 拿不到锁返回 null，供 installation_id 生成 / 心跳上报等
+     *                             「正确性依赖互斥」的场景使用，避免降级执行导致双 UUID / 重复上报。
      */
-    public static function withLock(string $key, callable $callback): mixed
+    public static function withLock(string $key, callable $callback, string $onContention = 'run'): mixed
     {
+        $skip = ($onContention === 'skip');
         $redis = self::getRedis();
         if ($redis) {
-            return self::withRedisLock(new PhpRedisLockConnection($redis), $key, $callback);
+            return self::withRedisLock(new PhpRedisLockConnection($redis), $key, $callback, $onContention);
         }
 
-        // ===== 以下 file 驱动 flock 逻辑保持不变 =====
+        // ===== 以下 file 驱动 flock 逻辑保持不变（仅新增 skip 分支） =====
         $lockFile = self::$cacheDir . 'lock_' . md5($key) . '.lock';
         $fp = @fopen($lockFile, 'c+');
         if (!$fp) {
-            // 锁文件创建失败，直接执行回调（降级为非原子）
-            return $callback();
+            // 锁文件创建失败：skip 模式跳过本次执行，否则降级为非原子直接跑回调
+            return $skip ? null : $callback();
         }
         try {
             if (flock($fp, LOCK_EX)) {
                 return $callback();
             }
-            // 获取锁失败，直接执行回调（降级为非原子）
-            return $callback();
+            // 获取锁失败：skip 模式跳过本次执行，否则降级为非原子直接跑回调
+            return $skip ? null : $callback();
         } finally {
             if (is_resource($fp)) {
                 flock($fp, LOCK_UN);
@@ -455,8 +460,9 @@ class Cache
      *
      * @internal 公开仅为可注入假连接做测试，业务代码请走 withLock()
      */
-    public static function withRedisLock(RedisLockConnection $conn, string $key, callable $callback): mixed
+    public static function withRedisLock(RedisLockConnection $conn, string $key, callable $callback, string $onContention = 'run'): mixed
     {
+        $skip = ($onContention === 'skip');
         $suffixKey = self::LOCK_PREFIX . md5($key);
         // PhpRedis 会自动给 SET 的 key 加 OPT_PREFIX，故实际存储的完整 key = 前缀 + suffixKey。
         // 释放时把完整 key 放 ARGV 传给 Lua，与存储 key 严格一致（不依赖 EVAL KEYS 的前缀行为）。
@@ -482,9 +488,11 @@ class Cache
         }
 
         if (!$acquired) {
-            // 与 flock 失败时一致的降级语义：直接执行回调（非原子，功能可用）
-            error_log('[Hublog Cache] Redis lock busy for key ' . $key . ', degraded to non-atomic execution');
-            return $callback();
+            // 与 flock 失败时一致的降级语义：直接执行回调（非原子，功能可用）；
+            // skip 模式下跳过本次执行，避免并发双 UUID / 重复上报
+            error_log('[Hublog Cache] Redis lock busy for key ' . $key
+                . ($skip ? ', skipped (skip mode)' : ', degraded to non-atomic execution'));
+            return $skip ? null : $callback();
         }
 
         try {

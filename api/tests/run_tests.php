@@ -150,10 +150,12 @@ require_once __DIR__ . '/../middleware/LicenseMiddleware.php';
 // 3) 自动发现可在自包含环境运行的测试文件并逐个执行 test* 方法
 $files = array_merge(
     glob(__DIR__ . '/License*Test.php') ?: [],
+    glob(__DIR__ . '/HeartbeatGate*Test.php') ?: [], // H-1：心跳上报门禁护栏（本地确定性断言）
     glob(__DIR__ . '/Phase0*Test.php') ?: [],
     glob(__DIR__ . '/ChatBatchATest.php') ?: [],
     glob(__DIR__ . '/ChatBatchBTest.php') ?: [],
-    glob(__DIR__ . '/ChatBatchCTest.php') ?: []
+    glob(__DIR__ . '/ChatBatchCTest.php') ?: [],
+    glob(__DIR__ . '/FreshInstallSchemaTest.php') ?: []
 );
 sort($files);
 

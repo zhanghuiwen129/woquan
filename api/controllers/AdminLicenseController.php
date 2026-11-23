@@ -266,6 +266,18 @@ class AdminLicenseController extends AdminController
         try {
             $status = \Hublog\Core\License::activateLicense($licenseKey);
             if ($status['authorized']) {
+                // 激活即上报（确定性首次握手）：不再只依赖 api/index.php 的 shutdown 回调
+                // ——那个回调有 5 分钟前台门控与失败退避，激活后若站点无后续请求或处于
+                // 退避窗口，心跳会迟发甚至迟迟不到，表现为「授权中心后台看不到站点」。
+                // 这里在授权码已落库、缓存已失效后显式同步上报一次；reportNow() 内部
+                // fire-and-forget（2s 超时、全吞异常），其成功会写 last_at 并清 pending，
+                // 使后续 maybeReport 自然按 6 小时间隔走，不会重复轰炸。
+                // 上报失败也绝不改变激活结果——激活成功与否只由本地/远程验签决定。
+                try {
+                    \Hublog\Core\HeartbeatReporter::reportNow();
+                } catch (\Throwable $e) {
+                    // 静默：上报失败仅由 HeartbeatReporter 自身写 debug 日志
+                }
                 return Response::success($status, '授权激活成功');
             }
             $msg = '授权码已保存，但验证未通过。';

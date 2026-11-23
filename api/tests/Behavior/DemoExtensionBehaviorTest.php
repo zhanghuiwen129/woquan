@@ -14,7 +14,7 @@ use ReflectionProperty;
 
 // 清单声明 core_version ">=2.16.0"，测试引导未定义 APP_VERSION；生产由 config.php 定义。
 if (!defined('APP_VERSION')) {
-    define('APP_VERSION', 'v2.16.29');
+    define('APP_VERSION', 'v2.17.00');
 }
 
 /**

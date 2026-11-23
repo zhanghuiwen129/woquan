@@ -162,7 +162,16 @@ $allowedOrigins = defined('CORS_ALLOWED_ORIGINS') ? CORS_ALLOWED_ORIGINS : '*';
 if ($allowedOrigins === '*') {
     // P2-12：本系统使用 Bearer Token 鉴权（非 Cookie 会话），不发送 Access-Control-Allow-Credentials，
     // 故 '*' 仅允许「任意源读取响应」，不会泄露需要凭据的 Cookie；生产环境仍建议配置具体域名白名单。
-    header('Access-Control-Allow-Origin: *');
+    // 安全修复（B-2）：若请求已带认证 Cookie（hublog_token，与 Auth::AUTH_COOKIE 同值），不再回显通配符，
+    // 改为回显其自身 Origin，杜绝「任意源 + 凭证」组合风险。对合法前端而言单个请求回显自身 Origin 与 '*' 等价，
+    // 行为无变化；未登录的公开请求仍走 '*'，不影响 H5/App 首屏跨域。
+    $hasAuthCookie = isset($_COOKIE['hublog_token']) && is_string($_COOKIE['hublog_token']) && $_COOKIE['hublog_token'] !== '';
+    if ($hasAuthCookie && $origin !== '') {
+        header('Access-Control-Allow-Origin: ' . $origin);
+        header('Vary: Origin');
+    } else {
+        header('Access-Control-Allow-Origin: *');
+    }
 } elseif ($origin !== '') {
     $originList = array_map('trim', explode(',', $allowedOrigins));
     if (in_array($origin, $originList, true)) {

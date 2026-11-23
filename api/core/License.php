@@ -21,6 +21,11 @@ class License
      *
      * 常量放在授权核心文件内：删除/改名会让 verifyRemote() 的签名调用抛可捕获 Error，
      * 授权校验随之失效——这是「剔除上报的成本高于保留」的刻意设计（PRD Q4）。
+     *
+     * 【勿挪到 .env / config（安全 B-1）】该 seed 必须与授权中心 LS_REPORT_KEY_SEED 逐字节一致，
+     * 且置于核心文件是反剔除耦合的一部分；挪到私有配置会破坏该耦合、可能让 license 校验整体崩塌。
+     * 【用途边界 / 路径A】由此派生的上报签名仅作完整性痕迹与统计告警，服务端绝不据此做授权 / 配额判定；
+     * seed 公开 + license_code/fingerprint 明文外发意味着签名可被离线重算，不具备身份真实性保证。
      */
     public const REPORT_KEY_SEED = 'd570994d805a04e3f54a746f8e754155e0ec1d8a9e33025d5ff93a67eec3daba';
 
@@ -789,8 +794,9 @@ class License
                     return null;
                 }
             } else {
-                // 未配置远程公钥——警告但兼容老的纯 HTTP 模式
-                Logger::warning('[Hublog License verifyRemote] WARNING: license_remote_pubkey not configured. Response signature NOT verified, spoofing possible!');
+                // 未配置远程公钥——警告但兼容老的纯 HTTP 模式（安全 H-4：生产必须配置，否则响应可被伪造）。
+                // 不在代码层强制 fail-closed：会让所有未配公钥的存量部署授权校验失败，属部署要求而非代码行为。
+                Logger::warning('[Hublog License verifyRemote] SECURITY: license_remote_pubkey not configured — response signature NOT verified (spoofing possible). PRODUCTION MUST configure the public key.');
             }
 
             if (!is_array($payloadData)) {
@@ -856,7 +862,9 @@ class License
     }
 
     /**
-     * 快速获取当前用户/动态数量（附带给远程验证服务器）
+     * 快速获取当前用户/动态数量（附带给远程验证服务器）。
+     * F-09：为供 HeartbeatReporter::buildPayload() 复用而由 private 改为 public，
+     * 勿在请求热路径高频调用（每次两次 COUNT 查询）。
      */
     public static function getQuickStats(): array
     {

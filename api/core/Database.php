@@ -49,6 +49,48 @@ class Database
     private static ?float $slowQueryMs = null;
     private static string $fieldPattern = '/^[a-zA-Z0-9_]+$/';
 
+    /**
+     * 迁移期元数据快照（opt-in，默认 null=关闭）。
+     *
+     * 【用途】全新安装补跑 66 个增量迁移时，每个 migrateNN 都要先探测 information_schema
+     * （表/列/索引是否存在），实测 133 次探测在大数据字典服务器上占安装耗时 90%。
+     * 全新安装先由 FreshInstallSchema 一次性建出终态库，再开启本快照：
+     * 迁移里所有「已存在就跳过 DDL」的判断都能在内存里命中，真实查询降到个位数。
+     *
+     * 【安全性】只缓存"肯定"结论：快照里存在 → 返回同形结果；快照里不存在 →
+     * 返回 null 走真实查询兜底（迁移中途新建的对象绝不会被误判为不存在）。
+     * 快照在终态 DDL 之后拍摄，故"存在"就是事实；另有 DROP 对象排除名单兜底。
+     *
+     * 【常态开销】关闭时 fetchOne/fetchColumn 只多一次 null 判断。
+     * 只在全新安装的补种子循环前后由 Migration::runFreshInstall() 开启/关闭。
+     */
+    private static ?array $schemaSnap = null;
+
+    /** 快照命中计数（诊断用：证明优化代码是否真的生效） */
+    private static int $snapHits = 0;
+
+    /** 迁移期探测总计数（白名单内被快照接管的探测次数） */
+    private static int $snapProbes = 0;
+
+    /** 快照层代码版本标记：完成页显示，用于判断是否加载到新代码（OPcache 排查） */
+    public const SNAP_VERSION = 'v2';
+
+    /**
+     * 返回快照命中统计（诊断用）。格式：['version'=>..., 'hits'=>n, 'probes'=>n]
+     */
+    public static function snapshotStats(): array
+    {
+        return ['version' => self::SNAP_VERSION, 'hits' => self::$snapHits, 'probes' => self::$snapProbes];
+    }
+
+    /**
+     * 会被迁移 DROP 掉的对象：排除出快照白名单，一律走真实查询。
+     * 原因：这些对象"先存在后被删"，快照缓存"存在"会陈旧，可能导致后续探测误判。
+     * （MODIFY COLUMN 不改名字、列始终存在，不在此列。）
+     */
+    private const SNAP_EXCLUDE_TABLES = ['checkins' => true];
+    private const SNAP_EXCLUDE_INDEXES = ['post_tags' . "\0" . 'idx_tag' => true];
+
     public static function getInstance(): PDO
     {
         if (self::$instance === null) {
@@ -74,6 +116,200 @@ class Database
     public static function validateName(string $name): bool
     {
         return preg_match(self::$fieldPattern, $name) === 1;
+    }
+
+    /**
+     * 开启迁移期元数据快照：一次性批量拉取全库表/列/索引元数据到内存。
+     * 仅供全新安装的补种子循环调用；调用方必须用 try/finally 保证 disableSchemaSnapshot()。
+     */
+    public static function enableSchemaSnapshot(): void
+    {
+        self::$snapHits = 0;
+        self::$snapProbes = 0;
+        $pdo = self::getInstance();
+        $tables = [];
+        $columns = [];
+        $indexes = [];
+
+        // 2 条批量查询代替 133 次逐条探测（列 / 索引元数据一次拉全；表从列元数据推得）
+        foreach ($pdo->query(
+            "SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()"
+        )->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $t = (string)$row['TABLE_NAME'];
+            $tables[$t] = true;
+            $columns[$t . "\0" . strtolower((string)$row['COLUMN_NAME'])] = [
+                'name' => (string)$row['COLUMN_NAME'],
+                'type' => (string)$row['COLUMN_TYPE'],
+                'nullable' => strtoupper((string)$row['IS_NULLABLE']) === 'YES',
+            ];
+        }
+        // STATISTICS 一个索引有 N 列就返回 N 行，按键收敛；NON_UNIQUE=0 才是唯一键
+        foreach ($pdo->query(
+            "SELECT TABLE_NAME, INDEX_NAME, NON_UNIQUE FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE()"
+        )->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $key = (string)$row['TABLE_NAME'] . "\0" . strtolower((string)$row['INDEX_NAME']);
+            if (!isset($indexes[$key]) || (int)$row['NON_UNIQUE'] === 0) {
+                $indexes[$key] = ['name' => (string)$row['INDEX_NAME'], 'non_unique' => (int)$row['NON_UNIQUE']];
+            }
+        }
+
+        self::$schemaSnap = ['tables' => $tables, 'columns' => $columns, 'indexes' => $indexes];
+    }
+
+    /** 关闭迁移期元数据快照，恢复正常真实查询路径。 */
+    public static function disableSchemaSnapshot(): void
+    {
+        self::$schemaSnap = null;
+    }
+
+    /**
+     * 用元数据快照回答迁移里的 information_schema 存在性探测。
+     *
+     * 支持 COLUMNS / TABLES / STATISTICS 三种视图，字面量与 ? 占位符两种参数形态，
+     * 覆盖迁移源码里 133 次探测中的 126 次（剩余 PLUGINS / fetchAll 批量等放行）。
+     *
+     * 【只返回肯定结论】快照中存在 → 返回与真实查询同形的伪造结果（调用方据此跳过 DDL）；
+     * 快照中不存在或 SQL 无法安全解析 → 返回 null，回落到真实查询。
+     * 这样即使快照拍早了，也只会多查几次，绝不会漏建表 / 列 / 索引。
+     *
+     * @return array{0: bool, 1: mixed}|null [是否命中, 伪造的返回值]；null=未命中
+     */
+    private static function probeFromSnapshot(string $sql, array $params = []): ?array
+    {
+        if (self::$schemaSnap === null) {
+            return null;
+        }
+        $s = preg_replace('/\s+/', ' ', trim($sql));
+
+        if (!preg_match(
+            '/^SELECT\s+(.+?)\s+FROM\s+information_schema\.(COLUMNS|TABLES|STATISTICS)\s+WHERE\s+(.*?)(?:\s+LIMIT\s+\d+)?\s*$/i',
+            $s,
+            $head
+        )) {
+            return null;
+        }
+        $select = strtoupper(trim($head[1]));
+        $view = strtoupper($head[2]);
+        $where = $head[3];
+
+        // 逐条件解析；只接受白名单字段 + DATABASE() / 数字 / 字符串字面量 / ? 占位符
+        $conds = [];
+        $paramIndex = 0;
+        foreach (preg_split('/\s+AND\s+/i', $where) as $cond) {
+            $cond = trim($cond);
+            if (preg_match('/^TABLE_SCHEMA\s*=\s*DATABASE\(\)$/i', $cond)) {
+                continue;
+            }
+            if (!preg_match('/^(\w+)\s*=\s*(.+)$/i', $cond, $cm)) {
+                return null;
+            }
+            $field = strtoupper($cm[1]);
+            $rhs = trim($cm[2]);
+            if ($rhs === '?') {
+                if (!array_key_exists($paramIndex, $params)) {
+                    return null;
+                }
+                $value = (string)$params[$paramIndex];
+                $paramIndex++;
+            } elseif (preg_match("/^'((?:[^']|'')*)'$/", $rhs, $qm)) {
+                $value = str_replace("''", "'", $qm[1]);
+            } elseif (preg_match('/^-?\d+$/', $rhs)) {
+                $value = $rhs;
+            } else {
+                return null; // 变量 / 函数 / 表达式：交给真实查询
+            }
+            $conds[$field] = $value;
+        }
+
+        // 占位符必须全部消费，否则说明解析与参数对不上，安全起见放行
+        if ($paramIndex !== count($params)) {
+            return null;
+        }
+
+        $table = $conds['TABLE_NAME'] ?? null;
+        if ($table === null || $table === '') {
+            return null;
+        }
+        if (isset(self::SNAP_EXCLUDE_TABLES[$table])) {
+            return null;
+        }
+
+        if ($view === 'TABLES') {
+            if (!in_array($select, ['COUNT(*)', '1', 'TABLE_NAME'], true)) {
+                return null;
+            }
+            // 不支持附加约束（如 CREATE_TIME），避免误答
+            if (array_diff(array_keys($conds), ['TABLE_NAME']) !== []) {
+                return null;
+            }
+            if (!isset(self::$schemaSnap['tables'][$table])) {
+                return null;
+            }
+            self::$snapProbes++;
+            self::$snapHits++;
+            return [true, $select === 'TABLE_NAME' ? ['TABLE_NAME' => $table] : 1];
+        }
+
+        if ($view === 'COLUMNS') {
+            $column = $conds['COLUMN_NAME'] ?? null;
+            if ($column === null || $column === '') {
+                return null;
+            }
+            if (!in_array($select, ['COUNT(*)', '1', 'COLUMN_NAME', 'COLUMN_TYPE'], true)) {
+                return null;
+            }
+            if (array_diff(array_keys($conds), ['TABLE_NAME', 'COLUMN_NAME', 'IS_NULLABLE']) !== []) {
+                return null;
+            }
+            $key = $table . "\0" . strtolower($column);
+            if (!isset(self::$schemaSnap['columns'][$key])) {
+                return null;
+            }
+            $info = self::$schemaSnap['columns'][$key];
+            // IS_NULLABLE='YES' 是附加筛选：列存在但不可空时答案是 0（否定结论）→ 放行真实查询
+            if (isset($conds['IS_NULLABLE']) && strtoupper($conds['IS_NULLABLE']) === 'YES' && !$info['nullable']) {
+                return null;
+            }
+            self::$snapProbes++;
+            self::$snapHits++;
+            if ($select === 'COLUMN_NAME') {
+                return [true, ['COLUMN_NAME' => $info['name']]];
+            }
+            if ($select === 'COLUMN_TYPE') {
+                return [true, ['COLUMN_TYPE' => $info['type']]];
+            }
+            return [true, 1];
+        }
+
+        if ($view === 'STATISTICS') {
+            $index = $conds['INDEX_NAME'] ?? null;
+            if ($index === null || $index === '') {
+                return null;
+            }
+            if (!in_array($select, ['COUNT(*)', '1', 'INDEX_NAME'], true)) {
+                return null;
+            }
+            if (array_diff(array_keys($conds), ['TABLE_NAME', 'INDEX_NAME', 'NON_UNIQUE']) !== []) {
+                return null;
+            }
+            $key = $table . "\0" . strtolower($index);
+            if (isset(self::SNAP_EXCLUDE_INDEXES[$key])) {
+                return null;
+            }
+            if (!isset(self::$schemaSnap['indexes'][$key])) {
+                return null;
+            }
+            $info = self::$schemaSnap['indexes'][$key];
+            // NON_UNIQUE=0 筛选：普通索引命中时答案为 0 → 放行真实查询
+            if (isset($conds['NON_UNIQUE']) && (int)$conds['NON_UNIQUE'] === 0 && $info['non_unique'] !== 0) {
+                return null;
+            }
+            self::$snapProbes++;
+            self::$snapHits++;
+            return [true, $select === 'INDEX_NAME' ? ['INDEX_NAME' => $info['name']] : 1];
+        }
+
+        return null;
     }
 
     /**
@@ -106,6 +342,9 @@ class Database
 
     public static function fetchOne(string $sql, array $params = []): ?array
     {
+        if (($hit = self::probeFromSnapshot($sql, $params)) !== null) {
+            return $hit[1]; // 快照命中"存在"：返回同形数组，跳过真实查询
+        }
         $stmt = self::query($sql, $params);
         $result = $stmt->fetch();
         return $result ?: null;
@@ -119,6 +358,9 @@ class Database
 
     public static function fetchColumn(string $sql, array $params = []): mixed
     {
+        if (($hit = self::probeFromSnapshot($sql, $params)) !== null) {
+            return $hit[1]; // 快照命中"存在"：返回 1，跳过真实查询
+        }
         $stmt = self::query($sql, $params);
         return $stmt->fetchColumn();
     }

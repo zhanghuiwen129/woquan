@@ -46,8 +46,7 @@ final class InstallationIdentity
             return $existing;
         }
 
-        /** @var string $id */
-        $id = Cache::withLock(self::LOCK_KEY, static function (): string {
+        $generate = static function (): string {
             // 锁内二次读取：前一个进程可能刚刚写入
             $latest = trim((string)License::getSetting(self::SETTINGS_KEY_ID, ''));
             if ($latest !== '') {
@@ -58,9 +57,22 @@ final class InstallationIdentity
             self::writeSetting(self::SETTINGS_KEY_ID, $created);
             self::writeSetting(self::SETTINGS_KEY_PENDING, '1');
             return $created;
-        });
+        };
 
-        return trim((string)$id);
+        // M-1：身份锚点必须互斥生成——锁竞争时跳过而非降级并发跑，避免并发首装产出两个不同 UUID。
+        /** @var string|null $id */
+        $id = Cache::withLock(self::LOCK_KEY, $generate, 'skip');
+        if (is_string($id) && $id !== '') {
+            return $id;
+        }
+
+        // 锁竞争被跳过：持锁进程正在生成，短等后重读复用它的结果；
+        // 极端情况下（持锁进程失败且尚未写入）再无锁生成兜底，绝不返回空串（身份不能为空）。
+        $latest = trim((string)License::getSetting(self::SETTINGS_KEY_ID, ''));
+        if ($latest !== '') {
+            return $latest;
+        }
+        return $generate();
     }
 
     /**

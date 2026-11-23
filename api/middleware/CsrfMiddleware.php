@@ -21,6 +21,7 @@ namespace Hublog\Middleware;
 
 use Hublog\Core\Request;
 use Hublog\Core\Csrf;
+use Hublog\Core\Auth;
 use Hublog\Core\Exception\HublogException;
 
 class CsrfMiddleware
@@ -37,7 +38,9 @@ class CsrfMiddleware
         }
 
         // 还得保证 Cookie 里**没有任何会话状态**：否则攻击者可以利用现有 Cookie 会话做 CSRF
-        $sensitiveCookies = ['PHPSESSID', 'user_token', 'hublog_uid', 'remember_web', 'csrf_guest_subject'];
+        // 安全修复：纳入真实 JWT httpOnly Cookie（Auth::AUTH_COOKIE），用常量引用避免名单再次漂移。
+        // 缺它时「带 hublog_token 的浏览器请求 + 伪造 X-Client-Type: app」会被误判为纯 Bearer 放行。
+        $sensitiveCookies = ['PHPSESSID', 'user_token', 'hublog_uid', 'remember_web', 'csrf_guest_subject', Auth::AUTH_COOKIE];
         foreach ($sensitiveCookies as $k) {
             if (isset($_COOKIE[$k]) && is_string($_COOKIE[$k]) && $_COOKIE[$k] !== '') {
                 // csrf_guest_subject 只是 CSRF 自己的绑定指纹，不是认证 Cookie——仍然通过
@@ -53,7 +56,9 @@ class CsrfMiddleware
      */
     private static function hasNoAuthCookies(): bool
     {
-        $authCookies = ['PHPSESSID', 'user_token', 'hublog_uid', 'remember_web'];
+        // 安全修复：同上，必须包含真实认证 Cookie，否则 X-Client-Type: app 的跨站请求
+        // 携带受害者 hublog_token 时 hasNoAuthCookies() 会误判为「无会话」而跳过 CSRF。
+        $authCookies = ['PHPSESSID', 'user_token', 'hublog_uid', 'remember_web', Auth::AUTH_COOKIE];
         foreach ($authCookies as $k) {
             if (isset($_COOKIE[$k]) && is_string($_COOKIE[$k]) && $_COOKIE[$k] !== '') {
                 return false;

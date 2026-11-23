@@ -16,6 +16,9 @@ namespace Hublog\Core;
  * 性能约定：前台请求的热路径只做一次 Cache::get（低频门控），
  * 真正的 HTTP 上报由 api/index.php 在响应发出后的 shutdown 回调中执行，
  * 因此故障注入下页面 P95 延迟增量远小于 100ms（PRD G3）。
+ *
+ * 签名用途边界（B-1/路径A）：buildPayload 生成的 signature 仅作完整性痕迹与统计告警，
+ * 服务端绝不据此做授权/配额判定——详见 PayloadSigner 文件头。
  */
 final class HeartbeatReporter
 {
@@ -62,13 +65,14 @@ final class HeartbeatReporter
                 return;
             }
 
+            // M-1：心跳上报正确性依赖互斥——锁竞争时跳过本次，避免并发重复上报产生重复台账。
             Cache::withLock(self::LOCK_KEY, static function () use ($now, $interval): bool {
                 // 锁内二次检查：并发请求中只有第一个真正发 HTTP
                 if (!self::isDue(time(), $interval)) {
                     return false;
                 }
                 return self::reportNow();
-            });
+            }, 'skip');
         } catch (\Throwable $e) {
             self::logFailure('maybeReport: ' . $e->getMessage());
         }
@@ -153,6 +157,16 @@ final class HeartbeatReporter
         }
 
         $sslVerify = (string)License::getSetting('license_remote_ssl_verify', '1') === '1';
+        if (!$sslVerify) {
+            // 安全修复（H-4）：SSL 校验关闭时，MITM 可回伪造的 {"code":200} 抑制上报、清 pending、
+            // 写 last_at，造成台账长期漏报且掩盖篡改。默认 fail-closed——不认任何成功响应。
+            // 受控内网纯 HTTP 部署若确需上报，须显式设 settings.license_report_allow_insecure='1'（知情逃生舱）。
+            $allowInsecure = (string)License::getSetting('license_report_allow_insecure', '0') === '1';
+            if (!$allowInsecure) {
+                self::logFailure('SSL 校验关闭且未显式允许不安全上报，拒绝认成功响应（fail-closed）');
+                return false;
+            }
+        }
         // 与 License::verifyRemote() 同一套 SSRF 防护，绝不放开内网 / 元数据地址
         $ssrf = Security::validateOutboundUrl($url, ['allowHttp' => !$sslVerify]);
         if (!is_array($ssrf) || empty($ssrf['ok'])) {
@@ -246,8 +260,11 @@ final class HeartbeatReporter
      */
     private static function shouldCheckByGate(): bool
     {
-        $uri = (string)($_SERVER['REQUEST_URI'] ?? '');
-        if (strpos($uri, '/api/admin/') !== false) {
+        // 只取 path 做前缀判断：REQUEST_URI 含 query string，
+        // 用 strpos 会被 ?next=/api/admin/ 之类的公开请求绕过，导致每次请求都跳过门控（DoS 放大面）。
+        $path = parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+        $path = is_string($path) ? $path : '';
+        if (str_starts_with($path, '/api/admin/')) {
             return true;
         }
         if (Cache::get(self::GATE_KEY) !== null) {
@@ -263,10 +280,14 @@ final class HeartbeatReporter
         $lastAt = (int)License::getSetting('license_heartbeat_last_at', '0');
         $retryAt = (int)License::getSetting('license_heartbeat_retry_at', '0');
 
-        if (InstallationIdentity::isPending()) {
-            return true;
+        // 失败重试退避对所有"待办"状态一视同仁：pending 态同样要尊重 retryAt。
+        // 原实现 pending 直接 return true，首次握手失败后 pending 多为 '1'，
+        // 叠加 gate 绕过会让匿名请求每次都进入 2s curl（自持 DoS 陷阱）。
+        // 语义：retryAt 未到 → 一律不发（退避）；已到 → 触发一次重试（失败会再写 backoff，成功会清 0）。
+        if ($retryAt > 0) {
+            return $now >= $retryAt;
         }
-        if ($retryAt > 0 && $now >= $retryAt) {
+        if (InstallationIdentity::isPending()) {
             return true;
         }
         return $now - $lastAt >= $interval;
