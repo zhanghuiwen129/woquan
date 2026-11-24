@@ -14,6 +14,7 @@ use Hublog\Core\BaseController;
 use Hublog\Core\Request;
 use Hublog\Core\Response;
 use Hublog\Core\PointRepository;
+use Hublog\Core\Database;
 use Hublog\Core\Auth;
 use Hublog\Core\Cache;
 use Hublog\Core\Security;
@@ -80,11 +81,17 @@ class AdminPointsController extends AdminController
             return Response::error('用户不存在', 404);
         }
 
+        // V102：addPoints 只做条件原子更新 + 写流水，本身不带事务；
+        // 后台调整必须在事务内调用，否则流水 INSERT 失败时积分已落库、无法回滚，
+        // 造成 users.points 与 points_logs 漂移（对账脚本会报出来）。
+        Database::beginTransaction();
         try {
             // 复用积分中心的双写工具（users.points + points_logs 一起写）
             $after = PointController::addPoints($userId, $delta, 'adjust', 'admin', 0, $remark);
+            Database::commit();
             return Response::success(['points' => $after], '已调整');
         } catch (\Throwable $e) {
+            Database::rollBack();
             error_log('[Hublog pointsAdjust] ' . $e->getMessage()); // @allow-error-log
             return Response::error('调整失败（积分不足？）', 500);
         }

@@ -122,6 +122,12 @@ class FinanceRepository
                 'balance_after' => $after,
                 'remark' => $remark,
             ]);
+            // V103：变更审计（容错写入，失败不影响主流程）。before 由 after-amount 推出。
+            MemberChangeAudit::record(
+                $userId, MemberChangeAudit::TYPE_BALANCE_ADJUST,
+                round($after - $amount, 2), $after,
+                0, '', $remark, '', 'wallet', ''
+            );
             Database::commit();
             return $after;
         } catch (\Throwable $e) {
@@ -174,6 +180,8 @@ class FinanceRepository
     ): void {
         Database::beginTransaction();
         try {
+            // V103：变更前快照，供审计记录（容错，读不到也不影响开通）
+            $oldVip = Database::fetchOne("SELECT vip_level, vip_expire_at FROM users WHERE id = ?", [$userId]);
             Database::update('users', [
                 'vip_level' => $level,
                 'vip_expire_at' => $expireAt,
@@ -189,6 +197,12 @@ class FinanceRepository
                 'expire_at' => $expireAt,
                 'remark' => '后台人工开通',
             ]);
+            // V103：VIP 开通审计（before 为旧等级/到期，after 为新等级/到期）
+            MemberChangeAudit::record(
+                $userId, MemberChangeAudit::TYPE_VIP_GRANT,
+                (int)($oldVip['vip_level'] ?? 0), $level,
+                0, '', '后台人工开通 L' . $level . ' ' . $days . '天', '', 'vip', $orderNo
+            );
             Database::commit();
         } catch (\Throwable $e) {
             Database::rollBack();

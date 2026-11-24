@@ -121,6 +121,7 @@ class CsrfMiddleware
             '/api/cron/archive',
             '/api/cron/circle-subscribes',
             '/api/cron/license-heartbeat',
+            '/api/cron/vip-expire',
         ];
         $path = $request->getPath();
         foreach ($publicPaths as $prefix) {

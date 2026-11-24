@@ -50,6 +50,7 @@ CREATE TABLE `circles` (
     `pay_amount` REAL NOT NULL DEFAULT 0,
     `pay_days` INTEGER NOT NULL DEFAULT 0,
     `pay_vip_level` INTEGER NOT NULL DEFAULT 0,
+    `post_review` INTEGER NOT NULL DEFAULT 0,
     `visibility` TEXT NOT NULL DEFAULT 'public',
     `post_permission` TEXT NOT NULL DEFAULT 'all',
     `limited` INTEGER NOT NULL DEFAULT 0,

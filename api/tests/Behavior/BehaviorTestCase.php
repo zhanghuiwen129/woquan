@@ -175,6 +175,7 @@ CREATE TABLE `users` (
     `bio`            TEXT    DEFAULT NULL,
     `role`           TEXT    DEFAULT 'user',
     `status`         INTEGER NOT NULL DEFAULT 1,
+    `account_state`  INTEGER NOT NULL DEFAULT 0, -- V102：status=0 二义性拆分
     `token_version`  INTEGER NOT NULL DEFAULT 1,
     `created_at`     TEXT    NOT NULL DEFAULT (datetime('now','localtime')),
     `vip_level`      INTEGER NOT NULL DEFAULT 0,
@@ -184,6 +185,21 @@ CREATE TABLE `users` (
     `avatar_frame`   TEXT    DEFAULT NULL,
     `muted_until`    TEXT    DEFAULT NULL,
     `phone`          TEXT    DEFAULT NULL
+);
+CREATE TABLE `member_change_logs` (
+    `id`            INTEGER PRIMARY KEY AUTOINCREMENT,
+    `user_id`       INTEGER NOT NULL,
+    `change_type`   TEXT    NOT NULL,
+    `operator_id`   INTEGER NOT NULL DEFAULT 0,
+    `operator_name` TEXT    DEFAULT '',
+    `before_value`  TEXT    DEFAULT NULL,
+    `after_value`   TEXT    DEFAULT NULL,
+    `delta`         TEXT    DEFAULT '',
+    `biz_type`      TEXT    DEFAULT '',
+    `biz_id`        TEXT    DEFAULT '',
+    `remark`        TEXT    DEFAULT '',
+    `ip`            TEXT    DEFAULT '',
+    `created_at`    TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
 );
 CREATE TABLE `rate_limits` (
     `id`      INTEGER PRIMARY KEY AUTOINCREMENT,

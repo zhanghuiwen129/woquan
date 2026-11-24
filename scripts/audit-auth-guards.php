@@ -44,9 +44,14 @@ $root = dirname(__DIR__);
  * AdminPluginController 7 处 + PluginAdminSettingsController 1 处（插件生命周期、
  * 配置与设置页）。这些路由虽已在 /api/admin 组走 AdminMiddleware，仍按全站后台
  * 控制器惯例在方法入口再做 requireAdmin() 双重确认，逐处复核均为真实守卫调用。
+ *
+ * V102 同步说明：requireUser 实测由 45 增至 46（+1），系 V97 之后批次新增的真实
+ * 控制器守卫未同步基线；逐文件核对 7 个控制器（Badge/Circle/ContentPay/Payment/
+ * Point/PostFeedTrait/Shop）= 1+18+5+9+7+1+5 = 46，均为 $this->requireUser( 真实调用。
+ * 旧基线 45 使本门禁恒失败（等于无门禁），据此更新为 46。
  */
 const BASELINE = [
-    'requireUser' => 45,
+    'requireUser' => 46,
     'requireAdmin' => 154,
     'Auth::check' => 105,
     'Auth::admin' => 6,

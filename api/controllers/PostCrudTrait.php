@@ -269,8 +269,9 @@ trait PostCrudTrait
         // V50：发布到圈子 —— 接收 circle_id，校验圈子存在 + 当前用户是否该圈子成员 + 发帖权限
         // V90：规则抽到 checkCirclePostable()，与编辑（update）共用同一份实现，避免两处漂移
         $circleId = $request->getInt('circle_id');
+        $circleReviewRequired = false;
         if ($circleId > 0) {
-            $circleError = $this->checkCirclePostable($circleId, $user);
+            $circleError = $this->checkCirclePostable($circleId, $user, $circleReviewRequired);
             if ($circleError !== null) {
                 return $circleError;
             }
@@ -437,7 +438,8 @@ trait PostCrudTrait
             return Response::error($this->sensitiveBlockMsg($fBody), 403);
         }
         $contentText = $fBody['text'];
-        $needReview = in_array('review', [$fTitle['action'], $fBody['action']], true);
+        $needReview = in_array('review', [$fTitle['action'], $fBody['action']], true)
+            || $circleReviewRequired;
         // 命中审核级敏感词时把具体词带出去：站内信要点名，用户才知道该改哪里
         $hitWords = $needReview
             ? array_values(array_unique(array_merge(
@@ -890,7 +892,7 @@ trait PostCrudTrait
      * @param array $user     当前登录用户
      */
 
-    private function checkCirclePostable(int $circleId, array $user): ?Response
+    private function checkCirclePostable(int $circleId, array $user, ?bool &$reviewRequired = null): ?Response
     {
         // V71：多带 limited / removed_at —— 圈子被限流或下架时禁止发帖
         $circle = PostRepository::findCircleForPost($circleId);
@@ -929,6 +931,13 @@ trait PostCrudTrait
             if ($perm === 'admin' && $myRole !== 'admin') {
                 return Response::error('本圈子仅管理员可发帖', 403);
             }
+        }
+
+        // 圈内发帖审核。圈主/圈管/平台管理员免审，普通成员发帖需在圈内待审列表通过后才公开。
+        if ($reviewRequired !== null) {
+            $reviewRequired = (int)($circle['post_review'] ?? 0) === 1
+                && $myRole === 'member'
+                && ($user['role'] ?? '') !== 'admin';
         }
         return null;
     }

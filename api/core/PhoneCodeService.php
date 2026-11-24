@@ -72,7 +72,10 @@ final class PhoneCodeService
         $code = (string)random_int(100000, 999999);
         Database::insert('phone_codes', [
             'phone'      => $phone,
-            'code'       => $code,
+            // V102：库里只存带盐 bcrypt 哈希，明文码只经由短信/DEBUG 通道下发。
+            // 列宽由 varchar(10) 扩到 varchar(255)（见 migrate102），存量明文在
+            // verify() 里按前缀兼容，TTL 5 分钟后自然消失。
+            'code'       => password_hash($code, PASSWORD_DEFAULT),
             'scene'      => $scene,
             'expires_at' => date('Y-m-d H:i:s', time() + self::TTL),
             'sent_ip'    => $ip,
@@ -165,7 +168,13 @@ final class PhoneCodeService
         }
 
         // ③ 恒定时间比对；失败即计数，满 5 次由 recordCodeFailure 触发锁定。
-        if (!hash_equals((string)$row['code'], $code)) {
+        //    V102 双模式：新数据是 bcrypt 哈希（$2y$ 前缀，走 password_verify），
+        //    存量明文（6 位数字）走 hash_equals 兼容，TTL 到期后自然消失。
+        $stored = (string)$row['code'];
+        $matched = str_starts_with($stored, '$2y$')
+            ? password_verify($code, $stored)
+            : hash_equals($stored, $code);
+        if (!$matched) {
             $attempts = Security::recordCodeFailure($phone, $scene);
             if ($attempts >= 5) {
                 return $fail('验证码错误次数过多，已锁定 1 小时，请稍后再试', 429);

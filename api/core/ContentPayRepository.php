@@ -177,15 +177,6 @@ final class ContentPayRepository
                 if ($stmt->rowCount() === 0) {
                     throw new \RuntimeException('积分不足');
                 }
-                Database::insert('points_logs', [
-                    'user_id' => $userId,
-                    'points' => -$usePoints,
-                    'type' => 'spend',
-                    'biz_type' => 'contentpay',
-                    'biz_id' => $targetId,
-                    'balance_after' => $pointsLeft,
-                    'remark' => $pointsLogRemark,
-                ]);
             }
 
             if ($pay > 0) {
@@ -196,6 +187,29 @@ final class ContentPayRepository
                 if ($stmt->rowCount() === 0) {
                     throw new \RuntimeException('余额不足');
                 }
+            }
+
+            // V102：调用方传入的 $pointsLeft / $balanceAfter 来自事务外快照，并发下
+            // 会把流水的 balance_after 写成陈旧值。对齐 purchaseVip / circleSubscribe
+            // 范本，扣款后事务内重读真实值再落流水（流水 amount 本身不受影响，
+            // 这里修的是 balance_after 记录准确性）。
+            $fresh = Database::fetchOne(
+                "SELECT balance, points FROM users WHERE id = ? LIMIT 1",
+                [$userId]
+            );
+            $pointsLeft = (int)($fresh['points'] ?? 0);
+            $balanceAfter = round((float)($fresh['balance'] ?? 0), 2);
+
+            if ($usePoints > 0) {
+                Database::insert('points_logs', [
+                    'user_id' => $userId,
+                    'points' => -$usePoints,
+                    'type' => 'spend',
+                    'biz_type' => 'contentpay',
+                    'biz_id' => $targetId,
+                    'balance_after' => $pointsLeft,
+                    'remark' => $pointsLogRemark,
+                ]);
             }
 
             // 订单（uk_order_no 防重复下单）

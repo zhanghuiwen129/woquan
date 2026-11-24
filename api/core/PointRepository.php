@@ -421,6 +421,15 @@ class PointRepository
             'remark' => $remark,
         ]);
 
+        // V103：仅后台人工调整写审计（签到/任务/兑换高频流水不记，避免日志膨胀）
+        if ($type === 'adjust' && $bizType === 'admin') {
+            MemberChangeAudit::record(
+                $userId, MemberChangeAudit::TYPE_POINTS_ADJUST,
+                $after - $delta, $after,
+                0, '', $remark, '', 'points', ''
+            );
+        }
+
         return $after;
     }
 

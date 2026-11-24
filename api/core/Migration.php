@@ -14,11 +14,11 @@
  * 本文件从上到下依次是：
  *   ① 迁移调度核心（run / GET_LOCK 互斥 / 版本读写 / 关键表与字段校验）
  *   ② buildFullSchema()：全新安装的基础建表 + 默认数据（约 500 行，单独一大块，只到 V35）
- *   ③ 增量迁移 migrate26 ~ migrate101（老库升级按版本号顺序逐个执行）
+ *   ③ 增量迁移 migrate26 ~ migrate103（老库升级按版本号顺序逐个执行）
  *      —— 已拆分到 trait，降低单文件体积：
  *         · MigrationBatchA.php：migrate26 ~ migrate45
  *         · MigrationBatchB.php：migrate46 ~ migrate65 + backfillPostTagsFromContent / markExistingPollPosts
- *         · MigrationBatchC.php：migrate66 ~ migrate101
+ *         · MigrationBatchC.php：migrate66 ~ migrate103
  *         主类通过 `use MigrationBatchA, MigrationBatchB, MigrationBatchC` 引入，编译期展平进主类，零行为差异。
  *   ④ 辅助方法（now() / log() 等）
  * V1~V25 的历史迁移在 MigrationHistory.php（trait），通过 `use MigrationHistory` 引入。
@@ -88,7 +88,7 @@ class Migration
     // V99: 私信软删除语义统一（V52 五列硬自检 + 存量脏数据幂等修复 + 终态哨兵），无新增业务列
     // V100: 评论审核状态列（comments.status/audit_state）+ AI 配额预扣状态列（ai_usage_logs.status）
     // V101: 扩展闭环基础设施三表（plugin_states/plugin_configs/pages）+ 协议占位种子
-    private static int $currentVersion = 101;
+    private static int $currentVersion = 103;
     private static bool $checked = false;
     /** 全新安装快速路径同请求只跑一次（install.php 只调用一次，这里防重放） */
     private static bool $freshChecked = false;

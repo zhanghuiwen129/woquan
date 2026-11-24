@@ -57,11 +57,17 @@ $inject(\Hublog\Core\Cache::class, 'cacheDir', $dir . DIRECTORY_SEPARATOR);
 $result = \Hublog\Core\PhoneCodeService::issue('13800138000', 'login', '203.0.113.9');
 $row = $pdo->query('SELECT `code` FROM `phone_codes` ORDER BY `id` DESC LIMIT 1')
     ->fetch(PDO::FETCH_ASSOC);
+$dbCode = (string)($row['code'] ?? '');
+$devCode = (string)($result['data']['dev_code'] ?? '');
 
+// V102：库里存 bcrypt 哈希，dev_code 是明文。用 password_verify 验证两者对应，
+// 同时暴露 db_code 本身供测试断言「不是明文 6 位」。
 echo json_encode([
-    'result'  => $result,
-    'db_code' => $row['code'] ?? null,
-    'debug'   => APP_DEBUG,
+    'result'             => $result,
+    'db_code'            => $dbCode,
+    'db_code_is_hash'    => str_starts_with($dbCode, '$2y$'),
+    'db_code_matches_dev'=> $devCode !== '' && password_verify($devCode, $dbCode),
+    'debug'              => APP_DEBUG,
 ], JSON_UNESCAPED_UNICODE), "\n";
 
 // 清理子进程自己的临时缓存目录

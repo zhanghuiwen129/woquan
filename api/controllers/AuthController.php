@@ -36,6 +36,13 @@ class AuthController extends BaseController
             return Response::error('站点已关闭注册', 403);
         }
 
+        // 会员系统治理 P0-1：注册独立限流（IP 维度，默认 1 小时 10 次）。
+        // 全局 rateLimit 是 600 次/分钟，拦不住慢速批量注册；此处补一道专用闸门。
+        // 放在所有校验之前：无效请求同样计入配额，防止用垃圾参数反复试探绕过。
+        if (!Security::checkRegisterLock($request->getIp())) {
+            return Response::error('注册过于频繁，请稍后再试', 429);
+        }
+
         $data = (new Validator($request->all()))
             ->required('username')
             ->string('username', 3, 20)
@@ -479,7 +486,8 @@ class AuthController extends BaseController
         RefreshToken::revoke(trim((string)$request->getString('refresh_token')));
         RefreshToken::revokeAllForUser((int)$user['id']);
 
-        UserRepository::updateTokenVersion((int)$user['id'], (int)$user['token_version'] + 1, Helper::now());
+        // P0-4b：改为 SQL 原子自增，避免并发登出读改写竞态
+        UserRepository::bumpTokenVersion((int)$user['id'], Helper::now());
         Auth::clear();
         Auth::clearAuthCookie();
         return Response::success(null, '退出成功');
@@ -1410,7 +1418,7 @@ class AuthController extends BaseController
     /**
      * OAuth Code 兑换（App/小程序模式）
      * 客户端自行完成 OAuth 跳转拿到 code 后，POST 给后端兑换 JWT
-     * 参数: provider(github/google/wechat), code, state(可选)
+     * 参数: provider(github/google/wechat), code, state(必填，/auth/oauth/{provider} 签发)
      * 返回: {user, token} JSON
      */
     public function oauthExchange(Request $request): Response
@@ -1425,28 +1433,26 @@ class AuthController extends BaseController
             return Response::error('缺少授权码 code', 400);
         }
 
-        // P2-5 App 兼容方案 A（不动客户端）：state 可选。
-        // 客户端带 state 且缓存命中时，按与 Web 同一口径校验 provider 并原子核销；
-        // 缓存未命中保持原行为（现网 App 客户端可能不带 state），仅告警不打断登录。
+        // 会员系统治理 P0-2：state 强制校验（原 P2-5 兼容方案允许缺省/未命中放行，
+        // 存在登录 CSRF 与账号绑定劫持面）。现网 App 未调用本接口，可安全收紧。
+        // 校验口径与 Web oauthCallback 一致：provider 匹配 + 存在性；IP 不一致仅告警
+        // （移动网络切换 / XFF 部署会误杀），不设浏览器 Cookie 绑定（App 无浏览器态）。
         $state = $request->getString('state');
-        if ($state !== '') {
-            $stateData = Cache::get('oauth_state_' . $state);
-            if ($stateData) {
-                if (!is_array($stateData) || ($stateData['provider'] ?? '') !== $provider) {
-                    return Response::error('授权失败：状态验证错误', 400);
-                }
-                if (($stateData['ip'] ?? '') !== $request->getIp()) {
-                    Logger::warning('[Hublog OAuth] exchange state IP 不一致（已放行）', [
-                        'provider' => $provider,
-                    ]);
-                }
-                Cache::delete('oauth_state_' . $state);
-            } else {
-                Logger::warning('[Hublog OAuth] exchange state 缓存未命中（App 兼容放行）', [
-                    'provider' => $provider,
-                ]);
-            }
+        if (empty($state)) {
+            return Response::error('授权失败：缺少 state', 400);
         }
+        $stateKey = 'oauth_state_' . $state;
+        $stateData = Cache::get($stateKey);
+        if (!is_array($stateData) || ($stateData['provider'] ?? '') !== $provider) {
+            return Response::error('授权失败：状态验证错误', 400);
+        }
+        if (($stateData['ip'] ?? '') !== $request->getIp()) {
+            Logger::warning('[Hublog OAuth] exchange state IP 不一致（已放行）', [
+                'provider' => $provider,
+            ]);
+        }
+        // 先删后用：保证同一 state 不能被兑换两次（防重放）
+        Cache::delete($stateKey);
 
         $settings = Cache::remember('site_settings', function () {
             $rows = UserRepository::fetchAllSettings();

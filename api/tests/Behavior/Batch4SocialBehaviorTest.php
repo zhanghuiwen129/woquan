@@ -42,6 +42,8 @@ final class Batch4SocialBehaviorTest extends BehaviorTestCase
             'realname_verified INTEGER NOT NULL DEFAULT 0',
             'realname_verified_at TEXT DEFAULT NULL',
             'allow_stranger_msg INTEGER NOT NULL DEFAULT 1',
+            // R4：suggestUsers 新增 u.allow_search = 1 条件，测试库需具备该列（默认 1 保持既有断言）
+            'allow_search INTEGER NOT NULL DEFAULT 1',
         ] as $column) {
             $pdo->exec('ALTER TABLE users ADD COLUMN ' . $column);
         }
@@ -231,7 +233,8 @@ SQL);
 
     private function headSuggestUsers(array $excludeIds, int $limit): array
     {
-        $where = 'u.status = 1';
+        // R4 有意行为变更：allow_search=0 的用户不再进入推荐列表
+        $where = 'u.status = 1 AND u.allow_search = 1';
         $params = [];
         if (!empty($excludeIds)) {
             $placeholders = implode(',', array_fill(0, count($excludeIds), '?'));
@@ -553,6 +556,11 @@ SQL);
         $this->assertSame($this->headSuggestUsers([2, 1], 6), FollowRepository::suggestUsers([2, 1], 6));
         $this->assertSame([3, 5], array_column(FollowRepository::suggestUsers([2, 1], 6), 'id'));
         $this->assertArrayHasKey('follower_count', FollowRepository::suggestUsers([], 6)[0]);
+
+        // R4：allow_search=0 的用户必须从推荐列表消失（快照与仓储同口径，非恒真）
+        $this->pdo()->exec('UPDATE users SET allow_search = 0 WHERE id = 5');
+        $this->assertSame($this->headSuggestUsers([2, 1], 6), FollowRepository::suggestUsers([2, 1], 6));
+        $this->assertSame([3], array_column(FollowRepository::suggestUsers([2, 1], 6), 'id'), 'allow_search=0 负例');
         $threw = false;
         try {
             $this->pdo()->query('SELECT user_id FROM follows f LIMIT 1');

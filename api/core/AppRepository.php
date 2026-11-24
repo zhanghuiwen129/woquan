@@ -103,11 +103,11 @@ class AppRepository
         );
     }
 
-    /** wxAppLogin() —— 更新 OAuth 绑定凭据 */
+    /** wxAppLogin() —— 更新 OAuth 绑定凭据（V102：令牌加密入库） */
     public static function updateOauthAccount(int $id, string $accessToken, string $rawData, string $now): void
     {
         Database::update('oauth_accounts', [
-            'access_token' => $accessToken,
+            'access_token' => OAuthTokenCipher::encrypt($accessToken),
             'raw_data' => $rawData,
             'updated_at' => $now
         ], 'id = ?', [$id]);
@@ -131,6 +131,12 @@ class AppRepository
     /** wxAppLogin() —— 新用户与 OAuth 绑定写入（同 unionid 复用路径） */
     public static function insertOauthAccount(array $data): int
     {
+        // V102：第三方令牌加密入库（raw_data 不加密，账号打通依赖 JSON_EXTRACT）。
+        foreach (['access_token', 'refresh_token'] as $field) {
+            if (isset($data[$field])) {
+                $data[$field] = OAuthTokenCipher::encrypt((string)$data[$field]);
+            }
+        }
         return Database::insert('oauth_accounts', $data);
     }
 
@@ -195,8 +201,10 @@ class AppRepository
     {
         $allowed = [
             'username', 'nickname', 'email', 'email_verified', 'avatar', 'cover', 'bio', 'password',
-            'oauth_id', 'realname_verified', 'realname_verified_at', 'status', 'deleted_at',
+            'oauth_id', 'realname_verified', 'realname_verified_at', 'status', 'account_state', 'deleted_at',
             'token_version', 'updated_at',
+            // B) 直接标识字段：必须与 AppController 的匿名化数组同步放行，否则注销后仍留存
+            'phone', 'phone_verified_at', 'gender', 'birthday', 'region', 'user_tags', 'last_active_at',
         ];
         foreach (array_keys($userUpdates) as $column) {
             if (!is_string($column) || !preg_match('/^[a-z_]+$/', $column) || !in_array($column, $allowed, true)) {

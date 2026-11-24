@@ -3557,4 +3557,194 @@ trait MigrationBatchC
 
         self::log('V101 完成');
     }
+
+    /**
+     * V102 —— 会员系统数据一致性治理（阶段3）。
+     *
+     * 三处 DDL：
+     *   ① users.account_state：拆分 status=0 的二义性（封禁/注销/后台软删）。
+     *      沿用 posts.audit_state 先例——加辅助列，不改 status 取值，所有既有查询零改动。
+     *      0=正常 1=管理员封禁 2=用户注销 3=后台软删。
+     *   ② phone_codes.code varchar(10)→varchar(255)：验证码改 bcrypt 哈希存储需要更长列。
+     *   ③ points_logs.biz_key + 唯一索引：补齐积分流水的幂等键（对齐 wallet_logs V92）。
+     *
+     * 全部带信息_schema 探测幂等；末尾自检，缺项抛异常（不静默吞 DDL）。
+     */
+    private static function migrate102(): void
+    {
+        $db = Database::getInstance();
+        self::log('开始 V102：会员数据一致性（account_state / 验证码哈希列 / 积分幂等键）');
+
+        // ---------- ① users.account_state：加列 + 回填 ----------
+        try {
+            $hasCol = (int)Database::fetchColumn(
+                "SELECT COUNT(*) FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'account_state'"
+            );
+            if (!$hasCol) {
+                $db->exec(
+                    "ALTER TABLE `users` ADD COLUMN `account_state` tinyint(1) NOT NULL DEFAULT 0
+                     COMMENT '账号状态细分：0正常 1管理员封禁 2用户注销 3后台软删；status=0 的二义性拆分'"
+                );
+                self::log('V102：users.account_state 已加');
+                // 回填：deleted_at 非空 → 2（注销/软删统一标记，二者靠 email 等副作用区分）；
+                //       其余 status=0 → 1（封禁）；status=1 保持默认 0。
+                $db->exec(
+                    "UPDATE users SET account_state = 2 WHERE deleted_at IS NOT NULL AND status = 0"
+                );
+                $db->exec(
+                    "UPDATE users SET account_state = 1 WHERE status = 0 AND deleted_at IS NULL"
+                );
+                self::log('V102：account_state 存量回填完成');
+            }
+        } catch (\Throwable $e) {
+            error_log('[Hublog Migration V102 account_state] ' . $e->getMessage());
+            throw $e;
+        }
+
+        // ---------- ② phone_codes.code 扩列宽 ----------
+        try {
+            $colLen = (int)Database::fetchColumn(
+                "SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'phone_codes' AND COLUMN_NAME = 'code'"
+            );
+            if ($colLen > 0 && $colLen < 255) {
+                $db->exec("ALTER TABLE `phone_codes` MODIFY COLUMN `code` varchar(255) NOT NULL COMMENT '验证码（bcrypt 哈希；存量明文兼容至 TTL 到期）'");
+                self::log('V102：phone_codes.code 已扩到 varchar(255)');
+            }
+        } catch (\Throwable $e) {
+            error_log('[Hublog Migration V102 phone_codes.code] ' . $e->getMessage());
+            throw $e;
+        }
+
+        // ---------- ③ points_logs.biz_key + 唯一索引 ----------
+        try {
+            $hasCol = (int)Database::fetchColumn(
+                "SELECT COUNT(*) FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'points_logs' AND COLUMN_NAME = 'biz_key'"
+            );
+            if (!$hasCol) {
+                $db->exec(
+                    "ALTER TABLE `points_logs` ADD COLUMN `biz_key` varchar(64) DEFAULT NULL
+                     COMMENT '业务幂等键：同一业务动作重复写入挡重；NULL=不参与去重'"
+                );
+                self::log('V102：points_logs.biz_key 已加');
+            }
+            $hasUk = (int)Database::fetchColumn(
+                "SELECT COUNT(*) FROM information_schema.STATISTICS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'points_logs' AND INDEX_NAME = 'uk_points_biz_key'"
+            );
+            if (!$hasUk) {
+                // 清历史重复的非空 biz_key（存量都是 NULL，理论无重复，保险起见）
+                $db->exec(
+                    "DELETE a FROM points_logs a
+                     INNER JOIN points_logs b
+                       ON a.biz_key = b.biz_key AND a.biz_key IS NOT NULL AND a.id > b.id"
+                );
+                $db->exec("ALTER TABLE `points_logs` ADD UNIQUE KEY `uk_points_biz_key` (`biz_key`)");
+                self::log('V102：points_logs.uk_points_biz_key 已加');
+            }
+        } catch (\Throwable $e) {
+            error_log('[Hublog Migration V102 points_logs biz_key] ' . $e->getMessage());
+            throw $e;
+        }
+
+        // ---------- 末尾自检：缺任何一项都抛异常，绝不静默推进版本号 ----------
+        try {
+            $missing = [];
+            $checks = [
+                ['COLUMNS', 'users', 'account_state'],
+                ['COLUMNS', 'phone_codes', 'code'],
+                ['COLUMNS', 'points_logs', 'biz_key'],
+            ];
+            foreach ($checks as [$kind, $table, $name]) {
+                $exists = (int)Database::fetchColumn(
+                    "SELECT COUNT(*) FROM information_schema.COLUMNS
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+                    [$table, $name]
+                );
+                if ($exists === 0) {
+                    $missing[] = 'column:' . $table . '.' . $name;
+                }
+            }
+            $uk = (int)Database::fetchColumn(
+                "SELECT COUNT(*) FROM information_schema.STATISTICS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'points_logs' AND INDEX_NAME = 'uk_points_biz_key'"
+            );
+            if ($uk === 0) {
+                $missing[] = 'index:points_logs.uk_points_biz_key';
+            }
+            // 验证码列宽必须 >= 255（bcrypt 60 字符也要留足余量）
+            $codeLen = (int)Database::fetchColumn(
+                "SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'phone_codes' AND COLUMN_NAME = 'code'"
+            );
+            if ($codeLen < 255) {
+                $missing[] = 'column-width:phone_codes.code<' . $codeLen;
+            }
+            if ($missing !== []) {
+                throw new \RuntimeException('V102 自检失败，缺失: ' . implode(', ', $missing));
+            }
+            self::log('V102 verify：account_state / code(255) / biz_key+uk 均已就绪');
+        } catch (\Throwable $e) {
+            error_log('[Hublog Migration V102 verify] ' . $e->getMessage());
+            throw $e;
+        }
+
+        self::log('V102 完成');
+    }
+
+    /**
+     * V103 —— 会员变更审计表（阶段4低风险增量）。
+     *
+     * 只记关键操作证据链（VIP 开通/降级、后台积分/余额调整、角色变更），
+     * 带 before/after/操作人。不碰 Auth 热路径，不改任何既有表。
+     * 写入由 MemberChangeAudit::record() 统一收口，容错不影响主流程。
+     */
+    private static function migrate103(): void
+    {
+        self::log('开始 V103：会员变更审计表');
+        try {
+            $exists = (int)Database::fetchColumn(
+                "SELECT COUNT(*) FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'member_change_logs'"
+            );
+            if ($exists === 0) {
+                Database::getInstance()->exec("CREATE TABLE IF NOT EXISTS `member_change_logs` (
+                    `id`            bigint unsigned NOT NULL AUTO_INCREMENT,
+                    `user_id`       int unsigned NOT NULL COMMENT '目标用户ID',
+                    `change_type`   varchar(32)  NOT NULL COMMENT 'vip_grant/vip_expire/vip_downgrade/points_adjust/balance_adjust/role_change',
+                    `operator_id`   int unsigned NOT NULL DEFAULT 0 COMMENT '操作人ID，0=系统/cron',
+                    `operator_name` varchar(50)  NOT NULL DEFAULT '' COMMENT '操作人名称快照',
+                    `before_value`  varchar(255) DEFAULT NULL COMMENT '变更前值',
+                    `after_value`   varchar(255) DEFAULT NULL COMMENT '变更后值',
+                    `delta`         varchar(32)  NOT NULL DEFAULT '' COMMENT '数值变化量（非数值变更留空）',
+                    `biz_type`      varchar(32)  NOT NULL DEFAULT '' COMMENT 'vip/wallet/points/admin',
+                    `biz_id`        varchar(64)  NOT NULL DEFAULT '' COMMENT '关联业务ID/订单号',
+                    `remark`        varchar(255) NOT NULL DEFAULT '' COMMENT '备注',
+                    `ip`            varchar(45)  NOT NULL DEFAULT '' COMMENT '来源IP',
+                    `created_at`    datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_user_created` (`user_id`,`created_at`),
+                    KEY `idx_type_created` (`change_type`,`created_at`),
+                    KEY `idx_operator` (`operator_id`,`created_at`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员变更审计日志'");
+                self::log('V103：member_change_logs 表已创建');
+            } else {
+                self::log('V103：member_change_logs 已存在，跳过');
+            }
+            // 末尾自检：表必须真实存在
+            $check = (int)Database::fetchColumn(
+                "SELECT COUNT(*) FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'member_change_logs'"
+            );
+            if ($check === 0) {
+                throw new \RuntimeException('V103 自检失败：member_change_logs 未创建');
+            }
+        } catch (\Throwable $e) {
+            error_log('[Hublog Migration V103] ' . $e->getMessage());
+            throw $e;
+        }
+        self::log('V103 完成');
+    }
 }

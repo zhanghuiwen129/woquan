@@ -549,6 +549,26 @@ class Plugin
             if (!$row || (int)($row['audit_state'] ?? 0) !== 1) {
                 return;
             }
+
+            // 圈内发帖审核：开启 post_review 的圈子里，status=0/audit_state=1
+            // 是「等待圈主审核」而不是「等内容审核插件放行」。若这里自动改成通过，
+            // 圈内审核会被完全绕过。圈内待审只由 manage-post 的 approve 动作放行。
+            if ($type === 'post') {
+                try {
+                    $circleReview = Database::fetchColumn(
+                        "SELECT c.post_review FROM posts p
+                         INNER JOIN circles c ON c.id = p.circle_id
+                         WHERE p.id = ? LIMIT 1",
+                        [$id]
+                    );
+                    if ((int)$circleReview === 1) {
+                        return;
+                    }
+                } catch (\Throwable $_) {
+                    // 迁移中间态 / 行为测试内存库可能没有 circles.post_review。
+                    // 查询不可用时按「未开启圈内审核」处理，不阻断原有内容审核链路。
+                }
+            }
             if ($type === 'comment') {
                 $postId = (int)($row['post_id'] ?? 0);
             }

@@ -624,9 +624,10 @@ SQL);
         foreach (['ban', 'unban'] as $action) {
             $this->resetBatchUsers();
             $this->seedBatchUsers();
+            // V102：手工基准同步 account_state（ban=1 / unban=0），与仓储口径一致
             $this->pdo()->exec($action === 'ban'
-                ? 'UPDATE users SET status = 0 WHERE id IN (1,2,3) AND id != 1'
-                : 'UPDATE users SET status = 1 WHERE id IN (1,2,3)');
+                ? 'UPDATE users SET status = 0, account_state = 1 WHERE id IN (1,2,3) AND id != 1 AND role != \'admin\''
+                : 'UPDATE users SET status = 1, account_state = 0 WHERE id IN (1,2,3) AND status = 0 AND deleted_at IS NULL');
             $expectedUsers = $this->rows('users');
 
             $this->resetBatchUsers();
@@ -640,8 +641,8 @@ SQL);
             $this->assertSame($expectedUsers, $this->rows('users'), "批量 {$action} 与 HEAD 不一致");
             $this->assertSame(
                 $action === 'ban'
-                    ? 'UPDATE users SET status = ? WHERE id IN (?,?,?) AND id != ? AND role != ?'
-                    : 'UPDATE users SET status = ? WHERE id IN (?,?,?)',
+                    ? 'UPDATE users SET status = ?, account_state = 1 WHERE id IN (?,?,?) AND id != ? AND role != ?'
+                    : 'UPDATE users SET status = 1, account_state = 0 WHERE id IN (?,?,?) AND status = 0 AND deleted_at IS NULL',
                 $this->pdo()->sqlLog[0] ?? '',
                 "批量 {$action} SQL 必须与 HEAD 逐字一致（值绑定）"
             );
@@ -654,7 +655,7 @@ SQL);
         $nickname = '已注销用户_2';
         $tokenVersion = 123456;
         $now = '2026-03-01 10:00:00';
-        $this->pdo()->prepare('UPDATE users SET `username` = ?, `nickname` = ?, `email` = ?, `avatar` = ?, `cover` = ?, `bio` = ?, `password` = ?, `status` = ?, `deleted_at` = ?, `token_version` = ?, `updated_at` = ? WHERE id = ? AND role != ? AND id != ?')
+        $this->pdo()->prepare('UPDATE users SET `username` = ?, `nickname` = ?, `email` = ?, `avatar` = ?, `cover` = ?, `bio` = ?, `password` = ?, `status` = ?, `account_state` = 3, `deleted_at` = ?, `token_version` = ?, `updated_at` = ? WHERE id = ? AND role != ? AND id != ?')
             ->execute([
                 'deleted_2', $nickname, '', '/templates/moments/assets/images/default-avatar.svg',
                 '', '', $deadPwd, 0, $now, $tokenVersion, $now, 2, 'admin', 1,
@@ -667,7 +668,7 @@ SQL);
         AdminRepository::softDeleteUser(2, $now, $deadPwd, $nickname, $tokenVersion);
         $this->assertSame($expectedUserRows, $this->rows('users'));
         $this->assertSame(
-            'UPDATE `users` SET `username` = ?, `nickname` = ?, `email` = ?, `avatar` = ?, `cover` = ?, `bio` = ?, `password` = ?, `status` = ?, `deleted_at` = ?, `token_version` = ?, `updated_at` = ? WHERE id = ? AND role != ? AND id != ?',
+            'UPDATE `users` SET `username` = ?, `nickname` = ?, `email` = ?, `avatar` = ?, `cover` = ?, `bio` = ?, `password` = ?, `status` = ?, `account_state` = ?, `deleted_at` = ?, `token_version` = ?, `updated_at` = ? WHERE id = ? AND role != ? AND id != ?',
             $this->pdo()->sqlLog[0] ?? ''
         );
 

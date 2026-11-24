@@ -156,6 +156,51 @@ class CircleRepository
         );
     }
 
+    /**
+     * 圈内待审动态列表（post_review 开启后，普通成员发帖进入 status=0 / audit_state=1）。
+     * 与 ContentAudit 的敏感词待审共用同一状态，圈主/管理员在这里统一处理。
+     */
+    public static function fetchPendingCirclePosts(int $circleId, int $offset, int $limit): array
+    {
+        return Database::fetchAll(
+            "SELECT p.id, p.user_id, p.content, p.created_at,
+                    u.username, u.nickname, u.avatar
+             FROM posts p
+             INNER JOIN users u ON u.id = p.user_id
+             WHERE p.circle_id = ? AND p.status = 0 AND p.audit_state = 1
+             ORDER BY p.id DESC
+             LIMIT ?, ?",
+            [$circleId, $offset, $limit]
+        );
+    }
+
+    public static function countPendingCirclePosts(int $circleId): int
+    {
+        return (int)Database::fetchColumn(
+            "SELECT COUNT(*) FROM posts
+             WHERE circle_id = ? AND status = 0 AND audit_state = 1",
+            [$circleId]
+        );
+    }
+
+    /**
+     * 圈内审核状态流转。条件更新保证幂等：只有仍处于待审态的记录才会被改写，
+     * 避免两位管理员重复点「通过」时把已拒绝的帖子重新放出。
+     *
+     * @return bool 是否真的改动了一行
+     */
+    public static function reviewCirclePost(int $postId, int $circleId, string $action): bool
+    {
+        $status = $action === 'approve' ? 1 : 0;
+        $auditState = $action === 'approve' ? 2 : 0;
+        $stmt = Database::getInstance()->prepare(
+            "UPDATE posts SET status = ?, audit_state = ?
+             WHERE id = ? AND circle_id = ? AND status = 0 AND audit_state = 1"
+        );
+        $stmt->execute([$status, $auditState, $postId, $circleId]);
+        return $stmt->rowCount() > 0;
+    }
+
     public static function findCircleBasic(int $id): ?array
     {
         return Database::fetchOne(
@@ -320,15 +365,65 @@ class CircleRepository
         )->execute([$circleId, $userId, $message]);
     }
 
-    /** free 模式直接入圈：两条语句保持原有非事务语义 */
+    /**
+     * 历史申请复用：唯一键 uk_circle_pending(circle_id,user_id,status) 只约束 (圈,人,状态) 组合，
+     * 同一用户被拒/通过后再次申请会撞 pending 键。这里复用其最新一条记录复位为 pending，
+     * 而不是把 500 抛给用户。事务内「清旧 pending → 更新最新记录」保证并发下不会留下两条 pending。
+     */
+    public static function reactivateJoinRequest(int $circleId, int $userId, string $message): void
+    {
+        Database::beginTransaction();
+        try {
+            Database::getInstance()->prepare(
+                "DELETE FROM circle_join_requests WHERE circle_id = ? AND user_id = ? AND status = 'pending'"
+            )->execute([$circleId, $userId]);
+
+            $latest = Database::fetchOne(
+                "SELECT id FROM circle_join_requests WHERE circle_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1",
+                [$circleId, $userId]
+            );
+            if (!$latest) {
+                // 理论上不会发生（insert 已撞唯一键说明记录存在），兜底重新插入
+                self::insertJoinRequest($circleId, $userId, $message);
+            } else {
+                Database::getInstance()->prepare(
+                    "UPDATE circle_join_requests
+                     SET status = 'pending', message = ?, reviewer_id = NULL, reviewed_at = NULL
+                     WHERE id = ?"
+                )->execute([$message, (int)$latest['id']]);
+            }
+            Database::commit();
+        } catch (\Throwable $e) {
+            Database::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * free 模式直接入圈：INSERT IGNORE + 事务，保证幂等与计数一致。
+     * 唯一键 uk_circle_user(circle_id,user_id) 冲突时 rowCount()=0，不再重复 +1；
+     * 两条语句同事务，任一步失败整段回滚，避免高并发下成员数与计数漂移。
+     */
     public static function joinFree(int $circleId, int $userId): void
     {
-        Database::getInstance()->prepare(
-            "INSERT INTO circle_members (circle_id, user_id, role, joined_at) VALUES (?, ?, 'member', NOW())"
-        )->execute([$circleId, $userId]);
-        Database::getInstance()->prepare(
-            "UPDATE circles SET member_count = member_count + 1 WHERE id = ?"
-        )->execute([$circleId]);
+        $isSqlite = Database::getInstance()->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'sqlite';
+        $insertSql = $isSqlite
+            ? "INSERT OR IGNORE INTO circle_members (circle_id, user_id, role, joined_at) VALUES (?, ?, 'member', NOW())"
+            : "INSERT IGNORE INTO circle_members (circle_id, user_id, role, joined_at) VALUES (?, ?, 'member', NOW())";
+        Database::beginTransaction();
+        try {
+            $stmt = Database::getInstance()->prepare($insertSql);
+            $stmt->execute([$circleId, $userId]);
+            if ($stmt->rowCount() > 0) {
+                Database::getInstance()->prepare(
+                    "UPDATE circles SET member_count = member_count + 1 WHERE id = ?"
+                )->execute([$circleId]);
+            }
+            Database::commit();
+        } catch (\Throwable $e) {
+            Database::rollBack();
+            throw $e;
+        }
     }
 
     public static function fetchMyJoinRequests(int $userId): array
@@ -493,14 +588,18 @@ class CircleRepository
         );
     }
 
-    /** 圈内动态存在性判定。posts 行查询带 p.post_type；只多返回一个未使用列，不改变行为 */
+    /**
+     * 圈内动态存在性判定：动态必须真实属于该圈子。
+     * 历史实现把 circleId 同时绑定到 p.user_id，等于拿「作者ID == 圈子ID」当第二条放行路径，
+     * 会让圈外动态被误判为圈内动态并被圈主管理操作命中。这里收敛为单一 circle_id 归属判定。
+     */
     public static function findPostInCircle(int $postId, int $circleId): ?array
     {
         return Database::fetchOne(
             "SELECT p.id, p.user_id, p.post_type
              FROM posts p
-             WHERE p.id = ? AND (p.circle_id = ? OR p.user_id = ?) LIMIT 1",
-            [$postId, $circleId, $circleId]
+             WHERE p.id = ? AND p.circle_id = ? LIMIT 1",
+            [$postId, $circleId]
         ) ?: null;
     }
 
@@ -855,19 +954,14 @@ class CircleRepository
         }
     }
 
-    /** deleteCircle() —— 圈子删除事务（posts.circle_id 置 NULL → 成员 → 圈子） */
+    /**
+     * deleteCircle() —— 后台删圈与前台删圈共用同一套级联实现。
+     * 此前后台路径只置空 posts、删成员与圈子，不清理 conversations，
+     * 会留下指向已删圈子的孤儿群会话；统一走 deleteCircleCascade 后两条路径行为一致。
+     */
     public static function deleteAdminCircle(int $circleId): void
     {
-        Database::beginTransaction();
-        try {
-            Database::query("UPDATE posts SET circle_id = NULL WHERE circle_id = ?", [$circleId]);
-            Database::delete('circle_members', 'circle_id = ?', [$circleId]);
-            Database::delete('circles', 'id = ?', [$circleId]);
-            Database::commit();
-        } catch (\Throwable $e) {
-            Database::rollBack();
-            throw $e;
-        }
+        self::deleteCircleCascade($circleId);
     }
 
     /** circleMembers() —— 后台成员列表（不过滤 status，与公开成员列表口径不同） */

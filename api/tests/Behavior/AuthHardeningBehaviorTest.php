@@ -324,6 +324,12 @@ SQL);
             "SELECT `code` FROM `phone_codes` WHERE `phone` = '{$phone}' AND `scene` = 'set_password' ORDER BY id DESC LIMIT 1"
         )->fetchColumn();
         $this->assertNotEmpty($code, 'set_password 场景必须真实落码');
+        // V102：库里现在是 bcrypt 哈希，测试拿不到明文。用一条已知明文覆盖该记录，
+        // 模拟「用户从短信读到码」——既保留跨端点 scene 链路验证，又兼容哈希存储。
+        $code = '135790';
+        $this->pdo()->exec(
+            "UPDATE `phone_codes` SET `code` = '{$code}' WHERE `phone` = '{$phone}' AND `scene` = 'set_password'"
+        );
 
         // ② 用该码走 /api/auth/set-password（校验端 scene 同为 set_password）
         $_POST = [
@@ -458,7 +464,8 @@ SQL);
         $this->assertEmpty(Cache::get('oauth_state_state-1'), '校验通过后 state 必须已核销');
     }
 
-    public function testOauthExchangeStateCompatibilityMode(): void
+    /** V102 阶段1：state 强制校验，缓存未命中/缺失一律拒绝（不再兼容放行） */
+    public function testOauthExchangeStateStrictMode(): void
     {
         // App 带 state 且 provider 不符 → 400
         $_POST = ['provider' => 'github', 'code' => 'code-2', 'state' => 'state-2'];
@@ -469,11 +476,11 @@ SQL);
         $this->assertSame(400, $response->getCode());
         $this->assertStringContainsString('状态验证错误', $response->toJson());
 
-        // 缓存未命中：保持现网 App 行为，不报状态错误
+        // 缓存未命中：V102 起一律拒绝（原兼容放行是 CSRF 漏洞）
         $_POST['state'] = 'state-miss';
         $response = (new AuthController())->oauthExchange(new Request());
-        $this->assertStringContainsString('登录未配置', $response->toJson());
-        $this->assertFalse(str_contains($response->toJson(), '状态验证错误'));
+        $this->assertSame(400, $response->getCode());
+        $this->assertStringContainsString('状态验证错误', $response->toJson());
 
         // 缓存命中且 provider 一致：核销后继续原流程
         Cache::set('oauth_state_state-3', [

@@ -31,6 +31,7 @@ use Hublog\Core\Moderation;
 use Hublog\Core\Exception\HublogException;
 use Hublog\Core\BadgeService;
 use Hublog\Core\MediaHelper;
+use Hublog\Core\AuditNotice;
 
 class CircleController extends BaseController
 {
@@ -628,9 +629,13 @@ class CircleController extends BaseController
             try {
                 CircleRepository::insertJoinRequest($id, (int)$currentUser['id'], $message);
             } catch (\Throwable $e) {
-                // 唯一键撞库 = 同一用户对同圈子已申请过（含历史 approved/rejected），
-                // 此时把旧 pending 之外的状态置为 pending 复用最新一条
-                return Response::error('申请失败：' . $e->getMessage(), 500);
+                // 唯一键撞库 = 同一用户此前被拒/通过后又申请（uk_circle_pending 含 status 维度）。
+                // 复用最新一条历史记录复位 pending，不再把 500 抛给用户。
+                try {
+                    CircleRepository::reactivateJoinRequest($id, (int)$currentUser['id'], $message);
+                } catch (\Throwable $retryError) {
+                    return Response::error('申请失败，请稍后重试', 500);
+                }
             }
 
             return Response::success(['request_status' => 'pending'], '申请已提交，等待审核');
@@ -690,6 +695,33 @@ class CircleController extends BaseController
         $total = CircleRepository::countPendingRequests($id);
 
         // 申请人头像补绝对 URL
+        MediaHelper::processUsers($rows);
+
+        return Response::success(Helper::paginatedResponse($rows, $page, $limit, $total), '获取成功');
+    }
+
+    /**
+     * 圈内待审动态列表（post_review 开启后由普通成员发帖产生）
+     * GET /api/circles/pending-posts?id=&page=&limit=
+     */
+    public function pendingPosts(Request $request): Response
+    {
+        $currentUser = $this->requireUser($request);
+        $id = $request->getInt('id');
+        if ($id <= 0) {
+            return Response::error('圈子ID必填', 400);
+        }
+
+        $role = $this->fetchMemberRole($id, (int)$currentUser['id']);
+        $isPlatformAdmin = ($currentUser['role'] ?? '') === 'admin';
+        if (!$isPlatformAdmin && $role !== 'owner' && $role !== 'admin') {
+            return Response::error('无权限，仅圈主/管理员可查看待审动态', 403);
+        }
+
+        ['page' => $page, 'limit' => $limit, 'offset' => $offset] = $request->pagination(20, 50);
+        $rows = CircleRepository::fetchPendingCirclePosts($id, $offset, $limit);
+        $total = CircleRepository::countPendingCirclePosts($id);
+
         MediaHelper::processUsers($rows);
 
         return Response::success(Helper::paginatedResponse($rows, $page, $limit, $total), '获取成功');
@@ -1042,6 +1074,34 @@ class CircleController extends BaseController
             return Response::error('动态不存在', 404);
         }
 
+        // 圈内发帖审核 —— approve / reject 是待审态流转，不是普通字段更新。
+        // 条件更新保证幂等：两位管理员重复点击时只有第一次生效，不会把已拒绝帖重新放出。
+        if ($action === 'approve' || $action === 'reject') {
+            if (!CircleRepository::reviewCirclePost($postId, $id, $action)) {
+                return Response::error('待审动态不存在或已被处理', 404);
+            }
+            if ($action === 'reject') {
+                // 发帖时已把待审帖计入 post_count，拒绝后要把这个数退回去
+                try {
+                    PostRepository::adjustCirclePostCount($id, -1, Helper::now());
+                } catch (\Throwable $_) {
+                    // 计数修正失败不影响审核结论
+                }
+            }
+            Cache::delete("post_{$postId}");
+            Cache::deleteByPrefix('post_');
+            Cache::bumpNsVersion('timeline');
+            Cache::bumpNsVersion('popular');
+            $this->clearCircleListCache();
+
+            $notice = $action === 'approve'
+                ? '你发布到圈子的动态已通过审核，现已公开展示。'
+                : '你发布到圈子的动态未通过审核，已不予展示。';
+            AuditNotice::notifyReviewResult($postId, 'post', $notice);
+
+            return Response::success(null, $action === 'approve' ? '已通过审核' : '已拒绝');
+        }
+
         $map = [
             'pin'        => ['is_pinned' => 1, 'pinned_at' => Helper::now()],
             'unpin'      => ['is_pinned' => 0, 'pinned_at' => null],
@@ -1340,14 +1400,7 @@ class CircleController extends BaseController
      */
     private function clearCircleListCache(): void
     {
-        // Cache 类暂未提供按前缀清除，这里清几个常用 key 即可；
-        // 时间戳 key 用前缀扫描方式（如 Cache 提供 flushByPrefix）
-        $keys = [
-            'circles_list_1_20_' . md5(''),
-            'circles_list_1_40_' . md5(''),
-        ];
-        foreach ($keys as $k) {
-            Cache::delete($k);
-        }
+        // 统一按前缀清理，覆盖所有分页与筛选组合（原硬编码 1_20 / 1_40 两个 key 会漏掉其它分页）
+        Cache::deleteByPrefix('circles_list_');
     }
 }

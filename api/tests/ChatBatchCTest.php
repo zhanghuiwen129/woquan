@@ -159,7 +159,7 @@ class ChatBatchCTest extends \PHPUnit\Framework\TestCase
     public function testV99MigrationVersionAndHardGuard(): void
     {
         $migration = (string)file_get_contents(dirname(__DIR__) . '/core/Migration.php');
-        $this->assertStringContainsString('private static int $currentVersion = 101;', $migration);
+        $this->assertStringContainsString('private static int $currentVersion = 103;', $migration);
 
         $m99 = self::migrate99Source();
         $this->assertTrue(strlen($m99) > 1000, 'migrate99() 必须存在');

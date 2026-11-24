@@ -125,8 +125,12 @@ class PaymentController extends BaseController
             $price = (float)$this->setting("vip_price_{$level}", [1 => 20, 2 => 50, 3 => 180][$level]);
             $plans[] = [
                 'level' => $level,
+                // 会员系统治理阶段 2：等级名 + 该档权益由后端唯一权威源下发，
+                // 前端不得再硬编码「青铜/白银/黄金」「配额提升」等文案。
+                'name' => self::VIP_NAMES[$level],
                 'days' => self::VIP_DAYS[$level],
                 'price' => $price,
+                'privileges' => self::privileges($level),
                 'current' => (int)($row['vip_level'] ?? 0) === $level,
             ];
         }
@@ -166,6 +170,8 @@ class PaymentController extends BaseController
             'points' => (int)($row['points'] ?? 0),
             'point_rate' => (int)self::pointRate(),
             'privileges' => $granted,
+            // 免费档权益：前端"对比说明"用，同样来自唯一权威源
+            'free_privileges' => self::privileges(0),
             'plans' => $plans,
             'coupons' => $coupons,
         ], '获取成功');

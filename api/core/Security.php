@@ -425,6 +425,48 @@ class Security
     }
 
     /**
+     * 会员系统治理 P0-1：注册独立限流（按 IP，默认 1 小时 10 次）。
+     *
+     * 全局 rateLimit 是 600 次/分钟，拦不住慢速批量注册；这里给注册单独设闸。
+     * 与 rateLimit 共用 Cache::withLock 的原子读-检查-写，避免并发绕过。
+     * 阈值可由后台 settings.register_max_per_hour 覆盖，便于运营调节。
+     *
+     * @return bool true=允许注册，false=触发限流
+     */
+    public static function checkRegisterLock(string $ip): bool
+    {
+        $max = 10;
+        try {
+            $settings = Cache::remember('site_settings', function () {
+                $rows = Database::fetchAll("SELECT `key`, `value` FROM settings");
+                $result = [];
+                foreach ($rows as $row) {
+                    $result[$row['key']] = $row['value'];
+                }
+                return $result;
+            }, 300);
+            if (isset($settings['register_max_per_hour'])) {
+                $configured = (int)$settings['register_max_per_hour'];
+                if ($configured > 0) {
+                    $max = $configured;
+                }
+            }
+        } catch (\Throwable $e) {
+            // 配置读取失败时用保守默认值，不阻断注册
+        }
+
+        $key = 'register_ip_' . md5($ip);
+        return Cache::withLock($key, function () use ($key, $max) {
+            $current = (int)(Cache::get($key) ?? 0);
+            if ($current >= $max) {
+                return false;
+            }
+            Cache::set($key, $current + 1, 3600);
+            return true;
+        });
+    }
+
+    /**
      * V147 验证码防爆破（P0-7）：查询「手机号 + 场景」是否处于锁定状态
      *  - 失败 5 次以内：继续允许
      *  - 满 5 次：锁定 1 小时（期间即使验证码正确也拒绝）

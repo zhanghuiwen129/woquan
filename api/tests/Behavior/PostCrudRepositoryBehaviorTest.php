@@ -55,7 +55,8 @@ CREATE TABLE `circles` (
     `limited`         INTEGER NOT NULL DEFAULT 0,
     `pay_type`        INTEGER NOT NULL DEFAULT 0,
     `removed_at`      TEXT    DEFAULT NULL,
-    `post_count`      INTEGER NOT NULL DEFAULT 0
+    `post_count`      INTEGER NOT NULL DEFAULT 0,
+    `post_review`     INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE `circle_members` (
     `id`        INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -547,7 +548,7 @@ SQL);
     private function originalCircleForPost(int $circleId): ?array
     {
         $stmt = $this->pdo()->prepare(
-            'SELECT id, owner_id, status, post_permission, limited, removed_at, pay_type FROM circles WHERE id = ? LIMIT 1'
+            'SELECT id, owner_id, status, post_permission, limited, removed_at, pay_type, post_review FROM circles WHERE id = ? LIMIT 1'
         );
         $stmt->execute([$circleId]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;

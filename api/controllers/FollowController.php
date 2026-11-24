@@ -9,6 +9,7 @@ use Hublog\Core\BaseController;
 use Hublog\Core\Request;
 use Hublog\Core\Response;
 use Hublog\Core\FollowRepository;
+use Hublog\Core\UserRepository;
 use Hublog\Core\Auth;
 use Hublog\Core\Cache;
 use Hublog\Core\Helper;
@@ -38,8 +39,8 @@ class FollowController extends BaseController
             return Response::error('用户不存在', 404);
         }
 
-        $exists = FollowRepository::findFollowEdge((int)$user['id'], $targetId);
-        $following = FollowRepository::toggleFollow((int)$user['id'], $targetId, Helper::now(), $exists);
+        // R8：存在性探测下沉到事务内，避免事务外读取导致并发双插 1062
+        $following = FollowRepository::toggleFollow((int)$user['id'], $targetId, Helper::now());
 
         // 关注成功后给被关注者发送通知（非核心副作用，失败不阻断主流程）
         if ($following) {
@@ -65,28 +66,37 @@ class FollowController extends BaseController
     public function following(Request $request): Response
     {
         $currentUser = Auth::user($request);
+        $currentUserId = (int)($currentUser['id'] ?? 0);
+        $isAdmin = ($currentUser['role'] ?? '') === 'admin';
         $username = $request->getString('username');
+        $isEmpty = static function () use ($request): Response {
+            ['page' => $page, 'limit' => $limit] = $request->pagination(20, 50);
+            return Response::success(Helper::paginatedResponse([], $page, $limit, 0));
+        };
 
         if ($username) {
             $target = FollowRepository::findActiveUserByUsername($username);
             if (!$target) {
-                ['page' => $page, 'limit' => $limit] = $request->pagination(20, 50);
-                return Response::success(Helper::paginatedResponse([], $page, $limit, 0));
+                return $isEmpty();
             }
             $targetId = (int)$target['id'];
+            // R4：查他人关系链前先过主页可见性门禁；不可见按「用户不存在」空分页返回
+            if (!UserRepository::isProfileVisibleTo($targetId, $currentUserId, $isAdmin)) {
+                return $isEmpty();
+            }
         } else {
             if (!$currentUser) {
-                ['page' => $page, 'limit' => $limit] = $request->pagination(20, 50);
-                return Response::success(Helper::paginatedResponse([], $page, $limit, 0));
+                return $isEmpty();
             }
-            $targetId = (int)$currentUser['id'];
+            $targetId = $currentUserId;
         }
 
         ['page' => $page, 'limit' => $limit, 'offset' => $offset] = $request->pagination(20, 50);
-        $items = FollowRepository::fetchFollowingPage($targetId, $offset, $limit);
+        // R4：viewerId 传入当前用户，供仓储双向过滤拉黑关系（游客=0 时不过滤）
+        $items = FollowRepository::fetchFollowingPage($targetId, $offset, $limit, $currentUserId);
         // V83：批量补内联徽章，让关注列表与动态卡片露出一致的徽章
         BadgeService::decorateUsersWithInlineBadges($items);
-        $total = FollowRepository::countFollowingList($targetId);
+        $total = FollowRepository::countFollowingList($targetId, $currentUserId);
 
         return Response::success(Helper::paginatedResponse($items, $page, $limit, $total));
     }
@@ -97,28 +107,36 @@ class FollowController extends BaseController
     public function followers(Request $request): Response
     {
         $currentUser = Auth::user($request);
+        $currentUserId = (int)($currentUser['id'] ?? 0);
+        $isAdmin = ($currentUser['role'] ?? '') === 'admin';
         $username = $request->getString('username');
+        $isEmpty = static function () use ($request): Response {
+            ['page' => $page, 'limit' => $limit] = $request->pagination(20, 50);
+            return Response::success(Helper::paginatedResponse([], $page, $limit, 0));
+        };
 
         if ($username) {
             $target = FollowRepository::findActiveUserByUsername($username);
             if (!$target) {
-                ['page' => $page, 'limit' => $limit] = $request->pagination(20, 50);
-                return Response::success(Helper::paginatedResponse([], $page, $limit, 0));
+                return $isEmpty();
             }
             $targetId = (int)$target['id'];
+            // R4：查他人粉丝链先过主页可见性门禁
+            if (!UserRepository::isProfileVisibleTo($targetId, $currentUserId, $isAdmin)) {
+                return $isEmpty();
+            }
         } else {
             if (!$currentUser) {
-                ['page' => $page, 'limit' => $limit] = $request->pagination(20, 50);
-                return Response::success(Helper::paginatedResponse([], $page, $limit, 0));
+                return $isEmpty();
             }
-            $targetId = (int)$currentUser['id'];
+            $targetId = $currentUserId;
         }
 
         ['page' => $page, 'limit' => $limit, 'offset' => $offset] = $request->pagination(20, 50);
-        $items = FollowRepository::fetchFollowersPage($targetId, $offset, $limit);
+        $items = FollowRepository::fetchFollowersPage($targetId, $offset, $limit, $currentUserId);
         // V83：批量补内联徽章（粉丝列表与关注列表一致）
         BadgeService::decorateUsersWithInlineBadges($items);
-        $total = FollowRepository::countFollowerList($targetId);
+        $total = FollowRepository::countFollowerList($targetId, $currentUserId);
 
         return Response::success(Helper::paginatedResponse($items, $page, $limit, $total));
     }
@@ -189,6 +207,8 @@ class FollowController extends BaseController
     public function followStats(Request $request): Response
     {
         $currentUser = Auth::user($request);
+        $currentUserId = (int)($currentUser['id'] ?? 0);
+        $isAdmin = ($currentUser['role'] ?? '') === 'admin';
         $username = $request->getString('username');
 
         if ($username) {
@@ -197,11 +217,15 @@ class FollowController extends BaseController
                 return Response::error('用户不存在', 404);
             }
             $targetId = (int)$target['id'];
+            // R4：查他人统计前过可见性门禁，不可见沿用「用户不存在」404
+            if (!UserRepository::isProfileVisibleTo($targetId, $currentUserId, $isAdmin)) {
+                return Response::error('用户不存在', 404);
+            }
         } else {
             if (!$currentUser) {
                 return Response::error('参数错误', 400);
             }
-            $targetId = (int)$currentUser['id'];
+            $targetId = $currentUserId;
         }
 
         $cacheKey = "follow_stats_{$targetId}";

@@ -129,6 +129,56 @@ class AuditNotice
     }
 
     /**
+     * 审核结果通知（圈内发帖审核的通过/拒绝）。
+     *
+     * 与 notify() 分开：notify() 会把命中词合并进同一条「敏感词待审」文案，
+     * 圈内审核的结论是另一件事，复用同一条通知会把两种语义揉在一起。
+     */
+    public static function notifyReviewResult(int $targetId, string $type, string $content): void
+    {
+        try {
+            $table = $type === 'post' ? 'posts' : 'comments';
+            $row = Database::fetchOne(
+                "SELECT user_id FROM {$table} WHERE id = ? LIMIT 1",
+                [$targetId]
+            );
+            $authorId = (int)($row['user_id'] ?? 0);
+            if ($authorId <= 0) {
+                return;
+            }
+
+            $senderId = Helper::getSystemUserId();
+            if ($senderId <= 0) {
+                $senderId = 1;
+            }
+
+            Database::insert('notifications', [
+                'user_id'    => $authorId,
+                'sender_id'  => $senderId,
+                'type'       => 'system',
+                'post_id'    => $type === 'post' ? $targetId : null,
+                'comment_id' => $type === 'comment' ? $targetId : null,
+                'content'    => $content,
+                'is_read'    => 0,
+                'created_at' => Helper::now(),
+            ]);
+
+            try {
+                SsePush::push($authorId, 'notification', [
+                    'type'       => 'system',
+                    'post_id'    => $type === 'post' ? $targetId : null,
+                    'comment_id' => $type === 'comment' ? $targetId : null,
+                    'content'    => $content,
+                ]);
+            } catch (\Throwable $_) {
+                // 实时推送失败不影响落库
+            }
+        } catch (\Throwable $e) {
+            Logger::warning('审核结果通知发送失败', ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
      * 清洗词数组：去空白、去重、去空串
      */
     private static function cleanWords(array $words): array

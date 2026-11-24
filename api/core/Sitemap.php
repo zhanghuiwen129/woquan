@@ -37,10 +37,15 @@ class Sitemap
         // 首页
         $urls[] = ['loc' => $root . '/', 'changefreq' => 'always', 'priority' => '1.0'];
 
-        // 文章详情页
+        // 文章详情页：复用可见性唯一权威的游客口径，只收录 public 帖，
+        // 防止 private/circle/friend 帖的存在性与 /p/{id} 被 sitemap 枚举。
         try {
+            [$visWhere, $visParams] = VisibilityPolicy::where(0);
             $posts = Database::fetchAll(
-                "SELECT id, created_at, updated_at FROM posts WHERE status = 1 ORDER BY created_at DESC LIMIT " . self::MAX_POSTS
+                "SELECT p.id, p.created_at, p.updated_at FROM posts p
+                 WHERE p.status = 1 AND {$visWhere}
+                 ORDER BY p.created_at DESC LIMIT " . self::MAX_POSTS,
+                $visParams
             );
             foreach ($posts as $post) {
                 $lastmod = !empty($post['updated_at']) ? $post['updated_at'] : $post['created_at'];
@@ -55,10 +60,12 @@ class Sitemap
             error_log('[Hublog Sitemap] posts 查询失败: ' . $e->getMessage()); // @allow-error-log
         }
 
-        // 用户主页
+        // 用户主页：只收录公开主页且允许被搜索的用户
         try {
             $users = Database::fetchAll(
-                "SELECT username FROM users WHERE status = 1 LIMIT " . self::MAX_USERS
+                "SELECT username FROM users
+                 WHERE status = 1 AND privacy_home = 'public' AND allow_search = 1
+                 LIMIT " . self::MAX_USERS
             );
             foreach ($users as $user) {
                 $urls[] = [
@@ -122,13 +129,18 @@ class Sitemap
         if (count($seenTopics) < self::MAX_TOPICS) {
             try {
                 // 至少 2 篇才收录，避免把只有一篇的薄页面塞进 sitemap。
+                // 与详情页同一游客可见性口径：这里独立取一次片段（前面的 try 可能未定义
+                // $visWhere），让 HAVING 只累计 public 帖，防止两篇 private/circle/friend
+                // 帖共用标签时 /topic/{tag} 被枚举进 sitemap。
+                [$tagVisWhere, $tagVisParams] = VisibilityPolicy::where(0);
                 $tags = Database::fetchAll(
                     "SELECT pt.tag AS name, COUNT(*) AS post_count, MAX(p.updated_at) AS updated_at
                      FROM post_tags pt
-                     INNER JOIN posts p ON p.id = pt.post_id AND p.status = 1
+                     INNER JOIN posts p ON p.id = pt.post_id AND p.status = 1 AND {$tagVisWhere}
                      GROUP BY pt.tag
                      HAVING COUNT(*) >= 2
-                     ORDER BY post_count DESC, pt.tag ASC LIMIT " . (self::MAX_TOPICS - count($seenTopics))
+                     ORDER BY post_count DESC, pt.tag ASC LIMIT " . (self::MAX_TOPICS - count($seenTopics)),
+                    $tagVisParams
                 );
                 foreach ($tags as $tag) {
                     $addTopic((string)$tag['name'], (string)($tag['updated_at'] ?? ''));

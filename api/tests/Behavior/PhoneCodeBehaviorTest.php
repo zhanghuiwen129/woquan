@@ -104,7 +104,9 @@ final class PhoneCodeBehaviorTest extends BehaviorTestCase
 
         $rows = $this->rows('phone_codes');
         $this->assertCount(1, $rows, '失败关闭前仍应落库一条验证码');
-        $this->assertMatchesRegularExpression('/^\d{6}$/', $rows[0]['code']);
+        // V102：库里只存 bcrypt 哈希，不再存 6 位明文
+        $this->assertMatchesRegularExpression('/^\$2[aby]\$\d{2}\$/', $rows[0]['code'],
+            '验证码必须哈希入库');
         $this->assertSame('login', $rows[0]['scene']);
         $this->assertSame(self::IP, $rows[0]['sent_ip']);
         $this->assertGreaterThan(time() + 200, strtotime((string)$rows[0]['expires_at']), '有效期应为 5 分钟');
@@ -218,12 +220,11 @@ final class PhoneCodeBehaviorTest extends BehaviorTestCase
         $this->assertTrue($payload['result']['ok']);
         $this->assertSame(200, $payload['result']['status']);
         $this->assertFalse($payload['result']['data']['sent']);
-        $this->assertMatchesRegularExpression('/^\d{6}$/', $payload['db_code']);
-        $this->assertSame(
-            $payload['db_code'],
-            $payload['result']['data']['dev_code'],
-            'DEBUG 下回带的码必须与真实落库的码一致'
-        );
+        $this->assertMatchesRegularExpression('/^\$2[aby]\$\d{2}\$/', $payload['db_code'],
+            'V102：库里存 bcrypt 哈希，不能是明文');
+        $this->assertTrue($payload['db_code_is_hash'], '库里的验证码须为哈希');
+        $this->assertTrue($payload['db_code_matches_dev'],
+            'DEBUG 回带的明文码必须能验证库中哈希（即两者对应同一验证码）');
     }
 
     public function testProductionLogsAreMaskedAndNeverContainPlainCode(): void

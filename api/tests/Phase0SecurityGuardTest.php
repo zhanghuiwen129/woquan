@@ -477,8 +477,15 @@ class Phase0SecurityGuardTest extends \PHPUnit\Framework\TestCase
         $exchange = ($start !== false && $end !== false && $end > $start)
             ? substr($auth, $start, $end - $start) : '';
         $this->assertStringContainsString("\$state = \$request->getString('state');", $exchange);
-        $this->assertStringContainsString("Logger::warning('[Hublog OAuth] exchange state 缓存未命中", $exchange);
-        $this->assertStringContainsString('Cache::delete(\'oauth_state_\' . $state);', $exchange);
+        $this->assertStringContainsString('if (empty($state)) {', $exchange);
+        $this->assertStringContainsString("return Response::error('授权失败：缺少 state', 400);", $exchange);
+        $this->assertStringContainsString("\$stateKey = 'oauth_state_' . \$state;", $exchange);
+        $this->assertStringContainsString('Cache::get($stateKey);', $exchange);
+        $this->assertStringContainsString("return Response::error('授权失败：状态验证错误', 400);", $exchange);
+        $this->assertStringContainsString("Logger::warning('[Hublog OAuth] exchange state IP 不一致（已放行）'", $exchange);
+        $this->assertStringContainsString('Cache::delete($stateKey);', $exchange);
+        // state 未命中必须直接拒绝，不得保留旧的“只告警放行”行为
+        $this->assertFalse(str_contains($exchange, 'exchange state 缓存未命中'));
     }
 
     /** P2-8 / P2-10 / P1-2：媒体白名单集中化、实名事务与 1062 映射 */

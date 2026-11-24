@@ -30,6 +30,11 @@ class NotificationRepository
     {
         $where = 'WHERE n.user_id = ?';
         $params = [$userId];
+        // R7：过滤自己拉黑的发送者；blocked_users 未迁移时不加条件（老库降级，避免 500）
+        if (FollowRepository::blockedUsersTableExists()) {
+            $where .= ' AND NOT EXISTS (SELECT 1 FROM blocked_users b WHERE b.user_id = ? AND b.blocked_user_id = n.sender_id)';
+            $params[] = $userId;
+        }
         if ($types) {
             $where .= ' AND n.type IN (' . implode(',', array_fill(0, count($types), '?')) . ')';
             $params = array_merge($params, $types);
@@ -92,11 +97,35 @@ class NotificationRepository
         );
     }
 
+    /**
+     * R7 收口：拉黑发送者过滤片段（裸表名查询，sender 列写裸名）。
+     *
+     * 供 countWhere / fetchUnreadCountsByType / countAllUnread 共用，确保列表、
+     * 分类未读、全量角标三处口径完全一致。blocked_users 未迁移时返回空片段降级，
+     * 老库不报 500。返回值含前导 " AND "，可直接拼到 WHERE 之后。
+     *
+     * @return array{0:string,1:array<int,int>} [SQL 片段, 参数]
+     */
+    private static function blockedSenderClause(int $userId): array
+    {
+        if (!FollowRepository::blockedUsersTableExists()) {
+            return ['', []];
+        }
+        return [
+            ' AND NOT EXISTS (SELECT 1 FROM blocked_users b WHERE b.user_id = ? AND b.blocked_user_id = sender_id)',
+            [$userId]
+        ];
+    }
+
     /** index() —— 计数 WHERE 助手；注意与列表 WHERE 不同：无 n. 别名、无游标条件 */
     private static function countWhere(int $userId, array $types): array
     {
         $where = 'WHERE user_id = ?';
         $params = [$userId];
+        // R7：与列表同口径过滤拉黑发送者（本助手无 n. 别名，sender 列写裸名）
+        [$blockSql, $blockParams] = self::blockedSenderClause($userId);
+        $where .= $blockSql;
+        $params = array_merge($params, $blockParams);
         if ($types) {
             $where .= ' AND type IN (' . implode(',', array_fill(0, count($types), '?')) . ')';
             $params = array_merge($params, $types);
@@ -126,22 +155,24 @@ class NotificationRepository
         );
     }
 
-    /** index() —— 各分类未读数（GROUP BY type，无分类过滤） */
+    /** index() —— 各分类未读数（GROUP BY type，无分类过滤；R7 收口：与 countWhere 同款过滤拉黑发送者） */
     public static function fetchUnreadCountsByType(int $userId): array
     {
+        [$blockSql, $blockParams] = self::blockedSenderClause($userId);
         return Database::fetchAll(
             "SELECT type, COUNT(*) AS cnt FROM notifications
-             WHERE user_id = ? AND is_read = 0 GROUP BY type",
-            [$userId]
+             WHERE user_id = ? AND is_read = 0{$blockSql} GROUP BY type",
+            array_merge([$userId], $blockParams)
         ) ?: [];
     }
 
-    /** unreadCount() / eventsPoll() / sseStream() —— 全量未读数（10s 缓存由控制器负责） */
+    /** unreadCount() / eventsPoll() / sseStream() —— 全量未读数（10s 缓存由控制器负责；R7 收口同款过滤） */
     public static function countAllUnread(int $userId): int
     {
+        [$blockSql, $blockParams] = self::blockedSenderClause($userId);
         return (int)Database::fetchColumn(
-            "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0",
-            [$userId]
+            "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0{$blockSql}",
+            array_merge([$userId], $blockParams)
         );
     }
 

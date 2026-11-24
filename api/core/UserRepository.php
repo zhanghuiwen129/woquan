@@ -215,11 +215,17 @@ class UserRepository
         ) ?: null;
     }
 
-    /** GDPR 导出账号信息 */
+    /**
+     * GDPR 导出账号信息（R9：补齐个人字段）。
+     *
+     * 仅补充用户本人的隐私/资料字段；绝不返回 password / password_hash / 任何 token 字段。
+     */
     public static function findExportProfileById(int $id): ?array
     {
         return Database::fetchOne(
-            "SELECT id, username, nickname, email, avatar, bio, role, status, created_at
+            "SELECT id, username, nickname, email, avatar, bio, role, status, created_at,
+                    phone, birthday, gender, region, user_tags, privacy_home, allow_search,
+                    hide_online, allow_stranger_msg, allow_mention
              FROM users WHERE id = ?",
             [$id]
         ) ?: null;
@@ -258,6 +264,47 @@ class UserRepository
             "SELECT privacy_home, hide_online, last_active_at FROM users WHERE id = ? LIMIT 1",
             [$id]
         ) ?: null;
+    }
+
+    /**
+     * R4/R5：主页关系链与行为列表的可见性门禁（唯一判定入口）。
+     *
+     * 复用 findPrivacyState()，口径与 UserController::profile() 原逻辑一致：
+     *  - 目标不存在 / id 非法 → 默认拒绝；
+     *  - 本人、平台管理员 → 始终放行；
+     *  - privacy_home=public（含历史缺失值）→ 放行，保持「默认公开」产品形态；
+     *  - privacy_home=private → 仅本人 / admin；
+     *  - privacy_home=followers → 本人 / admin 或 viewer 关注了 target；
+     *  - 其它非法值 → 默认拒绝。
+     *
+     * @param int  $targetId 被访问主页的用户 id
+     * @param int  $viewerId 访问者 id，<=0 视为游客
+     * @param bool $isAdmin  访问者是否为平台管理员
+     */
+    public static function isProfileVisibleTo(int $targetId, int $viewerId, bool $isAdmin = false): bool
+    {
+        if ($targetId <= 0) {
+            return false;
+        }
+        if ($isAdmin || ($viewerId > 0 && $viewerId === $targetId)) {
+            return true;
+        }
+        $state = self::findPrivacyState($targetId);
+        if (!$state) {
+            return false;
+        }
+        $home = $state['privacy_home'] ?? null;
+        // 缺失/空值按历史行为视为 public：不改变默认公开的产品形态，也不破坏 profile() 复用后的行为
+        if ($home === null || $home === '' || $home === 'public') {
+            return true;
+        }
+        if ($home === 'private') {
+            return false;
+        }
+        if ($home === 'followers') {
+            return $viewerId > 0 && self::isFollowing($viewerId, $targetId);
+        }
+        return false;
     }
 
     /** 设置页隐私 + 资料扩展 + 手机号 */
@@ -382,14 +429,37 @@ class UserRepository
         Database::update('users', ['token_version' => $version, 'updated_at' => $now], 'id = ?', [$id]);
     }
 
+    /**
+     * 会员系统治理 P0-4b：原子递增 token_version。
+     * 登出等场景不再用「读当前值 +1 再写回」，避免并发两次登出只增 1 的竞态。
+     * 与改密路径 applyPasswordChangeInTransaction 的 token_version = token_version + 1 同口径。
+     */
+    public static function bumpTokenVersion(int $id, string $now): void
+    {
+        // 用原始 SQL 而非 Database::update：后者会把键当列名做正则白名单校验，
+        // 不接受 `token_version = token_version + 1` 这类表达式。
+        Database::query(
+            "UPDATE users SET token_version = token_version + 1, updated_at = ? WHERE id = ?",
+            [$now, $id]
+        );
+    }
+
     public static function updateAvatarFrame(int $id, string $frame): void
     {
         Database::update('users', ['avatar_frame' => $frame], 'id = ?', [$id]);
     }
 
-    public static function updateUserStatus(int $id, int $status, string $now): void
+    /**
+     * V102：封禁/解封统一入口，同时维护 status 与 account_state（二义性拆分）。
+     * $accountState：0正常 1封禁 2注销 3后台软删；null=仅改 status（兼容旧调用）。
+     */
+    public static function updateUserStatus(int $id, int $status, string $now, ?int $accountState = null): void
     {
-        Database::update('users', ['status' => $status, 'updated_at' => $now], 'id = ?', [$id]);
+        $data = ['status' => $status, 'updated_at' => $now];
+        if ($accountState !== null) {
+            $data['account_state'] = $accountState;
+        }
+        Database::update('users', $data, 'id = ?', [$id]);
     }
 
     /** 修改密码 + 递增 token_version（changePassword / resetPassword，无事务）
@@ -818,13 +888,19 @@ class UserRepository
 
     public static function insertOauthAccount(array $data): int
     {
+        // V102：第三方令牌加密入库（raw_data 不加密，账号打通依赖 JSON_EXTRACT）。
+        foreach (['access_token', 'refresh_token'] as $field) {
+            if (isset($data[$field])) {
+                $data[$field] = OAuthTokenCipher::encrypt((string)$data[$field]);
+            }
+        }
         return Database::insert('oauth_accounts', $data);
     }
 
     public static function updateOauthAccountTokens(int $id, string $token, string $raw, string $now): void
     {
         Database::update('oauth_accounts', [
-            'access_token' => $token,
+            'access_token' => OAuthTokenCipher::encrypt($token),
             'raw_data' => $raw,
             'updated_at' => $now,
         ], 'id = ?', [$id]);

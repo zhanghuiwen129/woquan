@@ -88,20 +88,29 @@ class FollowRepository
         if ($followerId <= 0 || $followingId <= 0 || $followerId === $followingId) {
             return false;
         }
-        // 控制器已在事务前取过同一条边，传入可避免多余查询；内部直接调用时自行读取
-        $exists = $existingEdge ?? self::findFollowEdge($followerId, $followingId);
         $following = false;
 
         Database::beginTransaction();
         try {
-            if ($exists) {
-                Database::delete('follows', 'id = ?', [$exists['id']]);
+            // R8：存在性探测必须发生在事务内（不再信任控制器事务外传入的快照），
+            // 否则两请求并发都判定「不存在」→ 双插触发 1062。
+            $edge = self::findFollowEdge($followerId, $followingId);
+            if ($edge) {
+                // 幂等 DELETE：即使刚被并发删除，删 0 行也视为取消关注成功
+                Database::delete('follows', 'id = ?', [$edge['id']]);
             } else {
-                Database::insert('follows', [
-                    'follower_id' => $followerId,
-                    'following_id' => $followingId,
-                    'created_at' => $now,
-                ]);
+                // 幂等 INSERT：重复键（并发双插）按「已关注」成功处理，不抛 500
+                try {
+                    Database::insert('follows', [
+                        'follower_id' => $followerId,
+                        'following_id' => $followingId,
+                        'created_at' => $now,
+                    ]);
+                } catch (\Throwable $e) {
+                    if (!self::isDuplicateKey($e)) {
+                        throw $e;
+                    }
+                }
                 $following = true;
             }
             Database::commit();
@@ -110,6 +119,45 @@ class FollowRepository
             throw $e;
         }
         return $following;
+    }
+
+    /**
+     * R8：判断异常是否为并发写唯一键冲突（MySQL 1062 / SQLite UNIQUE）。
+     *
+     * 只匹配重复键特征，绝不吞掉触发器 RAISE(ABORT) 等真实写失败。
+     */
+    private static function isDuplicateKey(\Throwable $e): bool
+    {
+        $msg = strtolower($e->getMessage());
+        if (str_contains($msg, 'duplicate entry') || str_contains($msg, 'unique constraint failed')) {
+            return true;
+        }
+        // MySQL PDOException 的 driverCode 1062：用 errorInfo[1] 判定
+        if ($e instanceof \PDOException) {
+            $info = $e->errorInfo;
+            return isset($info[1]) && (string)$info[1] === '1062';
+        }
+        return false;
+    }
+
+    /**
+     * R4：关系链列表的拉黑过滤条件片段与参数（viewer 与列表中每个 u.id 双向排除）。
+     *
+     * 老库未迁移 blocked_users 时返回空片段，SQL 退化回迁移前形态，避免 500。
+     *
+     * @return array{0:string,1:array<int,int>}
+     */
+    private static function blockedExcludeClause(int $viewerId): array
+    {
+        if ($viewerId <= 0 || !self::blockedUsersTableExists()) {
+            return ['', []];
+        }
+        return [
+            " AND NOT EXISTS (SELECT 1 FROM blocked_users b
+                 WHERE (b.user_id = ? AND b.blocked_user_id = u.id)
+                    OR (b.user_id = u.id AND b.blocked_user_id = ?))",
+            [$viewerId, $viewerId]
+        ];
     }
 
     /**
@@ -135,47 +183,56 @@ class FollowRepository
         ]);
     }
 
-    /** following() —— 关注列表（JOIN users + u.status = 1，10 列顺序逐字保留） */
-    public static function fetchFollowingPage(int $followerId, int $offset, int $limit): array
+    /**
+     * following() —— 关注列表（JOIN users + u.status = 1，10 列顺序逐字保留）
+     *
+     * R4：末尾可选 $viewerId 用于拉黑双向过滤；不传（=0）时退化为迁移前 SQL，
+     * 保证既有内部调用与老库行为不变。SELECT 列与 LIMIT ?, ? 参数顺序逐字保留。
+     */
+    public static function fetchFollowingPage(int $followerId, int $offset, int $limit, int $viewerId = 0): array
     {
+        [$blockSql, $blockParams] = self::blockedExcludeClause($viewerId);
         return Database::fetchAll(
             "SELECT u.id, u.username, u.nickname, u.avatar, u.bio, u.realname_verified, u.created_at, f.created_at AS followed_at, u.vip_level, u.avatar_frame
              FROM follows f
              INNER JOIN users u ON f.following_id = u.id
-             WHERE f.follower_id = ? AND u.status = 1
+             WHERE f.follower_id = ? AND u.status = 1{$blockSql}
              ORDER BY f.created_at DESC LIMIT ?, ?",
-            [$followerId, $offset, $limit]
+            array_merge([$followerId], $blockParams, [$offset, $limit])
         );
     }
 
-    /** following() —— 关注列表总数，与列表共用 f.following_id = u.id + u.status = 1 */
-    public static function countFollowingList(int $followerId): int
+    /** following() —— 关注列表总数，与列表共用 f.following_id = u.id + u.status = 1 + 拉黑条件 */
+    public static function countFollowingList(int $followerId, int $viewerId = 0): int
     {
+        [$blockSql, $blockParams] = self::blockedExcludeClause($viewerId);
         return (int)Database::fetchColumn(
-            "SELECT COUNT(*) FROM follows f INNER JOIN users u ON f.following_id = u.id WHERE f.follower_id = ? AND u.status = 1",
-            [$followerId]
+            "SELECT COUNT(*) FROM follows f INNER JOIN users u ON f.following_id = u.id WHERE f.follower_id = ? AND u.status = 1{$blockSql}",
+            array_merge([$followerId], $blockParams)
         );
     }
 
     /** followers() —— 粉丝列表（JOIN 方向相反，独立的 10 列清单） */
-    public static function fetchFollowersPage(int $followingId, int $offset, int $limit): array
+    public static function fetchFollowersPage(int $followingId, int $offset, int $limit, int $viewerId = 0): array
     {
+        [$blockSql, $blockParams] = self::blockedExcludeClause($viewerId);
         return Database::fetchAll(
             "SELECT u.id, u.username, u.nickname, u.avatar, u.bio, u.realname_verified, u.created_at, f.created_at AS followed_at, u.vip_level, u.avatar_frame
              FROM follows f
              INNER JOIN users u ON f.follower_id = u.id
-             WHERE f.following_id = ? AND u.status = 1
+             WHERE f.following_id = ? AND u.status = 1{$blockSql}
              ORDER BY f.created_at DESC LIMIT ?, ?",
-            [$followingId, $offset, $limit]
+            array_merge([$followingId], $blockParams, [$offset, $limit])
         );
     }
 
     /** followers() —— 粉丝列表总数（与 follow() 的裸 COUNT 不是同一条 SQL） */
-    public static function countFollowerList(int $followingId): int
+    public static function countFollowerList(int $followingId, int $viewerId = 0): int
     {
+        [$blockSql, $blockParams] = self::blockedExcludeClause($viewerId);
         return (int)Database::fetchColumn(
-            "SELECT COUNT(*) FROM follows f INNER JOIN users u ON f.follower_id = u.id WHERE f.following_id = ? AND u.status = 1",
-            [$followingId]
+            "SELECT COUNT(*) FROM follows f INNER JOIN users u ON f.follower_id = u.id WHERE f.following_id = ? AND u.status = 1{$blockSql}",
+            array_merge([$followingId], $blockParams)
         );
     }
 
@@ -212,7 +269,8 @@ class FollowRepository
      */
     public static function suggestUsers(array $excludeIds, int $limit): array
     {
-        $where = 'u.status = 1';
+        // R4：allow_search=0 的用户不出现在推荐列表（保留 status=1 / NOT IN / ORDER / LIMIT 与参数顺序）
+        $where = 'u.status = 1 AND u.allow_search = 1';
         $params = [];
         if (!empty($excludeIds)) {
             $ids = array_values(array_map('intval', $excludeIds));
@@ -285,12 +343,20 @@ class FollowRepository
 
         Database::beginTransaction();
         try {
-            if (!self::findBlockRow($userId, $targetId)) {
-                Database::insert('blocked_users', [
-                    'user_id' => $userId,
-                    'blocked_user_id' => $targetId,
-                    'created_at' => $now,
-                ]);
+            // R8：探测在事务内；并发双插命中唯一键时按「已拉黑」幂等成功处理，不抛 500。
+            // 无论是否新插入，双向解除关注的幂等 DELETE 都必须执行。
+            try {
+                if (!self::findBlockRow($userId, $targetId)) {
+                    Database::insert('blocked_users', [
+                        'user_id' => $userId,
+                        'blocked_user_id' => $targetId,
+                        'created_at' => $now,
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                if (!self::isDuplicateKey($e)) {
+                    throw $e;
+                }
             }
             Database::delete('follows', 'follower_id = ? AND following_id = ?', [$userId, $targetId]);
             Database::delete('follows', 'follower_id = ? AND following_id = ?', [$targetId, $userId]);

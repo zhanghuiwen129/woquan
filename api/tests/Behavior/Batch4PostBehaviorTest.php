@@ -147,6 +147,7 @@ CREATE TABLE `circles` (
     `pay_type`        INTEGER NOT NULL DEFAULT 0,
     `removed_at`      TEXT    DEFAULT NULL,
     `post_count`      INTEGER NOT NULL DEFAULT 0,
+    `post_review`     INTEGER NOT NULL DEFAULT 0,
     `updated_at`      TEXT    DEFAULT NULL
 );
 CREATE TABLE `favorites` (
@@ -373,17 +374,24 @@ SQL);
             $this->seed('comments', ['id' => $id, 'post_id' => $id, 'user_id' => 1, 'created_at' => $now]);
         }
         $this->seed('posts', ['id' => 43, 'user_id' => 1, 'post_type' => 'normal', 'status' => 0, 'created_at' => $now]);
+        // R6：一条高 ID 的 private 帖 + 关联评论/点赞，用于验证游客口径确实按可见性过滤（非恒真）
+        $this->seed('posts', ['id' => 44, 'user_id' => 1, 'post_type' => 'normal', 'status' => 1, 'visibility' => 'private', 'created_at' => $now]);
+        $this->seed('likes', ['id' => 44, 'post_id' => 44, 'user_id' => 1, 'created_at' => $now]);
+        $this->seed('comments', ['id' => 44, 'post_id' => 44, 'user_id' => 1, 'created_at' => $now]);
 
-        $this->assertSame($this->originalLatestIds(), PostRepository::fetchLatestActivityIds());
-        $this->assertSame('42', (string)PostRepository::fetchLatestActivityIds()[0]['latest'], 'MAX 聚合只取 status=1 的最大 ID');
+        // viewerId=0 显式游客口径
+        $this->assertSame($this->originalLatestIds(), PostRepository::fetchLatestActivityIds(0));
+        $this->assertSame('42', (string)PostRepository::fetchLatestActivityIds(0)[0]['latest'], 'MAX 只取 status=1 且游客可见（private 44 被过滤）');
 
-        $this->assertSame($this->originalNewActivityCounts(null, 40, 40, 40), PostRepository::fetchNewActivityCounts(null, 40, 40, 40));
-        $this->assertSame($this->originalNewActivityCounts(1, 40, 40, 40), PostRepository::fetchNewActivityCounts(1, 40, 40, 40));
-        $withUser = PostRepository::fetchNewActivityCounts(1, 40, 40, 40);
-        $all = PostRepository::fetchNewActivityCounts(null, 40, 40, 40);
-        $this->assertSame(2, (int)$all[0]['cnt'], '无 user 条件时统计全部 status=1 且 id>40 的帖子');
+        $this->assertSame($this->originalNewActivityCounts(null, 40, 40, 40), PostRepository::fetchNewActivityCounts(null, 40, 40, 40, 0));
+        $this->assertSame($this->originalNewActivityCounts(1, 40, 40, 40), PostRepository::fetchNewActivityCounts(1, 40, 40, 40, 0));
+        $withUser = PostRepository::fetchNewActivityCounts(1, 40, 40, 40, 0);
+        $all = PostRepository::fetchNewActivityCounts(null, 40, 40, 40, 0);
+        $this->assertSame(2, (int)$all[0]['cnt'], '游客口径只统计 status=1 且 visibility=public 且 id>40 的帖子（private 44 不计）');
         $this->assertNotSame($withUser[0]['cnt'], $all[0]['cnt'], 'user 条件的有无必须产生不同聚合口径');
-        $this->assertSame(0, (int)PostRepository::fetchNewActivityCounts(999, 0, 0, 0)[0]['cnt'], '空结果负例');
+        $this->assertSame(2, (int)$all[1]['cnt'], 'comment 段同样过滤 private 帖的评论（41/42 可见、44 被过滤）');
+        $this->assertSame(2, (int)$all[2]['cnt'], 'like 段同样过滤 private 帖的点赞');
+        $this->assertSame(0, (int)PostRepository::fetchNewActivityCounts(999, 0, 0, 0, 0)[0]['cnt'], '空结果负例');
     }
 
     public function testRecommendationKeepsTagSimilarAndFeedbackSignals(): void
@@ -870,18 +878,30 @@ SQL);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * R6 有意行为变更：三段 UNION 各接入可见性条件。
+     * 游客口径（viewerId=0）等价于 VisibilityPolicy::where(0) = (p.visibility = 'public')，无参数。
+     * 本快照独立手写该片段，不复用 VisibilityPolicy，确保仍是对 SQL 结构的真实对照。
+     */
+    private function guestVisibilitySql(): string
+    {
+        return "(p.visibility = 'public')";
+    }
+
     private function originalLatestIds(): array
     {
-        $sql = "SELECT 'post' AS t, MAX(id) AS latest FROM posts WHERE status = 1
+        $vis = $this->guestVisibilitySql();
+        $sql = "SELECT 'post' AS t, MAX(id) AS latest FROM posts p WHERE status = 1 AND {$vis}
                 UNION ALL
-                SELECT 'comment', MAX(c.id) FROM comments c INNER JOIN posts p ON c.post_id = p.id WHERE p.status = 1
+                SELECT 'comment', MAX(c.id) FROM comments c INNER JOIN posts p ON c.post_id = p.id WHERE p.status = 1 AND {$vis}
                 UNION ALL
-                SELECT 'like', MAX(l.id) FROM likes l INNER JOIN posts p ON l.post_id = p.id WHERE p.status = 1";
+                SELECT 'like', MAX(l.id) FROM likes l INNER JOIN posts p ON l.post_id = p.id WHERE p.status = 1 AND {$vis}";
         return $this->pdo()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 
     private function originalNewActivityCounts(?int $userId, int $sinceId, int $sinceCommentId, int $sinceLikeId): array
     {
+        // 游客无可见性参数；每段参数顺序仍为 user(可选) → since
         $postParams = [];
         $commentParams = [];
         $likeParams = [];
@@ -893,11 +913,15 @@ SQL);
         $postParams[] = $sinceId;
         $commentParams[] = $sinceCommentId;
         $likeParams[] = $sinceLikeId;
-        $sql = "SELECT 'post' AS t, COUNT(*) AS cnt, MAX(id) AS latest_id FROM posts WHERE status = 1" . ($userId ? " AND user_id = ?" : "") . " AND id > ?
+        $vis = $this->guestVisibilitySql();
+        $sql = "SELECT 'post' AS t, COUNT(*) AS cnt, MAX(p.id) AS latest_id FROM posts p WHERE p.status = 1"
+            . ($userId ? " AND p.user_id = ?" : "") . " AND p.id > ? AND {$vis}
                 UNION ALL
-                SELECT 'comment', COUNT(*), MAX(c.id) FROM comments c INNER JOIN posts p ON c.post_id = p.id WHERE p.status = 1" . ($userId ? " AND p.user_id = ?" : "") . " AND c.id > ?
+                SELECT 'comment', COUNT(*), MAX(c.id) FROM comments c INNER JOIN posts p ON c.post_id = p.id WHERE p.status = 1"
+            . ($userId ? " AND p.user_id = ?" : "") . " AND c.id > ? AND {$vis}
                 UNION ALL
-                SELECT 'like', COUNT(*), MAX(l.id) FROM likes l INNER JOIN posts p ON l.post_id = p.id WHERE p.status = 1" . ($userId ? " AND p.user_id = ?" : "") . " AND l.id > ?";
+                SELECT 'like', COUNT(*), MAX(l.id) FROM likes l INNER JOIN posts p ON l.post_id = p.id WHERE p.status = 1"
+            . ($userId ? " AND p.user_id = ?" : "") . " AND l.id > ? AND {$vis}";
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute(array_merge($postParams, $commentParams, $likeParams));
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

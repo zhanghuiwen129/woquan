@@ -97,6 +97,9 @@ $router->group('/api', function ($router) {
     $router->post('/cron/circle-subscribes', [Hublog\Controllers\CircleSubscriptionCronController::class, 'sweep']);
     // 授权统计上报兜底端点（鉴权同 /cron/jobs；有服务器 cron 的站点可主动触发心跳）
     $router->post('/cron/license-heartbeat', [Hublog\Controllers\CronHeartbeatController::class, 'cron']);
+    // V102：VIP 到期批量降级（鉴权同 /cron/jobs；建议每天一次）
+    // 读时兜底 syncVip() 保留，本入口让落库值及时准确并清陈旧缓存
+    $router->post('/cron/vip-expire', [Hublog\Controllers\VipExpiryCronController::class, 'sweep']);
 
     // 用户
     $router->get('/user/profile', [Hublog\Controllers\UserController::class, 'profile']);
@@ -105,24 +108,10 @@ $router->group('/api', function ($router) {
     $router->get('/user/check-nickname', [Hublog\Controllers\UserController::class, 'checkNickname']);
     $router->get('/user/comments', [Hublog\Controllers\UserController::class, 'comments']);
     $router->get('/user/likes', [Hublog\Controllers\UserController::class, 'likes']);
-    // V58：隐私权限 + 个性化设置 + 草稿箱 + 通知偏好 + 申诉 + 手机号 + 在线状态
-    $router->get('/user/privacy', [Hublog\Controllers\UserController::class, 'privacy']);
-    $router->put('/user/privacy', [Hublog\Controllers\UserController::class, 'updatePrivacy']);
-    $router->get('/user/drafts', [Hublog\Controllers\UserController::class, 'drafts']);
-    $router->post('/user/draft', [Hublog\Controllers\UserController::class, 'saveDraft']);
-    $router->delete('/user/draft', [Hublog\Controllers\UserController::class, 'deleteDraft']);
-    $router->get('/user/notify-prefs', [Hublog\Controllers\UserController::class, 'notifyPrefs']);
-    $router->put('/user/notify-prefs', [Hublog\Controllers\UserController::class, 'updateNotifyPrefs']);
-    $router->post('/user/appeal', [Hublog\Controllers\UserController::class, 'submitAppeal']);
-    $router->get('/user/appeals', [Hublog\Controllers\UserController::class, 'myAppeals']);
+    // V58：手机号验证码签发保持公开（绑定/验证流程可能由未登录态触发）
     $router->post('/user/phone-code', [Hublog\Controllers\UserController::class, 'sendPhoneCode']);
-    $router->post('/user/phone/verify', [Hublog\Controllers\UserController::class, 'verifyPhone']);
-    $router->get('/user/online', [Hublog\Controllers\UserController::class, 'onlineStatus']);
-    $router->put('/user/alive', [Hublog\Controllers\UserController::class, 'heartbeat']);
-    // GDPR：用户导出自己的全部数据
-    $router->get('/user/export-data', [Hublog\Controllers\UserController::class, 'exportMyData']);
-    // V70：设置头像框（会员中心）
-    $router->post('/user/frame', [Hublog\Controllers\UserController::class, 'setFrame']);
+    // 会员系统治理 P0-3：其余 /user/* 私有读写接口已移至下方「需要登录」组，
+    // 由 AuthMiddleware 兜底，不再仅依赖控制器内 requireUser 逐个补位。
     
     // 内容
     $router->get('/posts/timeline', [Hublog\Controllers\PostController::class, 'timeline']);
@@ -226,6 +215,25 @@ $router->group('/api', function ($router) {
     $router->post('/auth/avatar', [Hublog\Controllers\AuthController::class, 'uploadAvatar']);
     $router->post('/auth/cover', [Hublog\Controllers\AuthController::class, 'uploadCover']);
 
+    // 会员系统治理 P0-3：用户私有数据读写（隐私/草稿/通知偏好/申诉/头像框/导出）。
+    // 从公开组移入，AuthMiddleware 提供纵深防御——新增接口漏写 requireUser 也不会越权。
+    $router->get('/user/privacy', [Hublog\Controllers\UserController::class, 'privacy']);
+    $router->put('/user/privacy', [Hublog\Controllers\UserController::class, 'updatePrivacy']);
+    $router->get('/user/drafts', [Hublog\Controllers\UserController::class, 'drafts']);
+    $router->post('/user/draft', [Hublog\Controllers\UserController::class, 'saveDraft']);
+    $router->delete('/user/draft', [Hublog\Controllers\UserController::class, 'deleteDraft']);
+    $router->get('/user/notify-prefs', [Hublog\Controllers\UserController::class, 'notifyPrefs']);
+    $router->put('/user/notify-prefs', [Hublog\Controllers\UserController::class, 'updateNotifyPrefs']);
+    $router->post('/user/appeal', [Hublog\Controllers\UserController::class, 'submitAppeal']);
+    $router->get('/user/appeals', [Hublog\Controllers\UserController::class, 'myAppeals']);
+    $router->post('/user/phone/verify', [Hublog\Controllers\UserController::class, 'verifyPhone']);
+    $router->get('/user/online', [Hublog\Controllers\UserController::class, 'onlineStatus']);
+    $router->put('/user/alive', [Hublog\Controllers\UserController::class, 'heartbeat']);
+    // GDPR：用户导出自己的全部数据
+    $router->get('/user/export-data', [Hublog\Controllers\UserController::class, 'exportMyData']);
+    // V70：设置头像框（会员中心）
+    $router->post('/user/frame', [Hublog\Controllers\UserController::class, 'setFrame']);
+
     // V51：实名认证（阿里云云市场二要素核验 + 后台人工复核）
     $router->get('/realname/status', [Hublog\Controllers\RealNameController::class, 'status']);
     $router->post('/realname/verify', [Hublog\Controllers\RealNameController::class, 'verify']);
@@ -287,6 +295,8 @@ $router->group('/api', function ($router) {
     // V50：圈子加入申请相关接口
     $router->get('/circles/my-requests', [Hublog\Controllers\CircleController::class, 'myJoinRequests']);
     $router->get('/circles/pending-requests', [Hublog\Controllers\CircleController::class, 'pendingRequests']);
+    // 圈内发帖审核的待审动态列表（圈主/管理员）
+    $router->get('/circles/pending-posts', [Hublog\Controllers\CircleController::class, 'pendingPosts']);
     $router->post('/circles/approve', [Hublog\Controllers\CircleController::class, 'approveRequest']);
     $router->post('/circles/reject', [Hublog\Controllers\CircleController::class, 'rejectRequest']);
     // V56：圈主管理（公告 / 成员移除与角色 / 圈内禁言 / 内容置顶与精华下沉）

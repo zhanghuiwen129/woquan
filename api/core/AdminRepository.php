@@ -701,8 +701,9 @@ WHERE p.id = ? AND p.status = 1 AND p.visibility = 'public' LIMIT 1",
     public static function banUsersByIds(array $ids): void
     {
         $ids = self::normalizeIds($ids);
+        // V102：同步写 account_state=1（管理员封禁）
         Database::query(
-            "UPDATE users SET status = ? WHERE id IN (" . self::inPlaceholders($ids) . ") AND id != ? AND role != ?",
+            "UPDATE users SET status = ?, account_state = 1 WHERE id IN (" . self::inPlaceholders($ids) . ") AND id != ? AND role != ?",
             array_merge([0], $ids, [1, 'admin'])
         );
     }
@@ -711,9 +712,10 @@ WHERE p.id = ? AND p.status = 1 AND p.visibility = 'public' LIMIT 1",
     public static function unbanUsersByIds(array $ids): void
     {
         $ids = self::normalizeIds($ids);
+        // V102：解封回 account_state=0（正常）；仅解封 status=0 的账号，避免覆盖注销/软删标记
         Database::query(
-            "UPDATE users SET status = ? WHERE id IN (" . self::inPlaceholders($ids) . ")",
-            array_merge([1], $ids)
+            "UPDATE users SET status = 1, account_state = 0 WHERE id IN (" . self::inPlaceholders($ids) . ") AND status = 0 AND deleted_at IS NULL",
+            $ids
         );
     }
 
@@ -742,6 +744,7 @@ WHERE p.id = ? AND p.status = 1 AND p.visibility = 'public' LIMIT 1",
             'bio'          => '',
             'password'     => $deadPwd,
             'status'       => 0,
+            'account_state'=> 3, // V102：后台软删
             'deleted_at'   => $now,
             'token_version'=> $tokenVersion,
             'updated_at'   => $now,

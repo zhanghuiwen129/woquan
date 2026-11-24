@@ -738,7 +738,9 @@ SQL);
         $this->assertNull(AppRepository::findActiveUserById(2), 'status=0 用户不可登录');
 
         AppRepository::updateOauthAccount(1, 'new-token', '{"unionid":"union-1"}', '2026-01-01');
-        $this->assertSame('new-token', $this->pdo()->query('SELECT access_token FROM oauth_accounts WHERE id = 1')->fetchColumn());
+        // V102：令牌加密入库，解密后应还原为明文（存量明文也能被 decrypt 原样返回）
+        $storedToken = $this->pdo()->query('SELECT access_token FROM oauth_accounts WHERE id = 1')->fetchColumn();
+        $this->assertSame('new-token', \Hublog\Core\OAuthTokenCipher::decrypt((string)$storedToken));
         AppRepository::touchUserLogin(1, '2026-01-01 10:00:00');
         $this->assertSame('2026-01-01 10:00:00', $this->pdo()->query('SELECT last_login FROM users WHERE id = 1')->fetchColumn());
 

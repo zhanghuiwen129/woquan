@@ -31,6 +31,7 @@ class TableArchive
         'wallet_logs'        => 'created_at',
         'points_logs'        => 'created_at',
         'admin_audit_logs'   => 'created_at',
+        'member_change_logs' => 'created_at',
         'content_filter_logs'=> 'created_at',
         'app_crash_logs'     => 'occurred_at',
         'post_view_logs'     => 'created_at',

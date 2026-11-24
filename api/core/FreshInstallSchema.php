@@ -2,7 +2,7 @@
 /**
  * 全新安装终态 DDL 基线 —— 由 scripts/build_fresh_schema.php 从终态库生成，勿手工编辑。
  *
- * 用途：install.php 的全新安装路径一次性建出全部 85 张表，
+ * 用途：install.php 的全新安装路径一次性建出全部 86 张表，
  *      不再循环执行 66 个 migrateNN（它们在大数据字典服务器上会发出上百次
  *      information_schema 探测，实测占安装耗时 90%）。
  *
@@ -18,7 +18,7 @@ namespace Hublog\Core;
 final class FreshInstallSchema
 {
     /** 基线对应的 schema 版本，必须与 Migration::$currentVersion 一致 */
-    public const SCHEMA_VERSION = 101;
+    public const SCHEMA_VERSION = 103;
 
     /** @var array<string,string> 表名 => CREATE TABLE IF NOT EXISTS 语句 */
     public const STATEMENTS = array (
@@ -657,6 +657,25 @@ final class FreshInstallSchema
       CONSTRAINT `fk_likes_post_id` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
       CONSTRAINT `fk_likes_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT=\'点赞表\'',
+      'member_change_logs' => 'CREATE TABLE IF NOT EXISTS `member_change_logs` (
+      `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+      `user_id` int(10) unsigned NOT NULL COMMENT \'目标用户ID\',
+      `change_type` varchar(32) NOT NULL COMMENT \'vip_grant/vip_expire/vip_downgrade/points_adjust/balance_adjust/role_change\',
+      `operator_id` int(10) unsigned NOT NULL DEFAULT \'0\' COMMENT \'操作人ID，0=系统/cron\',
+      `operator_name` varchar(50) NOT NULL DEFAULT \'\' COMMENT \'操作人名称快照\',
+      `before_value` varchar(255) DEFAULT NULL COMMENT \'变更前值\',
+      `after_value` varchar(255) DEFAULT NULL COMMENT \'变更后值\',
+      `delta` varchar(32) NOT NULL DEFAULT \'\' COMMENT \'数值变化量（非数值变更留空）\',
+      `biz_type` varchar(32) NOT NULL DEFAULT \'\' COMMENT \'vip/wallet/points/admin\',
+      `biz_id` varchar(64) NOT NULL DEFAULT \'\' COMMENT \'关联业务ID/订单号\',
+      `remark` varchar(255) NOT NULL DEFAULT \'\' COMMENT \'备注\',
+      `ip` varchar(45) NOT NULL DEFAULT \'\' COMMENT \'来源IP\',
+      `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`),
+      KEY `idx_user_created` (`user_id`,`created_at`),
+      KEY `idx_type_created` (`change_type`,`created_at`),
+      KEY `idx_operator` (`operator_id`,`created_at`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT=\'会员变更审计日志\'',
       'mentions' => 'CREATE TABLE IF NOT EXISTS `mentions` (
       `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `post_id` int(11) unsigned NOT NULL COMMENT \'动态ID\',
@@ -792,7 +811,7 @@ final class FreshInstallSchema
       'phone_codes' => 'CREATE TABLE IF NOT EXISTS `phone_codes` (
       `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
       `phone` varchar(20) NOT NULL COMMENT \'手机号\',
-      `code` varchar(10) NOT NULL COMMENT \'验证码\',
+      `code` varchar(255) NOT NULL COMMENT \'验证码（bcrypt 哈希；存量明文兼容至 TTL 到期）\',
       `scene` varchar(16) NOT NULL DEFAULT \'login\' COMMENT \'场景 login=登录 bind=绑定 reset=重置\',
       `expires_at` datetime NOT NULL COMMENT \'过期时间\',
       `used_at` datetime DEFAULT NULL,
@@ -848,7 +867,9 @@ final class FreshInstallSchema
       `balance_after` int(10) unsigned NOT NULL DEFAULT \'0\' COMMENT \'变动后的积分余额\',
       `remark` varchar(255) DEFAULT NULL,
       `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      `biz_key` varchar(64) DEFAULT NULL COMMENT \'业务幂等键：同一业务动作重复写入挡重；NULL=不参与去重\',
       PRIMARY KEY (`id`),
+      UNIQUE KEY `uk_points_biz_key` (`biz_key`),
       KEY `idx_user_created` (`user_id`,`created_at`),
       KEY `idx_user_type` (`user_id`,`type`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT=\'积分流水表\'',
@@ -1340,6 +1361,7 @@ final class FreshInstallSchema
       `last_active_at` datetime DEFAULT NULL COMMENT \'最近活跃时间（在线状态）\',
       `font_scale` varchar(8) NOT NULL DEFAULT \'normal\' COMMENT \'字体大小 small/normal/large/xlarge\',
       `msg_sound` tinyint(1) NOT NULL DEFAULT \'1\' COMMENT \'消息音效\',
+      `account_state` tinyint(1) NOT NULL DEFAULT \'0\' COMMENT \'账号状态细分：0正常 1管理员封禁 2用户注销 3后台软删；status=0 的二义性拆分\',
       PRIMARY KEY (`id`),
       UNIQUE KEY `uk_username` (`username`),
       UNIQUE KEY `uk_users_nickname` (`nickname`),

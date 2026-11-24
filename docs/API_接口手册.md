@@ -349,7 +349,7 @@ sender{id, username, nickname, avatar, vip_level, avatar_frame}, created_at
 | POST | `/api/user/phone/verify` | 登录 | `phone*`、`code*` | 绑定结果 |
 | GET | `/api/user/online` | 登录 | `user_id` | 在线状态 |
 | PUT | `/api/user/alive` | 登录 | — | 心跳结果 |
-| GET | `/api/user/export-data` | 登录 | `format`(`json`) | 个人数据导出 |
+| GET | `/api/user/export-data` | 登录 | `format`(`json`，仅支持 json；csv 返回 400) | 个人数据导出（结构化 JSON 包，不含密码/令牌；csv/zip 暂未实现） |
 | POST | `/api/user/frame` | 登录 | `frame*` | 设置结果 |
 | GET | `/api/follow/stats` | 公开 | `username` | `{following_count,followers_count,following,followers}` |
 | GET | `/api/follow/followers` | 公开 | `username`、`page`、`limit`(≤50) | `{list,pagination}` |
@@ -424,6 +424,7 @@ sender{id, username, nickname, avatar, vip_level, avatar_frame}, created_at
 | POST | `/api/circles/join` | 登录 | `id*` | 加入结果 |
 | POST | `/api/circles/leave` | 登录 | `id*` | `null` |
 | GET | `/api/circles/my-requests` | 登录 | — | 我的申请列表 |
+| GET | `/api/circles/pending-posts` | 登录（圈主/管理员） | `id*`、`page`、`limit` | 待审动态列表（`post_review` 开启时） |
 | GET | `/api/circles/pending-requests` | 登录 | `id*` | 待审申请列表 |
 | POST | `/api/circles/approve` | 登录 | `id*`、`user_id` | 审批结果 |
 | POST | `/api/circles/reject` | 登录 | `id*`、`user_id`、`content` | 审批结果 |
@@ -432,7 +433,7 @@ sender{id, username, nickname, avatar, vip_level, avatar_frame}, created_at
 | POST | `/api/circles/mute-member` | 登录 | `id*`、`user_id*`、`minutes` | 禁言结果 |
 | POST | `/api/circles/ban-member` | 登录 | `id*`、`user_id*` | 拉黑结果 |
 | POST | `/api/circles/unban-member` | 登录 | `id*`、`user_id*` | 解黑结果 |
-| POST | `/api/circles/manage-post` | 登录 | `id*`、`post_id*`、`action*` | 置顶 / 精华结果 |
+| POST | `/api/circles/manage-post` | 登录（圈主/管理员） | `id*`、`post_id*`、`action*`（含 `approve`/`reject`） | 内容治理 / 圈内审核结果 |
 | POST | `/api/circles/group` | 登录 | `id*` | 群会话对象 |
 
 ### 6.9 活动
@@ -506,6 +507,7 @@ sender{id, username, nickname, avatar, vip_level, avatar_frame}, created_at
 | POST | `/api/cron/badges` | 系统 | `secret` 或 `X-Cron-Token` | 徽章扫描结果 |
 | POST | `/api/cron/jobs` | 系统 | `secret` 或 `X-Cron-Token` | 异步任务结果 |
 | POST | `/api/cron/license-heartbeat` | 系统 | `secret` 或 `X-Cron-Token` | `{reported:bool}`，主动触发一次授权统计心跳上报 |
+| POST | `/api/cron/vip-expire` | 系统 | `secret` 或 `X-Cron-Token`、`limit` | `{scanned,downgraded,failed}`，VIP 到期批量降级（读时兜底保留；无 HTTP cron 可用 `php bin/expire-vip.php`） |
 | GET | `/api/cron/jobs/status` | 系统 | — | 队列状态 |
 
 ### 6.14 补充接口

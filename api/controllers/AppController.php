@@ -561,9 +561,19 @@ class AppController extends BaseController
             'realname_verified'   => 0,
             'realname_verified_at' => null,
             'status'              => 0,
+            'account_state'       => 2, // V102：用户主动注销
             'deleted_at'          => Helper::now(),
             'token_version'       => (int)$user['token_version'] + 1,
-            'updated_at'          => Helper::now()
+            'updated_at'          => Helper::now(),
+            // B) 直接标识字段同步擦除：phone/生日/地区/标签/活跃时间列均可空，置 null；
+            // gender 列 NOT NULL DEFAULT 0，只能置 0（未知），避免严格模式报错。
+            'phone'               => null,
+            'phone_verified_at'   => null,
+            'gender'              => 0,
+            'birthday'            => null,
+            'region'              => null,
+            'user_tags'           => null,
+            'last_active_at'      => null
         ];
 
         try {

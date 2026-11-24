@@ -198,18 +198,10 @@ class UserController extends BaseController
             BadgeService::decorateUser($profile['user']);
         }
 
-        if (!$isSelf) {
-            $home = $priv['privacy_home'] ?? 'public';
-            $isAdmin = ($currentUser['role'] ?? '') === 'admin';
-            if (!$isAdmin && $home !== 'public') {
-                $allowed = false;
-                if ($home === 'followers') {
-                    $allowed = UserRepository::isFollowing($currentUserId, $targetId);
-                }
-                if (!$allowed) {
-                    return Response::error('用户不存在', 404);
-                }
-            }
+        // R5：复用统一可见性门禁（口径与原逻辑一致：本人/admin/public 放行，followers 需关注，private 拒绝）
+        $isAdmin = ($currentUser['role'] ?? '') === 'admin';
+        if (!UserRepository::isProfileVisibleTo($targetId, $currentUserId, $isAdmin)) {
+            return Response::error('用户不存在', 404);
         }
 
         return Response::success($profile);
@@ -230,6 +222,15 @@ class UserController extends BaseController
             return Response::error('用户不存在', 404);
         }
 
+        // 当前登录用户（必须先算出来：fetchByIds() 的第二个参数要求 int）
+        $currentUser = Auth::user($request);
+        $currentUserId = (int)($currentUser['id'] ?? 0);
+        $isAdmin = ($currentUser['role'] ?? '') === 'admin';
+        // R5：评论列表与主页同一可见性门禁；不可见返回与 profile() 一致的 404
+        if (!UserRepository::isProfileVisibleTo((int)$user['id'], $currentUserId, $isAdmin)) {
+            return Response::error('用户不存在', 404);
+        }
+
         $page = max(1, $request->getInt('page', 1));
         $limit = min(50, max(1, $request->getInt('limit', 20)));
         $offset = ($page - 1) * $limit;
@@ -241,11 +242,6 @@ class UserController extends BaseController
 
         $postIds = array_unique(array_column($rows, 'post_id'));
         $list = [];
-
-        // 当前登录用户（必须先算出来：fetchByIds() 的第二个参数要求 int，
-        // 之前写在这里面、调用之后才赋值 → 传进去的是 null → TypeError 500）
-        $currentUser = Auth::user($request);
-        $currentUserId = (int)($currentUser['id'] ?? 0);
 
         if (!empty($postIds)) {
             // 2. 批量获取动态详情
@@ -295,11 +291,17 @@ class UserController extends BaseController
             return Response::error('用户不存在', 404);
         }
 
+        $currentUser = Auth::user($request);
+        $currentUserId = (int)($currentUser['id'] ?? 0);
+        $isAdmin = ($currentUser['role'] ?? '') === 'admin';
+        // R5：点赞列表与主页同一可见性门禁
+        if (!UserRepository::isProfileVisibleTo((int)$user['id'], $currentUserId, $isAdmin)) {
+            return Response::error('用户不存在', 404);
+        }
+
         $page = max(1, $request->getInt('page', 1));
         $limit = min(50, max(1, $request->getInt('limit', 20)));
         $offset = ($page - 1) * $limit;
-        $currentUser = Auth::user($request);
-        $currentUserId = (int)($currentUser['id'] ?? 0);
 
         $total = UserRepository::countLikesByUser((int)$user['id']);
 
@@ -336,11 +338,10 @@ class UserController extends BaseController
     /**
      * GDPR 数据可携带权：用户导出自己的全部数据
      *
-     * 支持 json / csv 两种格式：
-     * - json: 返回完整结构化数据包，推荐用于迁移到其他平台
-     * - csv:  返回 zip 压缩包，每个 CSV 文件对应一种数据类型
+     * 当前仅支持 format=json（返回完整结构化数据包，推荐用于迁移到其他平台）；
+     * format=csv 返回 400，不生成 zip 压缩包（csv/zip 打包尚未实现）。
      *
-     * 数据范围：账号信息、动态、评论、点赞、收藏、关注/粉丝
+     * 数据范围：账号信息（含资料与隐私字段，不含密码/令牌）、动态、评论、点赞、收藏、关注/粉丝
      * 不包含：他人发给该用户的私信（属于对方数据）
      */
     /**
@@ -452,7 +453,8 @@ class UserController extends BaseController
             return $error;
         }
 
-        UserRepository::updateUserStatus($id, $status, \Hublog\Core\Helper::now());
+        // V102：同步维护 account_state（封禁=1 / 解封=0），与 status 二义性拆分对齐
+        UserRepository::updateUserStatus($id, $status, \Hublog\Core\Helper::now(), $status === 0 ? 1 : 0);
         \Hublog\Core\Auth::clearUserCache($id);
         $this->clearCache('user_profile_');
 
@@ -508,6 +510,15 @@ class UserController extends BaseController
             if ($id === 1 && $role !== 'admin') {
                 return Response::error('超级管理员角色不可修改', 403);
             }
+            // V103：角色变更审计（before 为旧角色）
+            if ((string)($user['role'] ?? '') !== $role) {
+                \Hublog\Core\MemberChangeAudit::record(
+                    $id, \Hublog\Core\MemberChangeAudit::TYPE_ROLE_CHANGE,
+                    (string)($user['role'] ?? ''), $role,
+                    (int)($currentUser['id'] ?? 0), (string)($currentUser['username'] ?? ''),
+                    '后台修改角色', '', 'admin', (string)$id
+                );
+            }
             $data['role'] = $role;
         }
 
@@ -521,6 +532,8 @@ class UserController extends BaseController
                 return Response::error('不能禁用当前登录账号', 403);
             }
             $data['status'] = $status;
+            // V102：与 updateStatus 同口径同步 account_state（封禁=1 / 解封=0）
+            $data['account_state'] = $status === 0 ? 1 : 0;
         }
 
         // 密码：留空不修改，至少 6 位。取出哈希与其余字段分开走——改密必须同事务递增版本 + 撤销全部 refresh_token
@@ -1185,7 +1198,8 @@ class UserController extends BaseController
      */
     public function onlineStatus(Request $request): Response
     {
-        Auth::check($request);
+        $viewer = Auth::check($request);
+        $viewerId = (int)($viewer['id'] ?? 0);
         $ids = array_filter(array_map('intval', explode(',', (string)$request->getString('ids'))));
         $ids = array_values(array_slice($ids, 0, 50));
         if (!$ids) {
@@ -1196,13 +1210,17 @@ class UserController extends BaseController
 
         $result = [];
         foreach ($rows as $r) {
-            $online = !$r['hide_online']
+            $targetId = (int)$r['id'];
+            $hide = !empty($r['hide_online']);
+            $online = !$hide
                 && (int)$r['status'] === 1
                 && !empty($r['last_active_at'])
-                && (time() - strtotime($r['last_active_at'])) < 300;
-            $result[(int)$r['id']] = [
+                && (time() - strtotime((string)$r['last_active_at'])) < 300;
+            // 与 profile() 同一口径：本人 / 隐藏在线 / 非在线（含封禁注销 status≠1）
+            // 一律不下发精确活跃时间，避免 hide_online 被本接口绕过。
+            $result[$targetId] = [
                 'online'         => (bool)$online,
-                'last_active_at' => $r['last_active_at'],
+                'last_active_at' => ($viewerId === $targetId || $hide || !$online) ? null : $r['last_active_at'],
             ];
         }
         return Response::success($result);

@@ -86,6 +86,33 @@ trait PostUpdateTrait
             $out['updateData']['scheduled_at'] = null;
         }
 
+        // 圈内发帖审核。待审中的圈内动态不允许变更圈子归属 ——
+        // 移出后 ContentAudit 的圈内守卫不再命中，会被自动放行，形成审核绕过。
+        $originalCircleId = (int)($post['circle_id'] ?? 0);
+        if ($originalCircleId > 0 && (int)($post['status'] ?? 1) === 0
+            && (int)($post['audit_state'] ?? 0) === 1
+            && $out['newCircleId'] !== null && $out['newCircleId'] !== $originalCircleId) {
+            $originCircle = PostRepository::findCircleForPost($originalCircleId);
+            if ($originCircle && (int)($originCircle['post_review'] ?? 0) === 1) {
+                return Response::error('待审核的动态暂不能变更所属圈子', 403);
+            }
+        }
+
+        // 编辑后重新进入圈内待审，避免「审核通过后改一次内容就绕过审核」。
+        // 圈主/圈管与平台管理员免审；管理员已下架的内容仍不参与流转（与敏感词重审同口径）。
+        $effectiveCircleId = $out['newCircleId'] ?? $originalCircleId;
+        if ($effectiveCircleId > 0 && !$isAdminRemoved) {
+            $targetCircle = PostRepository::findCircleForPost($effectiveCircleId);
+            $memberRow = PostRepository::findCircleMemberForPost($effectiveCircleId, (int)$user['id']);
+            $isCircleManager = $memberRow && in_array($memberRow['role'], ['owner', 'admin'], true);
+            if ($targetCircle && (int)($targetCircle['post_review'] ?? 0) === 1
+                && !$isCircleManager && ($user['role'] ?? '') !== 'admin') {
+                $out['updateData']['status'] = 0;
+                $out['updateData']['audit_state'] = 1;
+                $out['updateData']['scheduled_at'] = null;
+            }
+        }
+
         // 事务内落库：posts 更新 + @提及关系 + uploads 重绑 + 话题刷新
         $this->persistPostUpdate(
             $id,

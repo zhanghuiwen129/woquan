@@ -16,6 +16,7 @@ use Hublog\Core\BadgeService;
 use Hublog\Core\Hook;
 use Hublog\Core\PostRepository;
 use Hublog\Core\PostFormatter;
+use Hublog\Core\UserRepository;
 use Hublog\Core\Moderation;
 use Hublog\Core\Exception\HublogException;
 use Hublog\Core\SsePush;
@@ -639,7 +640,10 @@ trait PostFeedTrait
 
     public function latestIds(Request $request): Response
     {
-        $rows = PostRepository::fetchLatestActivityIds();
+        // R6：按当前访问者可见性口径取最新 ID，游客=0 只看 public
+        $currentUser = Auth::user($request);
+        $viewerId = (int)($currentUser['id'] ?? 0);
+        $rows = PostRepository::fetchLatestActivityIds($viewerId);
 
         $postId = 0;
         $commentId = 0;
@@ -678,26 +682,39 @@ trait PostFeedTrait
         $sinceLikeId = $request->getInt('since_like_id', 0);
         $username = $request->getString('username');
 
+        // R6：viewerId 取当前登录用户（不能用 0，否则本人私密帖在增量检查里会消失）
+        $currentUser = Auth::user($request);
+        $viewerId = (int)($currentUser['id'] ?? 0);
+        $isAdmin = ($currentUser['role'] ?? '') === 'admin';
+        $emptyResponse = static function () use ($sinceId, $sinceCommentId, $sinceLikeId): Response {
+            return Response::success([
+                'count' => 0,
+                'latest_id' => $sinceId,
+                'latest_comment_id' => $sinceCommentId,
+                'latest_like_id' => $sinceLikeId
+            ]);
+        };
+
         $userId = null;
         if ($username) {
             $user = PostRepository::findUsernameForCheckNew($username);
             if (!$user) {
-                return Response::success([
-                    'count' => 0,
-                    'latest_id' => $sinceId,
-                    'latest_comment_id' => $sinceCommentId,
-                    'latest_like_id' => $sinceLikeId
-                ]);
+                return $emptyResponse();
             }
-            $userId = $user['id'];
+            $userId = (int)$user['id'];
+            // R6：查指定用户的增量前过主页可见性门禁，不可见沿用「用户不存在」空返回结构
+            if (!UserRepository::isProfileVisibleTo($userId, $viewerId, $isAdmin)) {
+                return $emptyResponse();
+            }
         }
 
-        // user_id 条件的有无随 SQL 一并下沉到仓储本体，避免内部调用绕过入口分支
+        // user_id 条件的有无随 SQL 一并下沉到仓储本体；viewerId 供三段可见性过滤
         $rows = PostRepository::fetchNewActivityCounts(
-            $userId !== null ? (int)$userId : null,
+            $userId,
             $sinceId,
             $sinceCommentId,
-            $sinceLikeId
+            $sinceLikeId,
+            $viewerId
         );
 
         $postCnt = 0;

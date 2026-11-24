@@ -551,7 +551,9 @@ SQL);
         ]);
         $this->assertSame($newId, (int)UserRepository::findOauthAccount('github', 'g1')['user_id']);
         UserRepository::updateOauthAccountTokens($oid, 't2', '{}', '2026-03-11');
-        $this->assertSame('t2', $this->pdo()->query("SELECT access_token FROM oauth_accounts WHERE id = {$oid}")->fetchColumn());
+        // V102：令牌加密入库，解密后还原明文
+        $stored = $this->pdo()->query("SELECT access_token FROM oauth_accounts WHERE id = {$oid}")->fetchColumn();
+        $this->assertSame('t2', \Hublog\Core\OAuthTokenCipher::decrypt((string)$stored));
 
         // 通知偏好写方法
         $this->assertFalse(UserRepository::notificationPrefsExist($newId));
@@ -697,8 +699,12 @@ SQL);
 
     private function originalExportProfile(int $id): ?array
     {
+        // R9：补齐个人资料与隐私字段；仍不含 password / password_hash / 任何 token 字段
         return $this->one(
-            "SELECT id, username, nickname, email, avatar, bio, role, status, created_at FROM users WHERE id = ?",
+            "SELECT id, username, nickname, email, avatar, bio, role, status, created_at,
+                    phone, birthday, gender, region, user_tags, privacy_home, allow_search,
+                    hide_online, allow_stranger_msg, allow_mention
+             FROM users WHERE id = ?",
             [$id]
         );
     }

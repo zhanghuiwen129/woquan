@@ -20,7 +20,7 @@
  * （migrate92 的 DDL 被 catch 吞掉）用前三个维度查不出来，而它直接决定
  * 重复支付回调会不会重复入账。见 REQUIRED_UNIQUE_INDEXES。
  *
- * 生成依据：85 张表 / 89 个列名
+ * 生成依据：86 张表 / 90 个列名
  * 已排除被 DROP 的表：checkins
  */
 
@@ -76,6 +76,7 @@ final class MigrationContract
         'jobs',
         'licenses',
         'likes',
+        'member_change_logs',
         'mentions',
         'message_deletions',
         'messages',
@@ -124,6 +125,7 @@ final class MigrationContract
 
     /** @var list<string> 期望在库中出现的全部增量列名（自动生成，至少一张表拥有即可） */
     public const REQUIRED_COLUMN_NAMES = [
+        'account_state',
         'announcement',
         'announcement_at',
         'attachments',

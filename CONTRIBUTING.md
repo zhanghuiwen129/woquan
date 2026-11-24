@@ -39,6 +39,7 @@
 | 主题契约 | `node scripts/audit-theme.js --gen`；生成后确认 `contract.json` 变更一并提交 |
 | 迁移契约 | `php scripts/build_migration_contract.php --check`；不一致时用 `--write` 重生成并提交 |
 | 计数对账 | `php bin/reconcile-counters.php` |
+| 余额/积分对账（只读） | `php bin/reconcile-wallet.php` |
 
 CI 中 PHPStan（level 3）、后台脚本审计、鉴权守卫审计、日志用法检查、内联 SQL 上限检查、唯一索引 DDL 检查与路由文档对账都是硬门禁，失败即退出非零，不能以“本地环境特殊”为由跳过。
 

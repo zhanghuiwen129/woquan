@@ -487,7 +487,7 @@ class PostRepository
     public static function findCircleForPost(int $circleId): ?array
     {
         return Database::fetchOne(
-            "SELECT id, owner_id, status, post_permission, limited, removed_at, pay_type FROM circles WHERE id = ? LIMIT 1",
+            "SELECT id, owner_id, status, post_permission, limited, removed_at, pay_type, post_review FROM circles WHERE id = ? LIMIT 1",
             [$circleId]
         );
     }
@@ -1563,15 +1563,21 @@ class PostRepository
         );
     }
 
-    /** latestIds() —— 三段 UNION 聚合取最大 ID（MAX 聚合不加 post_type） */
-    public static function fetchLatestActivityIds(): array
+    /**
+     * latestIds() —— 三段 UNION 聚合取最大 ID（MAX 聚合不加 post_type）
+     *
+     * R6：三段各接入一份 VisibilityPolicy 条件，避免私密/好友/圈子动态把最新 ID 顶高，
+     * 导致游客或无权用户在增量检查里永远看到「有新内容」。参数按段顺序 post→comment→like。
+     */
+    public static function fetchLatestActivityIds(int $viewerId = 0): array
     {
-        $sql = "SELECT 'post' AS t, MAX(id) AS latest FROM posts WHERE status = 1
+        [$visWhere, $visParams] = VisibilityPolicy::where($viewerId);
+        $sql = "SELECT 'post' AS t, MAX(id) AS latest FROM posts p WHERE status = 1 AND {$visWhere}
                 UNION ALL
-                SELECT 'comment', MAX(c.id) FROM comments c INNER JOIN posts p ON c.post_id = p.id WHERE p.status = 1
+                SELECT 'comment', MAX(c.id) FROM comments c INNER JOIN posts p ON c.post_id = p.id WHERE p.status = 1 AND {$visWhere}
                 UNION ALL
-                SELECT 'like', MAX(l.id) FROM likes l INNER JOIN posts p ON l.post_id = p.id WHERE p.status = 1";
-        return Database::fetchAll($sql);
+                SELECT 'like', MAX(l.id) FROM likes l INNER JOIN posts p ON l.post_id = p.id WHERE p.status = 1 AND {$visWhere}";
+        return Database::fetchAll($sql, array_merge($visParams, $visParams, $visParams));
     }
 
     /** checkNew() —— username 解析（status=1，与 findUsernameForTimeline 口径不同） */
@@ -1585,8 +1591,15 @@ class PostRepository
      * 原入口用 `if ($userId)` 决定是否拼 user_id 条件；该守卫随 SQL 一并下沉，
      * 避免仓储内部调用绕过入口条件。参数顺序 post → comment → like 逐字保留。
      */
-    public static function fetchNewActivityCounts(?int $userId, int $sinceId, int $sinceCommentId, int $sinceLikeId): array
-    {
+    public static function fetchNewActivityCounts(
+        ?int $userId,
+        int $sinceId,
+        int $sinceCommentId,
+        int $sinceLikeId,
+        int $viewerId = 0
+    ): array {
+        // R6：viewerId 用当前登录用户（<=0 视为游客），三段 UNION 各拼接一份可见性条件与参数。
+        [$visWhere, $visParams] = VisibilityPolicy::where($viewerId);
         $postParams = [];
         $commentParams = [];
         $likeParams = [];
@@ -1599,11 +1612,19 @@ class PostRepository
         $commentParams[] = $sinceCommentId;
         $likeParams[] = $sinceLikeId;
 
-        $sql = "SELECT 'post' AS t, COUNT(*) AS cnt, MAX(id) AS latest_id FROM posts WHERE status = 1" . ($userId ? " AND user_id = ?" : "") . " AND id > ?
+        // 参数顺序逐段 post → comment → like；每段内部：user(可选) → since → 该段可见性参数
+        $sql = "SELECT 'post' AS t, COUNT(*) AS cnt, MAX(p.id) AS latest_id FROM posts p WHERE p.status = 1"
+            . ($userId ? " AND p.user_id = ?" : "") . " AND p.id > ? AND {$visWhere}
                 UNION ALL
-                SELECT 'comment', COUNT(*), MAX(c.id) FROM comments c INNER JOIN posts p ON c.post_id = p.id WHERE p.status = 1" . ($userId ? " AND p.user_id = ?" : "") . " AND c.id > ?
+                SELECT 'comment', COUNT(*), MAX(c.id) FROM comments c INNER JOIN posts p ON c.post_id = p.id WHERE p.status = 1"
+            . ($userId ? " AND p.user_id = ?" : "") . " AND c.id > ? AND {$visWhere}
                 UNION ALL
-                SELECT 'like', COUNT(*), MAX(l.id) FROM likes l INNER JOIN posts p ON l.post_id = p.id WHERE p.status = 1" . ($userId ? " AND p.user_id = ?" : "") . " AND l.id > ?";
+                SELECT 'like', COUNT(*), MAX(l.id) FROM likes l INNER JOIN posts p ON l.post_id = p.id WHERE p.status = 1"
+            . ($userId ? " AND p.user_id = ?" : "") . " AND l.id > ? AND {$visWhere}";
+
+        $postParams = array_merge($postParams, $visParams);
+        $commentParams = array_merge($commentParams, $visParams);
+        $likeParams = array_merge($likeParams, $visParams);
 
         return Database::fetchAll($sql, array_merge($postParams, $commentParams, $likeParams));
     }

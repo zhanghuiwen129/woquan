@@ -87,4 +87,54 @@ final class AccountDeletionGuardTest extends TestCase
             '注销匿名化应把 email 置为 null。'
         );
     }
+
+    public function testDeletionErasesDirectPiiInBothWhitelists(): void
+    {
+        $src = $this->source();
+
+        if (!preg_match('/\$userUpdates\s*=\s*\[(.*?)\];/s', $src, $m)) {
+            $this->fail('未找到 AppController 的 $userUpdates 匿名化数组。');
+        }
+        $controller = $m[1];
+        // AppController 里另有一个同名 $allowed（分类参数白名单），必须锚定仓储方法再取，
+        // 否则会拿出错误的数组导致误判。
+        if (!preg_match('/function purgeAndAnonymizeUser.*?\$allowed\s*=\s*\[(.*?)\];/s', $src, $m2)) {
+            $this->fail('未找到 AppRepository 的 $allowed 更新白名单。');
+        }
+        $repository = $m2[1];
+
+        // 字段 => 注销时应写入的值。gender 在 FreshInstallSchema 中是 NOT NULL DEFAULT 0，
+        // 必须置 0（未知），其余 6 个字段列均可空，置 null。
+        $pii = [
+            'phone'             => 'null',
+            'phone_verified_at' => 'null',
+            'gender'            => '0',
+            'birthday'          => 'null',
+            'region'            => 'null',
+            'user_tags'         => 'null',
+            'last_active_at'    => 'null',
+        ];
+        foreach ($pii as $field => $expected) {
+            $quoted = preg_quote($field, '/');
+            $this->assertMatchesRegularExpression(
+                "/'" . $quoted . "'\s*=>\s*" . preg_quote($expected, '/') . "/",
+                $controller,
+                "AppController 注销必须把 {$field} 擦除为 {$expected}。"
+            );
+            $this->assertMatchesRegularExpression(
+                "/'" . $quoted . "'/",
+                $repository,
+                "AppRepository 的 \$allowed 必须放行 {$field}，否则该列不会被 UPDATE 写回。"
+            );
+        }
+
+        // 原 16 字段不能被这次增量挤掉
+        foreach (['username', 'email', 'status', 'account_state', 'deleted_at', 'token_version', 'updated_at'] as $kept) {
+            $this->assertMatchesRegularExpression(
+                "/'" . $kept . "'\s*=>/",
+                $controller,
+                "注销匿名化原有字段 {$kept} 必须保留。"
+            );
+        }
+    }
 }

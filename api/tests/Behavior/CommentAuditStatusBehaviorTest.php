@@ -298,7 +298,7 @@ SQL);
         );
 
         $main = (string)file_get_contents(self::root() . '/api/core/Migration.php');
-        $this->assertStringContainsString('private static int $currentVersion = 101;', $main);
-        $this->assertStringContainsString('migrate66 ~ migrate101', $main);
+        $this->assertStringContainsString('private static int $currentVersion = 103;', $main);
+        $this->assertStringContainsString('migrate66 ~ migrate103', $main);
     }
 }

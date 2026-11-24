@@ -297,7 +297,9 @@ class Auth
             throw new HublogException('请先登录', 401);
         }
 
-        if (isset($payload['tv']) && (int)$payload['tv'] !== (int)$user['token_version']) {
+        // 会员系统治理 P0-4a：tv 必须存在且匹配。原 isset 守卫让缺 tv 的旧签名 token
+        // 绕过版本失效校验，登出/改密/封禁后仍能继续使用。
+        if (!isset($payload['tv']) || (int)$payload['tv'] !== (int)$user['token_version']) {
             throw new HublogException('登录状态已失效，请重新登录', 401);
         }
 
