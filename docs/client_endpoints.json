@@ -1,9 +1,9 @@
 {
     "//": "本文件由 scripts/build-client-endpoints.php 自动生成，请勿手工编辑；改接口请先改 docs/openapi.yaml 再重新生成，否则 CI 会报「清单过期」。",
     "source": "docs/openapi.yaml",
-    "source_sha256": "e248b411d0c236641b3dc398bc0d29481fa3f514f35e774f8400d11bf2a40f1d",
-    "path_count": 351,
-    "operation_count": 399,
+    "source_sha256": "7b67cb2b18edd94f1d77d959f7f57d50c4a81c21e7a87f2fb787e3f723bb8229",
+    "path_count": 356,
+    "operation_count": 408,
     "paths": [
         "/api/activities",
         "/api/activity/detail",
@@ -239,6 +239,7 @@
         "/api/cron/jobs/status",
         "/api/cron/license-heartbeat",
         "/api/cron/scheduled",
+        "/api/cron/vip-expire",
         "/api/csrf",
         "/api/favorites/check",
         "/api/favorites/list",
@@ -254,6 +255,10 @@
         "/api/follow/stats",
         "/api/follow/suggest",
         "/api/follow/unblock",
+        "/api/gallery/albums",
+        "/api/gallery/images",
+        "/api/gallery/move",
+        "/api/gallery/upload",
         "/api/location/ip",
         "/api/location/reverse",
         "/api/metrics",
@@ -2973,6 +2978,17 @@
             ]
         },
         {
+            "path": "/api/cron/vip-expire",
+            "normalized": "/api/cron/vip-expire",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "运维"
+            ]
+        },
+        {
             "path": "/api/csrf",
             "normalized": "/api/csrf",
             "methods": [
@@ -3114,6 +3130,54 @@
             ],
             "path_params": [],
             "tags": []
+        },
+        {
+            "path": "/api/gallery/albums",
+            "normalized": "/api/gallery/albums",
+            "methods": [
+                "delete",
+                "get",
+                "post",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "图库"
+            ]
+        },
+        {
+            "path": "/api/gallery/images",
+            "normalized": "/api/gallery/images",
+            "methods": [
+                "delete",
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "图库"
+            ]
+        },
+        {
+            "path": "/api/gallery/move",
+            "normalized": "/api/gallery/move",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "图库"
+            ]
+        },
+        {
+            "path": "/api/gallery/upload",
+            "normalized": "/api/gallery/upload",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "图库"
+            ]
         },
         {
             "path": "/api/location/ip",

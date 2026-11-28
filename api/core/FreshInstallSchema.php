@@ -2,7 +2,7 @@
 /**
  * 全新安装终态 DDL 基线 —— 由 scripts/build_fresh_schema.php 从终态库生成，勿手工编辑。
  *
- * 用途：install.php 的全新安装路径一次性建出全部 86 张表，
+ * 用途：install.php 的全新安装路径一次性建出全部 88 张表，
  *      不再循环执行 66 个 migrateNN（它们在大数据字典服务器上会发出上百次
  *      information_schema 探测，实测占安装耗时 90%）。
  *
@@ -18,7 +18,7 @@ namespace Hublog\Core;
 final class FreshInstallSchema
 {
     /** 基线对应的 schema 版本，必须与 Migration::$currentVersion 一致 */
-    public const SCHEMA_VERSION = 105;
+    public const SCHEMA_VERSION = 106;
 
     /** @var array<string,string> 表名 => CREATE TABLE IF NOT EXISTS 语句 */
     public const STATEMENTS = array (
@@ -606,10 +606,35 @@ final class FreshInstallSchema
       KEY `idx_status_sort` (`status`,`sort_order`),
       KEY `idx_created_at` (`created_at`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT=\'友情链接表\'',
+      'gallery_albums' => 'CREATE TABLE IF NOT EXISTS `gallery_albums` (
+      `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+      `user_id` int(10) unsigned NOT NULL COMMENT \'相册所属用户\',
+      `name` varchar(80) NOT NULL COMMENT \'相册名称\',
+      `description` varchar(255) NOT NULL DEFAULT \'\' COMMENT \'相册简介\',
+      `cover_url` varchar(500) DEFAULT NULL COMMENT \'封面（取相册内某张图）\',
+      `sort_order` int(11) NOT NULL DEFAULT \'0\' COMMENT \'排序，越大越靠前\',
+      `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`),
+      KEY `idx_gallery_album_user` (`user_id`,`sort_order`,`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT=\'独立图库相册分组\'',
+      'gallery_images' => 'CREATE TABLE IF NOT EXISTS `gallery_images` (
+      `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+      `user_id` int(10) unsigned NOT NULL COMMENT \'上传者\',
+      `album_id` int(10) unsigned NOT NULL DEFAULT \'0\' COMMENT \'所属相册，0=未分组\',
+      `upload_id` int(10) unsigned NOT NULL COMMENT \'关联 uploads.id\',
+      `url` varchar(500) NOT NULL COMMENT \'图片访问地址\',
+      `filename` varchar(255) NOT NULL DEFAULT \'\' COMMENT \'原始文件名\',
+      `size` int(10) unsigned NOT NULL DEFAULT \'0\' COMMENT \'字节数\',
+      `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `uk_gallery_upload` (`upload_id`),
+      KEY `idx_gallery_image_user_album` (`user_id`,`album_id`,`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT=\'独立图库图片\'',
       'jobs' => 'CREATE TABLE IF NOT EXISTS `jobs` (
       `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
       `type` varchar(32) NOT NULL COMMENT \'任务类型：compress_video\',
-      `status` varchar(16) NOT NULL DEFAULT \'pending\' COMMENT \'pending 待执行 / running 执行中 / done 已完成 / failed 已失败 / dead_letter 死信\',
+      `status` varchar(16) NOT NULL DEFAULT \'pending\' COMMENT \'pending 待执行 / running 执行中 / done 已完成 / failed 已失败\',
       `payload` text COMMENT \'任务参数 JSON\',
       `dedupe_key` varchar(128) NOT NULL DEFAULT \'\' COMMENT \'幂等键：同键不重复排队\',
       `attempts` int(10) unsigned NOT NULL DEFAULT \'0\' COMMENT \'已尝试次数\',
@@ -617,14 +642,14 @@ final class FreshInstallSchema
       `run_after` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT \'最早可执行时间\',
       `started_at` datetime DEFAULT NULL,
       `finished_at` datetime DEFAULT NULL,
-      `priority` int(11) NOT NULL DEFAULT \'0\' COMMENT \'任务优先级，数值越大越先执行\',
       `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
       `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      `priority` int(11) NOT NULL DEFAULT \'0\' COMMENT \'任务优先级，数值越大越先执行\',
       PRIMARY KEY (`id`),
       UNIQUE KEY `uk_job_dedupe` (`dedupe_key`),
       KEY `idx_jobs_status_runafter` (`status`,`run_after`),
-      KEY `idx_jobs_priority` (`status`,`priority`,`run_after`),
-      KEY `idx_jobs_type` (`type`)
+      KEY `idx_jobs_type` (`type`),
+      KEY `idx_jobs_priority` (`status`,`priority`,`run_after`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT=\'异步任务队列\'',
       'licenses' => 'CREATE TABLE IF NOT EXISTS `licenses` (
       `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -815,7 +840,7 @@ final class FreshInstallSchema
       'phone_codes' => 'CREATE TABLE IF NOT EXISTS `phone_codes` (
       `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
       `phone` varchar(20) NOT NULL COMMENT \'手机号\',
-      `code` varchar(255) NOT NULL COMMENT \'验证码（bcrypt 哈希；存量明文兼容至 TTL 到期）\',
+      `code` varchar(10) NOT NULL COMMENT \'验证码\',
       `scene` varchar(16) NOT NULL DEFAULT \'login\' COMMENT \'场景 login=登录 bind=绑定 reset=重置\',
       `expires_at` datetime NOT NULL COMMENT \'过期时间\',
       `used_at` datetime DEFAULT NULL,
@@ -871,9 +896,7 @@ final class FreshInstallSchema
       `balance_after` int(10) unsigned NOT NULL DEFAULT \'0\' COMMENT \'变动后的积分余额\',
       `remark` varchar(255) DEFAULT NULL,
       `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      `biz_key` varchar(64) DEFAULT NULL COMMENT \'业务幂等键：同一业务动作重复写入挡重；NULL=不参与去重\',
       PRIMARY KEY (`id`),
-      UNIQUE KEY `uk_points_biz_key` (`biz_key`),
       KEY `idx_user_created` (`user_id`,`created_at`),
       KEY `idx_user_type` (`user_id`,`type`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT=\'积分流水表\'',
@@ -1365,7 +1388,6 @@ final class FreshInstallSchema
       `last_active_at` datetime DEFAULT NULL COMMENT \'最近活跃时间（在线状态）\',
       `font_scale` varchar(8) NOT NULL DEFAULT \'normal\' COMMENT \'字体大小 small/normal/large/xlarge\',
       `msg_sound` tinyint(1) NOT NULL DEFAULT \'1\' COMMENT \'消息音效\',
-      `account_state` tinyint(1) NOT NULL DEFAULT \'0\' COMMENT \'账号状态细分：0正常 1管理员封禁 2用户注销 3后台软删；status=0 的二义性拆分\',
       PRIMARY KEY (`id`),
       UNIQUE KEY `uk_username` (`username`),
       UNIQUE KEY `uk_users_nickname` (`nickname`),

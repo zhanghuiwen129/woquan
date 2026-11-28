@@ -399,6 +399,16 @@ $router->group('/api', function ($router) {
     // V96：积分大转盘（需登录：抽奖 / 我的记录）
     $router->post('/points/wheel', [Hublog\Controllers\PointController::class, 'wheel']);
     $router->get('/points/wheel-records', [Hublog\Controllers\PointController::class, 'wheelRecords']);
+
+    // V106：独立图库（相册分组 CRUD + 图片上传/列表/删除/移动），免费核心能力
+    $router->get('/gallery/albums', [Hublog\Controllers\GalleryController::class, 'albums']);
+    $router->post('/gallery/albums', [Hublog\Controllers\GalleryController::class, 'createAlbum']);
+    $router->put('/gallery/albums', [Hublog\Controllers\GalleryController::class, 'updateAlbum']);
+    $router->delete('/gallery/albums', [Hublog\Controllers\GalleryController::class, 'deleteAlbum']);
+    $router->get('/gallery/images', [Hublog\Controllers\GalleryController::class, 'images']);
+    $router->post('/gallery/upload', [Hublog\Controllers\GalleryController::class, 'uploadImage']);
+    $router->delete('/gallery/images', [Hublog\Controllers\GalleryController::class, 'deleteImage']);
+    $router->post('/gallery/move', [Hublog\Controllers\GalleryController::class, 'moveImage']);
 }, ['RateLimitMiddleware', 'AuthMiddleware', 'CsrfMiddleware', 'LicenseMiddleware', 'FeatureGuardMiddleware']);
 
 // 管理员接口

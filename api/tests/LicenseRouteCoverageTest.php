@@ -83,6 +83,7 @@ final class LicenseRouteCoverageTest extends TestCase
         '/api/topics'               => 'core',
         '/api/call'                 => 'core',
         '/api/upload'               => 'core',
+        '/api/gallery'              => 'core', // V106 独立图库：免费基础媒体能力，与 /api/upload 同类不挂门禁
         '/api/attachments'          => 'core',
         '/api/search'               => 'core',
         '/api/site'                 => 'core',

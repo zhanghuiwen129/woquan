@@ -49,9 +49,15 @@ $root = dirname(__DIR__);
  * 控制器守卫未同步基线；逐文件核对 7 个控制器（Badge/Circle/ContentPay/Payment/
  * Point/PostFeedTrait/Shop）= 1+18+5+9+7+1+5 = 46，均为 $this->requireUser( 真实调用。
  * 旧基线 45 使本门禁恒失败（等于无门禁），据此更新为 46。
+ *
+ * V106 同步说明：requireUser 实测由 46 增至 54（+8）—— 新增 GalleryController
+ * 的 albums/createAlbum/updateAlbum/deleteAlbum/images/uploadImage/deleteImage/
+ * moveImage 八个接口，逐处均有真实 $this->requireUser( 守卫（独立图库属用户私有数据）。
+ * 路由层已走 AuthMiddleware，控制器双重确认，逐处复核无误，据此更新为 54。
  */
 const BASELINE = [
-    'requireUser' => 46,
+    // V106：GalleryController 8 个接口各 1 处真实 requireUser 守卫，46 → 54
+    'requireUser' => 54,
     'requireAdmin' => 154,
     'Auth::check' => 105,
     'Auth::admin' => 6,

@@ -939,4 +939,101 @@ trait MigrationBatchC5
 
         self::log('V105 完成');
     }
+
+    // ==================== V106：独立图库（相册分组 + 图片） ====================
+
+    /**
+     * V106 —— 独立图库两表：gallery_albums（相册分组）+ gallery_images（图片）。
+     *
+     * 与文章配图相册（从 posts 正文提图）不同，这是用户主动上传、可分组管理的独立图库。
+     * 图片物理文件仍落 uploads/images/，gallery_images.upload_id 关联 uploads.id；
+     * 相册删除时图片移回未分组（album_id=0），不删物理文件，避免误删被文章引用的同一张图。
+     * DDL 集中为字符串字面量，供 scripts/build_migration_contract.php 扫描器抓取。
+     */
+    private static function migrate106(): void
+    {
+        self::log('开始 V106：独立图库 gallery_albums + gallery_images 两表');
+        $db = Database::getInstance();
+
+        // ---------- ① gallery_albums：相册分组 ----------
+        try {
+            $exists = (int)Database::fetchColumn(
+                "SELECT COUNT(*) FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'gallery_albums'"
+            );
+            if ($exists === 0) {
+                $db->exec("CREATE TABLE IF NOT EXISTS `gallery_albums` (
+                    `id`          int unsigned NOT NULL AUTO_INCREMENT,
+                    `user_id`     int unsigned NOT NULL COMMENT '相册所属用户',
+                    `name`        varchar(80)  NOT NULL COMMENT '相册名称',
+                    `description` varchar(255) NOT NULL DEFAULT '' COMMENT '相册简介',
+                    `cover_url`   varchar(500) DEFAULT NULL COMMENT '封面（取相册内某张图）',
+                    `sort_order`  int          NOT NULL DEFAULT 0 COMMENT '排序，越大越靠前',
+                    `created_at`  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at`  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    KEY `idx_gallery_album_user` (`user_id`, `sort_order`, `id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='独立图库相册分组'");
+                self::log('V106：gallery_albums 表已创建');
+            } else {
+                self::log('V106：gallery_albums 表已存在，跳过');
+            }
+        } catch (\Throwable $e) {
+            error_log('[Hublog Migration V106 gallery_albums] ' . $e->getMessage());
+            throw $e;
+        }
+
+        // ---------- ② gallery_images：图片 ----------
+        try {
+            $exists = (int)Database::fetchColumn(
+                "SELECT COUNT(*) FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'gallery_images'"
+            );
+            if ($exists === 0) {
+                $db->exec("CREATE TABLE IF NOT EXISTS `gallery_images` (
+                    `id`         bigint unsigned NOT NULL AUTO_INCREMENT,
+                    `user_id`    int unsigned NOT NULL COMMENT '上传者',
+                    `album_id`   int unsigned NOT NULL DEFAULT 0 COMMENT '所属相册，0=未分组',
+                    `upload_id`  int unsigned NOT NULL COMMENT '关联 uploads.id',
+                    `url`        varchar(500) NOT NULL COMMENT '图片访问地址',
+                    `filename`   varchar(255) NOT NULL DEFAULT '' COMMENT '原始文件名',
+                    `size`       int unsigned NOT NULL DEFAULT 0 COMMENT '字节数',
+                    `created_at` datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `uk_gallery_upload` (`upload_id`),
+                    KEY `idx_gallery_image_user_album` (`user_id`, `album_id`, `id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='独立图库图片'");
+                self::log('V106：gallery_images 表已创建');
+            } else {
+                self::log('V106：gallery_images 表已存在，跳过');
+            }
+        } catch (\Throwable $e) {
+            error_log('[Hublog Migration V106 gallery_images] ' . $e->getMessage());
+            throw $e;
+        }
+
+        // ---------- ③ 收尾硬自检：两表 + 关键索引必须真实存在 ----------
+        try {
+            $tables = (int)Database::fetchColumn(
+                "SELECT COUNT(*) FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('gallery_albums','gallery_images')"
+            );
+            $indexes = (int)Database::fetchColumn(
+                "SELECT COUNT(*) FROM information_schema.STATISTICS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'gallery_images'
+                   AND INDEX_NAME = 'uk_gallery_upload'"
+            );
+            if ($tables !== 2 || $indexes === 0) {
+                throw new \RuntimeException(
+                    'V106 自检失败，缺失: ' . ($tables !== 2 ? 'gallery 表 ' : '') . 'uk_gallery_upload 索引'
+                );
+            }
+            self::log('V106 verify：gallery_albums / gallery_images / uk_gallery_upload 均已就绪');
+        } catch (\Throwable $e) {
+            error_log('[Hublog Migration V106 verify] ' . $e->getMessage());
+            throw $e;
+        }
+
+        self::log('V106 完成');
+    }
 }

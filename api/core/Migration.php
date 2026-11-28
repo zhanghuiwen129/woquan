@@ -14,7 +14,7 @@
  * 本文件从上到下依次是：
  *   ① 迁移调度核心（run / GET_LOCK 互斥 / 版本读写 / 关键表与字段校验）
  *   ② buildFullSchema()：全新安装的基础建表 + 默认数据（约 500 行，单独一大块，只到 V35）
- *   ③ 增量迁移 migrate26 ~ migrate105（老库升级按版本号顺序逐个执行）
+ *   ③ 增量迁移 migrate26 ~ migrate106（老库升级按版本号顺序逐个执行）
  *      —— 已拆分到 trait，降低单文件体积：
  *         · MigrationBatchA.php：migrate26 ~ migrate45
  *         · MigrationBatchB.php：migrate46 ~ migrate65 + backfillPostTagsFromContent / markExistingPollPosts
@@ -22,7 +22,7 @@
  *         · MigrationBatchC2.php：migrate74 ~ migrate81
  *         · MigrationBatchC3.php：migrate82 ~ migrate89
  *         · MigrationBatchC4.php：migrate90 ~ migrate97
- *         · MigrationBatchC5.php：migrate98 ~ migrate105（批次 C 合计 migrate66 ~ migrate105）
+ *         · MigrationBatchC5.php：migrate98 ~ migrate106（批次 C 合计 migrate66 ~ migrate106）
  *         主类通过 `use MigrationBatchA, MigrationBatchB, MigrationBatchC1, MigrationBatchC2, MigrationBatchC3, MigrationBatchC4, MigrationBatchC5` 引入，编译期展平进主类，零行为差异。
  *   ④ 辅助方法（now() / log() 等）
  * V1~V25 的历史迁移在 MigrationHistory.php（trait），通过 `use MigrationHistory` 引入。
@@ -96,7 +96,8 @@ class Migration
     // V103: 会员变更审计表（member_change_logs）
     // V104: 私信通知关联会话（notifications.conversation_id）
     // V105: jobs 任务队列优先级（priority）+ 死信状态（status='dead_letter'）
-    private static int $currentVersion = 105;
+    // V106: 独立图库两表（gallery_albums 相册分组 + gallery_images 图片）
+    private static int $currentVersion = 106;
     private static bool $checked = false;
     /** 全新安装快速路径同请求只跑一次（install.php 只调用一次，这里防重放） */
     private static bool $freshChecked = false;

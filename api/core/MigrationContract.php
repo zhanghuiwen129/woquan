@@ -20,7 +20,7 @@
  * （migrate92 的 DDL 被 catch 吞掉）用前三个维度查不出来，而它直接决定
  * 重复支付回调会不会重复入账。见 REQUIRED_UNIQUE_INDEXES。
  *
- * 生成依据：86 张表 / 91 个列名
+ * 生成依据：88 张表 / 91 个列名
  * 已排除被 DROP 的表：checkins
  */
 
@@ -73,6 +73,8 @@ final class MigrationContract
         'file_hashes',
         'follows',
         'friend_links',
+        'gallery_albums',
+        'gallery_images',
         'jobs',
         'licenses',
         'likes',
