@@ -61,7 +61,7 @@ class MigrationIntegrityTest extends TestCase
     /**
      * ① 类可加载 = 无 trait 方法冲突。
      * PHP 的规则：多个 trait 提供同名方法且未显式解决冲突时，会在类加载期抛出 fatal error，
-     * 因此本断言实际是在守护「 MigrationBatchA/B/C + MigrationHistory 之间不得有重名方法」。
+     * 因此本断言实际是在守护「 MigrationBatchA/B/C1~C5 + MigrationHistory 之间不得有重名方法」。
      */
     public function testClassLoadsWithoutTraitConflict(): void
     {
@@ -69,7 +69,7 @@ class MigrationIntegrityTest extends TestCase
 
         // 断言四个 trait 都被引入（防止重构时漏掉某一个批次，导致该批次迁移整体丢失）
         $traits = array_keys($r->getTraits());
-        foreach (['MigrationHistory', 'MigrationBatchA', 'MigrationBatchB', 'MigrationBatchC'] as $short) {
+        foreach (['MigrationHistory', 'MigrationBatchA', 'MigrationBatchB', 'MigrationBatchC1', 'MigrationBatchC2', 'MigrationBatchC3', 'MigrationBatchC4', 'MigrationBatchC5'] as $short) {
             $this->assertContains(
                 'Hublog\\Core\\' . $short,
                 $traits,

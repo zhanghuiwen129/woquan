@@ -20,7 +20,7 @@
  * （migrate92 的 DDL 被 catch 吞掉）用前三个维度查不出来，而它直接决定
  * 重复支付回调会不会重复入账。见 REQUIRED_UNIQUE_INDEXES。
  *
- * 生成依据：86 张表 / 90 个列名
+ * 生成依据：86 张表 / 91 个列名
  * 已排除被 DROP 的表：checkins
  */
 
@@ -193,6 +193,7 @@ final class MigrationContract
         'post_id',
         'post_permission',
         'post_review',
+        'priority',
         'read_at',
         'realname_verified',
         'realname_verified_at',
@@ -256,6 +257,10 @@ final class MigrationContract
         ['content_entitlements', 'expire_at'],
         // V98 私信发送幂等键：手工登记的「表.列」精确哨兵，与自动生成的列名清单互补
         ['messages', 'client_msg_id'],
+        // V104 私信通知关联会话：conversation_id 在全库多表同名（conversation_members /
+        // message_deletions 都有），「全库同名即放行」会掩盖 notifications 缺列，
+        // 必须精确登记到 notifications 表，否则新装库缺列自检发现不了。
+        ['notifications', 'conversation_id'],
         // V99 私信软删除：通用列名清单里已有 deleted_at/deleted_by/delete_scope，
         // 但半残库只要任意一张表有同名列就能通过自检 —— 必须精确登记到 chat 五列
         ['conversations', 'deleted_at'],
@@ -289,6 +294,8 @@ final class MigrationContract
         ['plugin_states', 'plugin_name'],
         ['plugin_configs', 'plugin_name'],
         ['pages', 'slug'],
+        // V102 队列优先级：ADD COLUMN 自动列名段为「全库同名即放行」，需精确落到 jobs。
+        ['jobs', 'priority'],
     ];
 
     /**
@@ -314,7 +321,7 @@ final class MigrationContract
         ['table' => 'vip_subscriptions', 'index' => 'uk_order_no', 'cols' => ['order_no'], 'why' => '会员订阅单号防重复开通'],
         ['table' => 'jobs', 'index' => 'uk_job_dedupe', 'cols' => ['dedupe_key'], 'why' => '异步任务幂等，防重复排队与重复执行'],
         ['table' => 'conversations', 'index' => 'uk_dm_key', 'cols' => ['dm_key'], 'why' => '私信会话去重，防重复建会话'],
-        // 该键真实建在 feed_feedback（V66/MigrationBatchC.php:52），列 target_type/target_value
+        // 该键真实建在 feed_feedback（V66/MigrationBatchC1.php:52），列 target_type/target_value
         // 只存在于该表；此前误登记为 user_actions 导致补建 ALTER 恒报 1072（列不存在）被吞。
         ['table' => 'feed_feedback', 'index' => 'uk_user_action_target', 'cols' => ['user_id', 'action', 'target_type', 'target_value'], 'why' => '信息流负反馈去重，防同一目标被反复刷'],
         ['table' => 'comment_marks', 'index' => 'uk_comment_mark', 'cols' => ['comment_id', 'mark_type'], 'why' => '评论标记去重'],

@@ -586,6 +586,7 @@ export async function loadSettings() {
         // 底部导航排序
         renderNavSortList(data.nav_items_order || 'home,search,messages,favorites,profile');
         // AI 配置
+        document.getElementById('setting-ai_auto_install').checked = (data.ai_auto_install == '1' || data.ai_auto_install === true);
         document.getElementById('setting-ai_comment_enabled').checked = (data.ai_comment_enabled == '1' || data.ai_comment_enabled === true);
         if (data.ai_comment_provider) document.getElementById('setting-ai_comment_provider').value = data.ai_comment_provider;
         document.getElementById('setting-ai_comment_api_url').value = data.ai_comment_api_url || '';
@@ -812,6 +813,7 @@ export async function saveSettings() {
             nav_favorites_enabled: document.getElementById('setting-nav_favorites_enabled').checked ? '1' : '0',
             nav_profile_enabled: document.getElementById('setting-nav_profile_enabled').checked ? '1' : '0',
             // AI 配置
+            ai_auto_install: document.getElementById('setting-ai_auto_install').checked ? '1' : '0',
             ai_comment_enabled: document.getElementById('setting-ai_comment_enabled').checked ? '1' : '0',
             ai_comment_provider: document.getElementById('setting-ai_comment_provider').value,
             ai_comment_api_url: document.getElementById('setting-ai_comment_api_url').value,

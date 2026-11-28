@@ -3,7 +3,7 @@
  * 路由：/c/{id}。对接 /posts/timeline?category_id=&sort= + /app/categories
  * 卡片复用 feed.renderCard；侧栏复用 feed.buildSidebar。
  */
-import * as feed from './feed.js?v=20261116.12';
+import * as feed from './feed.js?v=20261128.01';
 import { PAGE_BASE } from './config.js?v=20261116.12';
 
 let catCache = null;

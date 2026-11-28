@@ -47,9 +47,12 @@ class ChatBatchBTest extends \PHPUnit\Framework\TestCase
     public function testMigrationV98AddsIdempotencyColumnAndIndex(): void
     {
         $migration = self::src('api/core/Migration.php');
-        $this->assertStringContainsString('private static int $currentVersion = 103;', $migration);
+        $this->assertStringContainsString('private static int $currentVersion = 105;', $migration);
 
-        $batch = self::src('api/core/MigrationBatchC.php');
+        $batch = '';
+        foreach (['1', '2', '3', '4', '5'] as $batchNo) {
+            $batch .= self::src('api/core/MigrationBatchC' . $batchNo . '.php');
+        }
         $this->assertStringContainsString('private static function migrate98(): void', $batch);
         $this->assertStringContainsString('ADD COLUMN `client_msg_id` VARCHAR(64)', $batch);
         $this->assertStringContainsString(

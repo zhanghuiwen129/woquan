@@ -70,12 +70,14 @@ function bindChrome(app) {
     };
     const fav = document.getElementById('favTopicBtn');
     if (fav) fav.onclick = () => {
-        const key = 'shaibo_fav_topics';
+        if (!app.checkAuth()) return;
+        // 后端暂无话题收藏接口：按用户隔离保存在本机，避免不同账号串数据
+        const key = 'shaibo_fav_topics_' + (app.user?.id || 0);
         let list = [];
         try { list = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) { list = []; }
         const i = list.indexOf(state.name);
-        if (i >= 0) { list.splice(i, 1); app.showToast('已取消收藏话题'); }
-        else { list.push(state.name); app.showToast('已收藏话题'); }
+        if (i >= 0) { list.splice(i, 1); app.showToast('已取消本机收藏'); }
+        else { list.push(state.name); app.showToast('已加入本机收藏'); }
         try { localStorage.setItem(key, JSON.stringify(list)); } catch (e) {}
         updateFavBtn(app);
     };
@@ -94,7 +96,7 @@ function updateFavBtn(app) {
     const fav = document.getElementById('favTopicBtn');
     if (!fav) return;
     let list = [];
-    try { list = JSON.parse(localStorage.getItem('shaibo_fav_topics') || '[]'); } catch (e) {}
+    try { list = JSON.parse(localStorage.getItem('shaibo_fav_topics_' + (app.user?.id || 0)) || '[]'); } catch (e) {}
     fav.textContent = list.indexOf(state.name) >= 0 ? '已收藏' : '收藏话题';
 }
 

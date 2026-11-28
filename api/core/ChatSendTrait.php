@@ -140,22 +140,28 @@ trait ChatSendTrait
         }
 
         // 给会话中其他成员创建通知（让接收方在消息中心也能看到"有人给你发了私信"）
-        try {
-            $members = Database::fetchAll(
-                "SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ?",
-                [$conversationId, $senderId]
-            );
-            // 通知内容摘要：先生成原文，再统一净化一次（写入端净化，输出点仍保留 escape）
-            $rawPreview = $type === 'image' ? '[图片]' : ($type === 'video' ? '[视频]' : ($type === 'file' ? '[文件]' : mb_substr($content, 0, 100)));
-            $preview = Security::purify($rawPreview);
-            foreach ($members as $member) {
-                // P1-2：无论免打扰与否，新消息都计入对方未读 → 先失效未读缓存再建通知
-                self::invalidateUnreadCache((int)$member['user_id']);
-                Cache::delete("notif_unread_" . (int)$member['user_id']);
+        // P0-C：try/catch 必须逐成员隔离。旧实现用一个大 try 包住整个 foreach，
+        // 群聊里第一个成员的 insert 抛异常（如老库缺 conversation_id）就跳到 catch，
+        // 后续所有成员的 notification + SSE 全部丢失。改为每个成员独立兜底，
+        // 单个成员失败只记日志并 continue，不影响其余成员。
+        $members = Database::fetchAll(
+            "SELECT user_id FROM conversation_members WHERE conversation_id = ? AND user_id != ?",
+            [$conversationId, $senderId]
+        );
+        // 通知内容摘要：先生成原文，再统一净化一次（写入端净化，输出点仍保留 escape）
+        $rawPreview = $type === 'image' ? '[图片]' : ($type === 'video' ? '[视频]' : ($type === 'file' ? '[文件]' : mb_substr($content, 0, 100)));
+        $preview = Security::purify($rawPreview);
+        foreach ($members as $member) {
+            $memberId = (int)$member['user_id'];
+            // P1-2：无论免打扰与否，新消息都计入对方未读 → 先失效未读缓存再建通知。
+            // 缓存失效放在成员 try 之外，确保即便该成员通知写入失败，未读角标仍正确。
+            self::invalidateUnreadCache($memberId);
+            Cache::delete("notif_unread_{$memberId}");
+            try {
                 // 查看对方是否已读（避免给已读的人发多余通知）
                 $memberRow = Database::fetchOne(
                     "SELECT last_read_message_id, muted FROM conversation_members WHERE conversation_id = ? AND user_id = ?",
-                    [$conversationId, $member['user_id']]
+                    [$conversationId, $memberId]
                 );
                 $isRead = $memberRow && (int)$memberRow['last_read_message_id'] >= $messageId;
                 // 免打扰成员不创建通知（避免打扰）
@@ -163,7 +169,7 @@ trait ChatSendTrait
                 if ($muted) continue;
 
                 Database::insert('notifications', [
-                    'user_id' => $member['user_id'],
+                    'user_id' => $memberId,
                     'sender_id' => $senderId,
                     'type' => 'chat',
                     'post_id' => null,
@@ -174,17 +180,16 @@ trait ChatSendTrait
                     'created_at' => $now
                 ]);
                 // P1-3：实时推送给会话成员
-                try {
-                    SsePush::push((int)$member['user_id'], 'chat_message', [
-                        'conversation_id' => $conversationId,
-                        'message_id' => $messageId,
-                        'sender_id' => $senderId,
-                        'preview' => $preview,
-                    ]);
-                } catch (\Throwable $_) {}
+                SsePush::push($memberId, 'chat_message', [
+                    'conversation_id' => $conversationId,
+                    'message_id' => $messageId,
+                    'sender_id' => $senderId,
+                    'preview' => $preview,
+                ]);
+            } catch (\Throwable $e) {
+                // 单个成员失败不影响其他人（群聊关键健壮性）
+                Logger::error('[Hublog Chat notification] member ' . $memberId . ': ' . $e->getMessage());
             }
-        } catch (\Throwable $e) {
-            Logger::error('[Hublog Chat notification] ' . $e->getMessage());
         }
 
         // 返回格式化消息（正常路径与幂等命中路径共用同一出口）

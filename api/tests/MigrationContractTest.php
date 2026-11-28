@@ -228,7 +228,7 @@ final class MigrationContractTest extends TestCase
         $this->assertStringContainsString('self::saveVersion($upgradeFrom);', $src, '终态不满足必须回退到升级前版本');
         $this->assertStringContainsString('全新安装后终态契约未满足', $src);
         $this->assertStringContainsString('升级后终态契约未满足', $src);
-        $this->assertSame(
+        $this->assertGreaterThanOrEqual(
             2,
             substr_count($src, 'if (!MigrationContract::isComplete($diff)) {'),
             '全新安装与升级两条路径都必须真正执行终态契约校验，不能留成永不生效的死分支'

@@ -209,18 +209,16 @@ function applyLogin(app, d) {
 
 function bindMisc(app) {
     document.querySelectorAll('[data-agree]').forEach(a => a.addEventListener('click', e => {
-        e.preventDefault(); app.showToast(a.dataset.agree + '（由站点管理员配置）');
+        e.preventDefault(); app.showToast('站点未配置「' + a.dataset.agree + '」页面，请联系管理员');
     }));
     document.querySelectorAll('[data-third]').forEach(b => b.addEventListener('click', async () => {
         const name = b.dataset.third;
         try {
-            const d = await app.request('/auth/oauth/providers');
-            const list = (d && (d.list || d.providers)) || [];
-            if (Array.isArray(list) && list.length) {
-                const p = list[0];
-                const provider = typeof p === 'string' ? p : (p.id || p.name);
-                location.href = (window.HUBLOG_BASE_URL || '/') + 'api/index.php/auth/oauth/' + encodeURIComponent(provider);
-            } else app.showToast('站点未开启' + name + '，请用手机号或密码登录');
+            // /auth/oauth/providers 会被通配路由当成 provider 名，后端返回 400；
+            // 改用 /app/config 里真实存在的 wx_app_login / wx_mini_login 开关
+            const cfg = await app.request('/app/config');
+            if (!cfg.wx_app_login && !cfg.wx_mini_login) throw new Error('未配置');
+            location.href = (window.HUBLOG_BASE_URL || '/') + 'api/index.php/auth/oauth/wechat';
         } catch (e) {
             app.showToast('站点未开启' + name + '，请用手机号或密码登录');
         }

@@ -156,7 +156,23 @@ export async function renderArticle(app, postId) {
       </section>`;
 
     bindActions(app, post);
-    renderComments(app, post.comments || []);
+    // 评论排序：后端 /posts/detail 不支持 sort，前端按点赞数/时间本地排序
+    let commentSort = 'hot';
+    const sortedComments = () => {
+        const arr = Array.isArray(post.comments) ? [...post.comments] : [];
+        if (commentSort === 'new') {
+            return arr.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+        }
+        return arr.sort((a, b) => (b.like_count || 0) - (a.like_count || 0));
+    };
+    renderComments(app, sortedComments());
+    document.querySelectorAll('#articleHost .comment-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            commentSort = tab.dataset.tab === 'new' ? 'new' : 'hot';
+            document.querySelectorAll('#articleHost .comment-tab').forEach(t => t.classList.toggle('active', t === tab));
+            renderComments(app, sortedComments());
+        });
+    });
     bindCommentSend(app, post);
     loadAside(app, post);
     app.refreshSidebars().catch(() => {});
@@ -217,6 +233,14 @@ function renderComments(app, list) {
         try { await app.request('/posts/comment-like', { method: 'POST', body: { comment_id: el.closest('.comment').dataset.cid } }); }
         catch (e) { app.showToast(e.message); }
     }));
+    // 回复：后端 /posts/comment 支持 parent_id（不是 reply_to）
+    box.querySelectorAll('[data-creply]').forEach(el => el.addEventListener('click', () => {
+        const input = document.getElementById('commentInput');
+        if (!input) return;
+        input.dataset.parentId = el.closest('.comment')?.dataset.cid || '';
+        input.placeholder = '回复该评论…';
+        input.focus();
+    }));
 }
 
 function bindCommentSend(app, post) {
@@ -228,8 +252,13 @@ function bindCommentSend(app, post) {
         const val = input.value.trim();
         if (!val) { app.showToast('先写点内容再发送'); return; }
         try {
-            await app.request('/posts/comment', { method: 'POST', body: { post_id: post.id, content: val } });
+            await app.request('/posts/comment', {
+                method: 'POST',
+                body: { post_id: post.id, content: val, parent_id: Number(input.dataset.parentId || 0) },
+            });
             input.value = '';
+            delete input.dataset.parentId;
+            input.placeholder = '写下你的看法…';
             app.showToast('评论已发布');
             // 重新拉取详情评论
             const d = await app.request(`/posts/detail?id=${post.id}`);

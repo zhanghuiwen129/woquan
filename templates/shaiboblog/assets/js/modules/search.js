@@ -12,7 +12,8 @@ const state = { q: '', tab: '综合', page: 1, hasMore: true, loading: false, it
 // 递增序号：切换关键词/标签时丢弃过期响应，避免旧结果覆盖新结果
 let searchSeq = 0;
 
-const FALLBACK_WORDS = ['路亚', '夜钓', '装备', '技术笔记'];
+// 不再硬编码演示热词：无站点分类时不展示假数据（SSR 端同样只取真实分类名）
+const FALLBACK_WORDS = [];
 
 function titleOf(post) {
     return post.title || plainText(post.content).slice(0, 40) || '动态';
@@ -390,17 +391,32 @@ function renderHotWords(app) {
     });
 }
 
-/** 相关搜索：基于当前关键词派生 + 点击可重搜 */
+/** 相关搜索：取真实话题 / 分类，不再用关键词拼假词 */
 function renderRelated(app) {
     const box = document.getElementById('relatedWords');
     if (!box) return;
-    let words = [];
-    const suffixes = ['教程', '笔记', '心得', '装备'];
-    if (state.q) words = [state.q].concat(suffixes.map(s => state.q + ' ' + s));
-    else words = hotWordsOf(app);
-    box.innerHTML = words.map(w => `<span class="hot-word" data-q="${app.escapeHtml(w)}">${app.escapeHtml(w)}</span>`).join('');
-    box.querySelectorAll('.hot-word').forEach(el => {
-        el.addEventListener('click', () => applyQuery(app, el.dataset.q));
+    box.innerHTML = '<span class="hot-word">加载中…</span>';
+    app.request('/topics?limit=8').then(d => {
+        const list = Array.isArray(d) ? d : ((d && d.list) || []);
+        let words = list
+            .map(t => String(t.name || '').trim())
+            .filter(n => n && n !== state.q)
+            .slice(0, 6);
+        if (!words.length) words = hotWordsOf(app).filter(w => w !== state.q).slice(0, 6);
+        box.innerHTML = words.length
+            ? words.map(w => `<span class="hot-word" data-q="${app.escapeHtml(w)}">${app.escapeHtml(w)}</span>`).join('')
+            : '<span class="hot-word">暂无相关话题</span>';
+        box.querySelectorAll('.hot-word[data-q]').forEach(el => {
+            el.addEventListener('click', () => applyQuery(app, el.dataset.q));
+        });
+    }).catch(() => {
+        const words = hotWordsOf(app).filter(w => w !== state.q).slice(0, 6);
+        box.innerHTML = words.length
+            ? words.map(w => `<span class="hot-word" data-q="${app.escapeHtml(w)}">${app.escapeHtml(w)}</span>`).join('')
+            : '<span class="hot-word">暂无相关话题</span>';
+        box.querySelectorAll('.hot-word[data-q]').forEach(el => {
+            el.addEventListener('click', () => applyQuery(app, el.dataset.q));
+        });
     });
 }
 

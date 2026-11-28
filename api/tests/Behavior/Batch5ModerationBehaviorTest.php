@@ -288,13 +288,28 @@ SQL);
         $this->assertCount(1, $this->rows('comment_marks'));
         $this->assertSame('god', $this->rows('comment_marks')[0]['mark_type'], 'mark_type 仍为 god');
 
+        // P0-A：notifications 生产表无 title 列，白名单必须拒绝该越界字段；
+        // 生产控制器已把标题语义并入 content，这里同步断言越界写入被拦截。
+        $blocked = false;
+        try {
+            ModerationRepository::insertGodCommentNotification([
+                'user_id' => 20, 'type' => 'god_comment', 'title' => '你的评论被标记为神评',
+                'content' => '内容', 'post_id' => 1, 'comment_id' => 1,
+                'sender_id' => 30, 'is_read' => 0, 'created_at' => $now,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            $blocked = true;
+        }
+        $this->assertTrue($blocked, 'notifications 白名单必须拒绝不存在的 title 列');
+
         ModerationRepository::insertGodCommentNotification([
-            'user_id' => 20, 'type' => 'god_comment', 'title' => '你的评论被标记为神评',
-            'content' => '内容', 'post_id' => 1, 'comment_id' => 1,
+            'user_id' => 20, 'type' => 'god_comment',
+            'content' => '你的评论被标记为神评：内容', 'post_id' => 1, 'comment_id' => 1,
             'sender_id' => 30, 'is_read' => 0, 'created_at' => $now,
         ]);
         $this->assertCount(1, $this->rows('notifications'));
         $this->assertSame('god_comment', $this->rows('notifications')[0]['type']);
+        $this->assertStringContainsString('神评', $this->rows('notifications')[0]['content']);
 
         // 取消标记同样幂等
         $this->assertTrue(ModerationRepository::deleteGodCommentMark(1));

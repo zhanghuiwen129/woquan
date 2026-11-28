@@ -87,6 +87,22 @@ function bindToolbar(app, input) {
             insertAtCursor(input, `[${sel}](${url})`);
         } else if (cmd === 'image') {
             pickImage(app, input);
+        } else if (cmd === 'extimage') {
+            // 外部图片：只接受 http/https，插入标准 Markdown 图片语法
+            const raw = window.prompt('输入外部图片地址（http/https）：', 'https://');
+            if (!raw) return;
+            const url = safeUrl(raw.trim());
+            if (!/^https?:\/\//i.test(url)) {
+                app.showToast('图片地址需以 http:// 或 https:// 开头');
+                return;
+            }
+            let alt = url.split('?')[0].split('/').pop() || '外部图片';
+            try { alt = decodeURIComponent(alt); } catch (err) {}
+            alt = alt.replace(/[\[\]()]/g, '').replace(/\.[^.]+$/, '').slice(0, 60) || '外部图片';
+            const mdUrl = url.replace(/\)/g, '%29').replace(/\s/g, '%20');
+            insertAtCursor(input, `\n![${alt}](${mdUrl})\n`);
+            updateImageStrip(input);
+            app.showToast('外部图片已插入正文');
         } else if (cmd === 'video' || cmd === 'attachment') {
             pickMedia(app, input, cmd);
         } else if (cmd === 'emoji') {
@@ -95,27 +111,33 @@ function bindToolbar(app, input) {
     });
 }
 
+async function uploadImageFile(app, input, file) {
+    const maxMB = Number(app.siteConfig?.upload_max_size || 10);
+    if (file.size > maxMB * 1024 * 1024) { app.showToast(`图片不能超过 ${maxMB}MB`); return; }
+    const fd = new FormData();
+    fd.append('image', file);
+    app.showToast('图片上传中…');
+    try {
+        const res = await app.request('/posts/upload', { method: 'POST', body: fd });
+        const url = res?.url || res?.data?.url || '';
+        if (!url) throw new Error('上传未返回地址');
+        insertAtCursor(input, `\n![${file.name.replace(/\.[^.]+$/, '')}](${url})\n`);
+        updateImageStrip(input);
+        app.showToast('图片已插入正文，下方预览可见');
+    } catch (e) {
+        // 登录失效时 api.js 已清空前端登录态，这里给出可操作的提示而不是静默失败
+        app.showToast(e.code === 401 ? '登录已失效，请重新登录后再上传' : (e.message || '图片上传失败'));
+    }
+}
+
 function pickImage(app, input) {
+    if (!app.checkAuth()) return;
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
-    fileInput.onchange = async () => {
+    fileInput.onchange = () => {
         const file = fileInput.files && fileInput.files[0];
-        if (!file) return;
-        const maxMB = Number(app.siteConfig?.upload_max_size || 10);
-        if (file.size > maxMB * 1024 * 1024) { app.showToast(`图片不能超过 ${maxMB}MB`); return; }
-        const fd = new FormData();
-        fd.append('image', file);
-        app.showToast('图片上传中…');
-        try {
-            const res = await app.request('/posts/upload', { method: 'POST', body: fd });
-            const url = res?.url || res?.data?.url || '';
-            if (!url) throw new Error('上传失败');
-            insertAtCursor(input, `\n![${file.name.replace(/\.[^.]+$/, '')}](${url})\n`);
-            app.showToast('图片已插入');
-        } catch (e) {
-            app.showToast(e.message || '图片上传失败');
-        }
+        if (file) uploadImageFile(app, input, file);
     };
     fileInput.click();
 }
@@ -234,6 +256,7 @@ function updateCount(input) {
     const stateEl = $('editorState');
     if (stateEl && stateEl.dataset.saved) stateEl.textContent = stateEl.dataset.saved;
     updateCover(input);
+    updateImageStrip(input);
 }
 
 function updateCover(input) {
@@ -246,6 +269,53 @@ function updateCover(input) {
     } else {
         box.innerHTML = '<span>正文首图将作为封面</span>';
     }
+}
+
+/**
+ * 正文图片预览条：编辑器是纯 Markdown textarea，上传后源码里只有 ![...](url)，
+ * 用户看不到图片会以为「没反应」。这里从源码实时解析出缩略图，支持点击定位与移除。
+ * 容器动态创建，不写进 HTML 骨架，避免破坏主题契约。
+ */
+function updateImageStrip(input) {
+    let strip = $('imageStrip');
+    if (!strip) {
+        strip = document.createElement('div');
+        strip.id = 'imageStrip';
+        strip.className = 'md-image-strip';
+        strip.hidden = true;
+        input.insertAdjacentElement('afterend', strip);
+    }
+    const matches = [...String(input.value || '').matchAll(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g)];
+    if (!matches.length) { strip.hidden = true; strip.innerHTML = ''; return; }
+    strip.hidden = false;
+    const items = matches.map(m => ({ full: m[0], start: m.index, end: m.index + m[0].length, url: m[2] }));
+    strip.innerHTML = '<div class="strip-label">正文图片 · ' + items.length + ' 张</div><div class="strip-list">'
+        + items.map((it, i) => {
+            const safe = safeUrl(it.url);
+            const alt = escapeAttr(it.url.split('/').pop() || ('图片 ' + (i + 1)));
+            return '<div class="strip-item" data-idx="' + i + '" title="点击定位到正文源码">'
+                + (safe ? `<img src="${escapeAttr(safe)}" alt="${alt}" loading="lazy">` : '<span class="strip-broken">?</span>')
+                + '<button type="button" class="strip-del" data-idx="' + i + '" title="移除这张图片" aria-label="移除图片">×</button>'
+                + '</div>';
+        }).join('') + '</div>';
+    strip.querySelectorAll('.strip-item').forEach((el, i) => {
+        el.addEventListener('click', () => {
+            const it = items[i];
+            input.focus();
+            input.setSelectionRange(it.start, it.end);
+        });
+    });
+    strip.querySelectorAll('.strip-del').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            const it = items[Number(btn.dataset.idx)];
+            if (!it) return;
+            input.value = input.value.slice(0, it.start) + input.value.slice(it.end);
+            input.focus();
+            input.setSelectionRange(it.start, it.start);
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+    });
 }
 
 function saveDraft(app, silent) {
@@ -383,7 +453,19 @@ export async function renderWrite(app) {
     if (tagParam) addTag(app, tagParam);
 
     input.addEventListener('input', () => updateCount(input));
-    input.addEventListener('paste', () => setTimeout(() => updateCount(input), 0));
+    // 直接粘贴剪贴板图片也走同一上传链路；普通文本粘贴仍照常更新字数与预览
+    input.addEventListener('paste', e => {
+        const file = Array.from(e.clipboardData?.items || [])
+            .filter(it => it && it.type && it.type.startsWith('image/'))
+            .map(it => it.getAsFile())
+            .find(Boolean);
+        if (file && app.checkAuth()) {
+            e.preventDefault();
+            uploadImageFile(app, input, file);
+        } else {
+            setTimeout(() => updateCount(input), 0);
+        }
+    });
     updateCount(input);
 
     if (!app.user) {

@@ -18,7 +18,7 @@ namespace Hublog\Core;
 final class FreshInstallSchema
 {
     /** 基线对应的 schema 版本，必须与 Migration::$currentVersion 一致 */
-    public const SCHEMA_VERSION = 103;
+    public const SCHEMA_VERSION = 105;
 
     /** @var array<string,string> 表名 => CREATE TABLE IF NOT EXISTS 语句 */
     public const STATEMENTS = array (
@@ -609,7 +609,7 @@ final class FreshInstallSchema
       'jobs' => 'CREATE TABLE IF NOT EXISTS `jobs` (
       `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
       `type` varchar(32) NOT NULL COMMENT \'任务类型：compress_video\',
-      `status` varchar(16) NOT NULL DEFAULT \'pending\' COMMENT \'pending 待执行 / running 执行中 / done 已完成 / failed 已失败\',
+      `status` varchar(16) NOT NULL DEFAULT \'pending\' COMMENT \'pending 待执行 / running 执行中 / done 已完成 / failed 已失败 / dead_letter 死信\',
       `payload` text COMMENT \'任务参数 JSON\',
       `dedupe_key` varchar(128) NOT NULL DEFAULT \'\' COMMENT \'幂等键：同键不重复排队\',
       `attempts` int(10) unsigned NOT NULL DEFAULT \'0\' COMMENT \'已尝试次数\',
@@ -617,11 +617,13 @@ final class FreshInstallSchema
       `run_after` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT \'最早可执行时间\',
       `started_at` datetime DEFAULT NULL,
       `finished_at` datetime DEFAULT NULL,
+      `priority` int(11) NOT NULL DEFAULT \'0\' COMMENT \'任务优先级，数值越大越先执行\',
       `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
       `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`),
       UNIQUE KEY `uk_job_dedupe` (`dedupe_key`),
       KEY `idx_jobs_status_runafter` (`status`,`run_after`),
+      KEY `idx_jobs_priority` (`status`,`priority`,`run_after`),
       KEY `idx_jobs_type` (`type`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT=\'异步任务队列\'',
       'licenses' => 'CREATE TABLE IF NOT EXISTS `licenses` (
@@ -761,6 +763,7 @@ final class FreshInstallSchema
       `type` varchar(20) NOT NULL DEFAULT \'comment\' COMMENT \'通知类型\',
       `post_id` int(11) unsigned DEFAULT NULL COMMENT \'关联动态ID\',
       `comment_id` int(11) unsigned DEFAULT NULL COMMENT \'关联评论ID\',
+      `conversation_id` bigint(20) unsigned DEFAULT NULL COMMENT \'关联会话ID（私信通知）\',
       `content` varchar(255) DEFAULT NULL COMMENT \'通知内容摘要（评论内容等）\',
       `is_read` tinyint(1) NOT NULL DEFAULT \'0\' COMMENT \'是否已读：0未读 1已读\',
       `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -771,6 +774,7 @@ final class FreshInstallSchema
       KEY `fk_notifications_sender_id` (`sender_id`),
       KEY `fk_notifications_post_id` (`post_id`),
       KEY `fk_notifications_comment_id` (`comment_id`),
+      KEY `idx_user_type_read` (`user_id`,`type`,`is_read`,`created_at`),
       CONSTRAINT `fk_notifications_comment_id` FOREIGN KEY (`comment_id`) REFERENCES `comments` (`id`) ON DELETE CASCADE,
       CONSTRAINT `fk_notifications_post_id` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE CASCADE,
       CONSTRAINT `fk_notifications_sender_id` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,

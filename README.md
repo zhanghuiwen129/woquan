@@ -40,7 +40,7 @@
 | :---: | :---: | :---: |
 | ![发布动态](assets/app-publish.jpg)<br>五种帖型、四档可见范围 | ![首页信息流](assets/app-home.jpg)<br>多档切换、点赞 / 评论 / 收藏 / 转发 | ![我的](assets/app-mine.jpg)<br>积分、会员、钱包入口 |
 
-Web 端提供 `moments`（兴趣社区）与 `zixunfeed`（资讯 / 博客）两套主题，可在后台切换。
+Web 端提供 `moments`（兴趣社区）、`shaiboblog`（赛博博客）与 `zixunfeed`（资讯 / 博客）三套主题，可在后台切换。
 
 ## 核心特性
 

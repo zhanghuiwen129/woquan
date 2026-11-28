@@ -69,6 +69,12 @@ define('CACHE_DRIVER', 'file');
 define('CACHE_PREFIX', 'hublog_');
 defined('CACHE_TTL') || define('CACHE_TTL', 3600);
 
+// 实时事件派发驱动：file（默认，本机文件队列，适合单机部署）。
+// 多机部署时改为其它实现（如 centrifugo），需先部署对应 Dispatcher 类。
+// 存量安装未定义此常量时按 file 处理，无需改配置即可升级；
+// 显式填了未实现的驱动会快速失败，不会静默降级导致多机漏事件。
+defined('REALTIME_DRIVER') || define('REALTIME_DRIVER', 'file');
+
 // 高德地图 Web 服务 Key（可选）：用于把经纬度反查成中文地名
 defined('AMAP_WEB_KEY') || define('AMAP_WEB_KEY', '');
 

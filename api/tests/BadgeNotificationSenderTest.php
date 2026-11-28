@@ -65,7 +65,10 @@ final class BadgeNotificationSenderTest extends TestCase
 
     public function testSystemAccountIsCreatedByMigration(): void
     {
-        $src = $this->src('core/MigrationBatchC.php');
+        $src = '';
+        foreach (['1', '2', '3', '4', '5'] as $batchNo) {
+            $src .= $this->src('core/MigrationBatchC' . $batchNo . '.php');
+        }
         $this->assertStringContainsString("'system_notice'", $src, '必须有创建 system_notice 账号的迁移（migrate90）。');
 
         // 系统账号必须与 AI 账号独立，否则又会共用身份

@@ -85,6 +85,7 @@ $strictCaps = [
     'AdminAiController.php'      => 0, // 批次五 E
     'AdminLicenseController.php' => 0, // 批次五 E
     'LocationController.php'     => 0, // 批次五 E
+    'ContentPayController.php'   => 0, // P0-2：作者免购查询已收进 ContentPayRepository
 ];
 
 // 宽松警戒线：仅报告，不阻断。数值取自全仓 TOP 调用数附近的量级。

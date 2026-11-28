@@ -1,0 +1,4229 @@
+{
+    "//": "本文件由 scripts/build-client-endpoints.php 自动生成，请勿手工编辑；改接口请先改 docs/openapi.yaml 再重新生成，否则 CI 会报「清单过期」。",
+    "source": "docs/openapi.yaml",
+    "source_sha256": "e248b411d0c236641b3dc398bc0d29481fa3f514f35e774f8400d11bf2a40f1d",
+    "path_count": 351,
+    "operation_count": 399,
+    "paths": [
+        "/api/activities",
+        "/api/activity/detail",
+        "/api/activity/join",
+        "/api/activity/leave",
+        "/api/activity/mine",
+        "/api/admin/activities",
+        "/api/admin/ai/ollama-install",
+        "/api/admin/ai/ollama-status",
+        "/api/admin/ai/test",
+        "/api/admin/app-versions",
+        "/api/admin/appeal-handle",
+        "/api/admin/appeals",
+        "/api/admin/attachments",
+        "/api/admin/attachments/status",
+        "/api/admin/backup",
+        "/api/admin/backup/auto",
+        "/api/admin/backup/cleanup",
+        "/api/admin/badge-god-marks",
+        "/api/admin/badge-logs",
+        "/api/admin/badge-save",
+        "/api/admin/badge-scan",
+        "/api/admin/badge-toggle",
+        "/api/admin/badges",
+        "/api/admin/categories",
+        "/api/admin/chat/batch-delete",
+        "/api/admin/chat/cleanup-expired",
+        "/api/admin/chat/cleanup-orphan",
+        "/api/admin/chat/conversation",
+        "/api/admin/chat/conversations",
+        "/api/admin/chat/deletions",
+        "/api/admin/chat/export",
+        "/api/admin/chat/message",
+        "/api/admin/chat/messages",
+        "/api/admin/chat/restore",
+        "/api/admin/chat/settings",
+        "/api/admin/chat/storage-stats",
+        "/api/admin/circles",
+        "/api/admin/circles/members",
+        "/api/admin/circles/members/role",
+        "/api/admin/circles/moderate",
+        "/api/admin/circles/requests",
+        "/api/admin/circles/requests/approve",
+        "/api/admin/circles/requests/reject",
+        "/api/admin/circles/transfer",
+        "/api/admin/comments",
+        "/api/admin/comments/batch",
+        "/api/admin/content-pay/column",
+        "/api/admin/content-pay/columns",
+        "/api/admin/content-pay/grant",
+        "/api/admin/content-pay/item",
+        "/api/admin/content-pay/orders",
+        "/api/admin/content-pay/product",
+        "/api/admin/crash-alert-threshold",
+        "/api/admin/crash-logs",
+        "/api/admin/dashboard",
+        "/api/admin/export",
+        "/api/admin/featured",
+        "/api/admin/featured/toggle",
+        "/api/admin/filter-logs",
+        "/api/admin/friend-links",
+        "/api/admin/grant-vip",
+        "/api/admin/license",
+        "/api/admin/license/activate",
+        "/api/admin/license/deactivate",
+        "/api/admin/license/refresh-hashes",
+        "/api/admin/license/save-settings",
+        "/api/admin/license/sync-revoked",
+        "/api/admin/license/test-remote",
+        "/api/admin/mail/test",
+        "/api/admin/my-circles",
+        "/api/admin/pages",
+        "/api/admin/pages/publish",
+        "/api/admin/plugin-admin-config",
+        "/api/admin/plugin-config",
+        "/api/admin/plugin-settings-page",
+        "/api/admin/plugins",
+        "/api/admin/plugins/install",
+        "/api/admin/plugins/uninstall",
+        "/api/admin/plugins/upgrade",
+        "/api/admin/point-task-delete",
+        "/api/admin/point-task-save",
+        "/api/admin/point-tasks",
+        "/api/admin/points-adjust",
+        "/api/admin/points-logs",
+        "/api/admin/posts",
+        "/api/admin/posts/batch",
+        "/api/admin/posts/cleanup-orphan-uploads",
+        "/api/admin/posts/pin",
+        "/api/admin/posts/status",
+        "/api/admin/realname",
+        "/api/admin/realname/review",
+        "/api/admin/recharge-orders",
+        "/api/admin/reports",
+        "/api/admin/reports/resolve",
+        "/api/admin/rollback",
+        "/api/admin/sensitive-words",
+        "/api/admin/sensitive-words/import",
+        "/api/admin/settings",
+        "/api/admin/shop-coupons",
+        "/api/admin/shop-orders",
+        "/api/admin/shop-product-delete",
+        "/api/admin/shop-product-save",
+        "/api/admin/shop-products",
+        "/api/admin/shop-ship",
+        "/api/admin/stats",
+        "/api/admin/storage/test-connection",
+        "/api/admin/theme-options",
+        "/api/admin/theme-options/upload",
+        "/api/admin/themes",
+        "/api/admin/topics",
+        "/api/admin/topics/cover",
+        "/api/admin/upgrade",
+        "/api/admin/upgrade-compare",
+        "/api/admin/upgrade/online-compare",
+        "/api/admin/upgrade/online-preflight",
+        "/api/admin/upgrade/online-run",
+        "/api/admin/upload-homepage-cover",
+        "/api/admin/upload-watermark",
+        "/api/admin/user-badge-freeze",
+        "/api/admin/user-badge-grant",
+        "/api/admin/user-badge-revoke",
+        "/api/admin/user-badges",
+        "/api/admin/users",
+        "/api/admin/users/batch",
+        "/api/admin/users/mute",
+        "/api/admin/users/status",
+        "/api/admin/users/unmute",
+        "/api/admin/users/update",
+        "/api/admin/version-check",
+        "/api/admin/vip-orders",
+        "/api/admin/wallet-adjust",
+        "/api/admin/wallet-logs",
+        "/api/admin/watermark-preview",
+        "/api/admin/wheel-prize-delete",
+        "/api/admin/wheel-prize-save",
+        "/api/admin/wheel-prizes",
+        "/api/ai/assist",
+        "/api/app/account",
+        "/api/app/agreements",
+        "/api/app/auth/wx-app-login",
+        "/api/app/categories",
+        "/api/app/config",
+        "/api/app/devices",
+        "/api/app/devices/kick",
+        "/api/app/events",
+        "/api/app/push-token",
+        "/api/app/track",
+        "/api/app/version",
+        "/api/app/wx-jsapi-config",
+        "/api/auth/avatar",
+        "/api/auth/check-email",
+        "/api/auth/check-username",
+        "/api/auth/cover",
+        "/api/auth/forgot-password",
+        "/api/auth/login",
+        "/api/auth/login-phone",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/auth/oauth/exchange",
+        "/api/auth/oauth/{param}",
+        "/api/auth/oauth/{param}/callback",
+        "/api/auth/password",
+        "/api/auth/phone-code",
+        "/api/auth/profile",
+        "/api/auth/refresh",
+        "/api/auth/register",
+        "/api/auth/reset-password",
+        "/api/auth/send-verification",
+        "/api/auth/set-password",
+        "/api/auth/token-refresh",
+        "/api/auth/verify-email",
+        "/api/auth/wx-mini-login",
+        "/api/badges/my",
+        "/api/call/accept",
+        "/api/call/cancel",
+        "/api/call/hangup",
+        "/api/call/invite",
+        "/api/call/pending",
+        "/api/call/records",
+        "/api/call/reject",
+        "/api/call/token",
+        "/api/category/follow",
+        "/api/category/following",
+        "/api/category/status",
+        "/api/chat/conversation",
+        "/api/chat/conversations",
+        "/api/chat/deleted",
+        "/api/chat/group/announce",
+        "/api/chat/group/dissolve",
+        "/api/chat/group/info",
+        "/api/chat/group/kick",
+        "/api/chat/group/members",
+        "/api/chat/group/mute",
+        "/api/chat/message",
+        "/api/chat/messages",
+        "/api/chat/new-messages",
+        "/api/chat/private",
+        "/api/chat/read",
+        "/api/chat/restore",
+        "/api/chat/send",
+        "/api/chat/settings",
+        "/api/chat/typing",
+        "/api/chat/unread-count",
+        "/api/circles",
+        "/api/circles/announce",
+        "/api/circles/approve",
+        "/api/circles/ban-member",
+        "/api/circles/blacklist",
+        "/api/circles/detail",
+        "/api/circles/group",
+        "/api/circles/join",
+        "/api/circles/leave",
+        "/api/circles/manage-member",
+        "/api/circles/manage-post",
+        "/api/circles/members",
+        "/api/circles/mute-member",
+        "/api/circles/my",
+        "/api/circles/my-requests",
+        "/api/circles/pending-posts",
+        "/api/circles/pending-requests",
+        "/api/circles/posts",
+        "/api/circles/reject",
+        "/api/circles/unban-member",
+        "/api/content-pay/buy",
+        "/api/content-pay/column",
+        "/api/content-pay/entitlements",
+        "/api/content-pay/orders",
+        "/api/content-pay/product",
+        "/api/cron/archive",
+        "/api/cron/badges",
+        "/api/cron/jobs",
+        "/api/cron/jobs/status",
+        "/api/cron/license-heartbeat",
+        "/api/cron/scheduled",
+        "/api/csrf",
+        "/api/favorites/check",
+        "/api/favorites/list",
+        "/api/favorites/toggle",
+        "/api/follow",
+        "/api/follow/batch-check",
+        "/api/follow/block",
+        "/api/follow/blocked-check",
+        "/api/follow/blocks",
+        "/api/follow/check",
+        "/api/follow/followers",
+        "/api/follow/following",
+        "/api/follow/stats",
+        "/api/follow/suggest",
+        "/api/follow/unblock",
+        "/api/location/ip",
+        "/api/location/reverse",
+        "/api/metrics",
+        "/api/notifications",
+        "/api/notifications/clear",
+        "/api/notifications/read-all",
+        "/api/notifications/unread-count",
+        "/api/notifications/{param}",
+        "/api/notifications/{param}/read",
+        "/api/pages/{param}",
+        "/api/pay/circle-pay",
+        "/api/pay/circle-subscribe",
+        "/api/pay/notify/alipay",
+        "/api/pay/notify/wxpay",
+        "/api/pay/recharge-config",
+        "/api/pay/recharge-create",
+        "/api/pay/recharge-orders",
+        "/api/pay/vip-buy",
+        "/api/pay/vip-info",
+        "/api/pay/vip-orders",
+        "/api/pay/wallet",
+        "/api/points/claim",
+        "/api/points/home",
+        "/api/points/logs",
+        "/api/points/signin",
+        "/api/points/tasks",
+        "/api/points/wheel",
+        "/api/points/wheel-prizes",
+        "/api/points/wheel-records",
+        "/api/posts",
+        "/api/posts/category",
+        "/api/posts/check-new",
+        "/api/posts/checkin/do",
+        "/api/posts/comment",
+        "/api/posts/comment-like",
+        "/api/posts/comment/god",
+        "/api/posts/comment/god/unmark",
+        "/api/posts/comment/pin",
+        "/api/posts/delete-upload",
+        "/api/posts/detail",
+        "/api/posts/feedback",
+        "/api/posts/latest-ids",
+        "/api/posts/like",
+        "/api/posts/likes",
+        "/api/posts/pinned",
+        "/api/posts/poll/vote",
+        "/api/posts/popular",
+        "/api/posts/question/accept",
+        "/api/posts/question/answer",
+        "/api/posts/repost",
+        "/api/posts/scheduled",
+        "/api/posts/team/join",
+        "/api/posts/team/leave",
+        "/api/posts/timeline",
+        "/api/posts/topic",
+        "/api/posts/upload",
+        "/api/posts/upload-attachment",
+        "/api/posts/upload-video",
+        "/api/realname/status",
+        "/api/realname/verify",
+        "/api/reports",
+        "/api/search",
+        "/api/shop/buy",
+        "/api/shop/config",
+        "/api/shop/my-posts",
+        "/api/shop/orders",
+        "/api/shop/post",
+        "/api/shop/post-delete",
+        "/api/shop/product",
+        "/api/shop/products",
+        "/api/site/config",
+        "/api/site/featured",
+        "/api/site/friend-links",
+        "/api/site/lang",
+        "/api/site/ranking",
+        "/api/site/stats",
+        "/api/site/user-ranking",
+        "/api/sse",
+        "/api/topics",
+        "/api/upload/register",
+        "/api/upload/sign",
+        "/api/uploads/cleanup",
+        "/api/user/alive",
+        "/api/user/appeal",
+        "/api/user/appeals",
+        "/api/user/check-nickname",
+        "/api/user/comments",
+        "/api/user/draft",
+        "/api/user/drafts",
+        "/api/user/export-data",
+        "/api/user/frame",
+        "/api/user/likes",
+        "/api/user/notify-prefs",
+        "/api/user/online",
+        "/api/user/phone-code",
+        "/api/user/phone/verify",
+        "/api/user/privacy",
+        "/api/user/profile",
+        "/api/user/search",
+        "/health",
+        "/robots.txt",
+        "/sitemap.xml"
+    ],
+    "endpoints": [
+        {
+            "path": "/api/activities",
+            "normalized": "/api/activities",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "活动"
+            ]
+        },
+        {
+            "path": "/api/activity/detail",
+            "normalized": "/api/activity/detail",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "活动"
+            ]
+        },
+        {
+            "path": "/api/activity/join",
+            "normalized": "/api/activity/join",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "活动"
+            ]
+        },
+        {
+            "path": "/api/activity/leave",
+            "normalized": "/api/activity/leave",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "活动"
+            ]
+        },
+        {
+            "path": "/api/activity/mine",
+            "normalized": "/api/activity/mine",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "活动"
+            ]
+        },
+        {
+            "path": "/api/admin/activities",
+            "normalized": "/api/admin/activities",
+            "methods": [
+                "delete",
+                "get",
+                "post",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/ai/ollama-install",
+            "normalized": "/api/admin/ai/ollama-install",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/ai/ollama-status",
+            "normalized": "/api/admin/ai/ollama-status",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/ai/test",
+            "normalized": "/api/admin/ai/test",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/app-versions",
+            "normalized": "/api/admin/app-versions",
+            "methods": [
+                "delete",
+                "get",
+                "post",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/appeal-handle",
+            "normalized": "/api/admin/appeal-handle",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/appeals",
+            "normalized": "/api/admin/appeals",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/attachments",
+            "normalized": "/api/admin/attachments",
+            "methods": [
+                "delete",
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/attachments/status",
+            "normalized": "/api/admin/attachments/status",
+            "methods": [
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/backup",
+            "normalized": "/api/admin/backup",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/backup/auto",
+            "normalized": "/api/admin/backup/auto",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/backup/cleanup",
+            "normalized": "/api/admin/backup/cleanup",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/badge-god-marks",
+            "normalized": "/api/admin/badge-god-marks",
+            "methods": [
+                "delete",
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/badge-logs",
+            "normalized": "/api/admin/badge-logs",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/badge-save",
+            "normalized": "/api/admin/badge-save",
+            "methods": [
+                "post",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/badge-scan",
+            "normalized": "/api/admin/badge-scan",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/badge-toggle",
+            "normalized": "/api/admin/badge-toggle",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/badges",
+            "normalized": "/api/admin/badges",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/categories",
+            "normalized": "/api/admin/categories",
+            "methods": [
+                "delete",
+                "get",
+                "post",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/chat/batch-delete",
+            "normalized": "/api/admin/chat/batch-delete",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/chat/cleanup-expired",
+            "normalized": "/api/admin/chat/cleanup-expired",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/chat/cleanup-orphan",
+            "normalized": "/api/admin/chat/cleanup-orphan",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/chat/conversation",
+            "normalized": "/api/admin/chat/conversation",
+            "methods": [
+                "delete"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/chat/conversations",
+            "normalized": "/api/admin/chat/conversations",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/chat/deletions",
+            "normalized": "/api/admin/chat/deletions",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/chat/export",
+            "normalized": "/api/admin/chat/export",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/chat/message",
+            "normalized": "/api/admin/chat/message",
+            "methods": [
+                "delete"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/chat/messages",
+            "normalized": "/api/admin/chat/messages",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/chat/restore",
+            "normalized": "/api/admin/chat/restore",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/chat/settings",
+            "normalized": "/api/admin/chat/settings",
+            "methods": [
+                "get",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/chat/storage-stats",
+            "normalized": "/api/admin/chat/storage-stats",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/circles",
+            "normalized": "/api/admin/circles",
+            "methods": [
+                "delete",
+                "get",
+                "post",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/circles/members",
+            "normalized": "/api/admin/circles/members",
+            "methods": [
+                "delete",
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/circles/members/role",
+            "normalized": "/api/admin/circles/members/role",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/circles/moderate",
+            "normalized": "/api/admin/circles/moderate",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/circles/requests",
+            "normalized": "/api/admin/circles/requests",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/circles/requests/approve",
+            "normalized": "/api/admin/circles/requests/approve",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/circles/requests/reject",
+            "normalized": "/api/admin/circles/requests/reject",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/circles/transfer",
+            "normalized": "/api/admin/circles/transfer",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/comments",
+            "normalized": "/api/admin/comments",
+            "methods": [
+                "delete",
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/comments/batch",
+            "normalized": "/api/admin/comments/batch",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/content-pay/column",
+            "normalized": "/api/admin/content-pay/column",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/content-pay/columns",
+            "normalized": "/api/admin/content-pay/columns",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/content-pay/grant",
+            "normalized": "/api/admin/content-pay/grant",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/content-pay/item",
+            "normalized": "/api/admin/content-pay/item",
+            "methods": [
+                "delete",
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/content-pay/orders",
+            "normalized": "/api/admin/content-pay/orders",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/content-pay/product",
+            "normalized": "/api/admin/content-pay/product",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/crash-alert-threshold",
+            "normalized": "/api/admin/crash-alert-threshold",
+            "methods": [
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/crash-logs",
+            "normalized": "/api/admin/crash-logs",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/dashboard",
+            "normalized": "/api/admin/dashboard",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/export",
+            "normalized": "/api/admin/export",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/featured",
+            "normalized": "/api/admin/featured",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/featured/toggle",
+            "normalized": "/api/admin/featured/toggle",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/filter-logs",
+            "normalized": "/api/admin/filter-logs",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/friend-links",
+            "normalized": "/api/admin/friend-links",
+            "methods": [
+                "delete",
+                "get",
+                "post",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/grant-vip",
+            "normalized": "/api/admin/grant-vip",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/license",
+            "normalized": "/api/admin/license",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/license/activate",
+            "normalized": "/api/admin/license/activate",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/license/deactivate",
+            "normalized": "/api/admin/license/deactivate",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/license/refresh-hashes",
+            "normalized": "/api/admin/license/refresh-hashes",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/license/save-settings",
+            "normalized": "/api/admin/license/save-settings",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/license/sync-revoked",
+            "normalized": "/api/admin/license/sync-revoked",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/license/test-remote",
+            "normalized": "/api/admin/license/test-remote",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/mail/test",
+            "normalized": "/api/admin/mail/test",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/my-circles",
+            "normalized": "/api/admin/my-circles",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/pages",
+            "normalized": "/api/admin/pages",
+            "methods": [
+                "delete",
+                "get",
+                "post",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/pages/publish",
+            "normalized": "/api/admin/pages/publish",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/plugin-admin-config",
+            "normalized": "/api/admin/plugin-admin-config",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/plugin-config",
+            "normalized": "/api/admin/plugin-config",
+            "methods": [
+                "get",
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/plugin-settings-page",
+            "normalized": "/api/admin/plugin-settings-page",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/plugins",
+            "normalized": "/api/admin/plugins",
+            "methods": [
+                "get",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/plugins/install",
+            "normalized": "/api/admin/plugins/install",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/plugins/uninstall",
+            "normalized": "/api/admin/plugins/uninstall",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/plugins/upgrade",
+            "normalized": "/api/admin/plugins/upgrade",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/point-task-delete",
+            "normalized": "/api/admin/point-task-delete",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/point-task-save",
+            "normalized": "/api/admin/point-task-save",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/point-tasks",
+            "normalized": "/api/admin/point-tasks",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/points-adjust",
+            "normalized": "/api/admin/points-adjust",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/points-logs",
+            "normalized": "/api/admin/points-logs",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/posts",
+            "normalized": "/api/admin/posts",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/posts/batch",
+            "normalized": "/api/admin/posts/batch",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/posts/cleanup-orphan-uploads",
+            "normalized": "/api/admin/posts/cleanup-orphan-uploads",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/posts/pin",
+            "normalized": "/api/admin/posts/pin",
+            "methods": [
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/posts/status",
+            "normalized": "/api/admin/posts/status",
+            "methods": [
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/realname",
+            "normalized": "/api/admin/realname",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/realname/review",
+            "normalized": "/api/admin/realname/review",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/recharge-orders",
+            "normalized": "/api/admin/recharge-orders",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/reports",
+            "normalized": "/api/admin/reports",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/reports/resolve",
+            "normalized": "/api/admin/reports/resolve",
+            "methods": [
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/rollback",
+            "normalized": "/api/admin/rollback",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/sensitive-words",
+            "normalized": "/api/admin/sensitive-words",
+            "methods": [
+                "delete",
+                "get",
+                "post",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/sensitive-words/import",
+            "normalized": "/api/admin/sensitive-words/import",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/settings",
+            "normalized": "/api/admin/settings",
+            "methods": [
+                "get",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/shop-coupons",
+            "normalized": "/api/admin/shop-coupons",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/shop-orders",
+            "normalized": "/api/admin/shop-orders",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/shop-product-delete",
+            "normalized": "/api/admin/shop-product-delete",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/shop-product-save",
+            "normalized": "/api/admin/shop-product-save",
+            "methods": [
+                "post",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/shop-products",
+            "normalized": "/api/admin/shop-products",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/shop-ship",
+            "normalized": "/api/admin/shop-ship",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/stats",
+            "normalized": "/api/admin/stats",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/storage/test-connection",
+            "normalized": "/api/admin/storage/test-connection",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/theme-options",
+            "normalized": "/api/admin/theme-options",
+            "methods": [
+                "get",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/theme-options/upload",
+            "normalized": "/api/admin/theme-options/upload",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/themes",
+            "normalized": "/api/admin/themes",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/topics",
+            "normalized": "/api/admin/topics",
+            "methods": [
+                "delete",
+                "get",
+                "post",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/topics/cover",
+            "normalized": "/api/admin/topics/cover",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/upgrade",
+            "normalized": "/api/admin/upgrade",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/upgrade-compare",
+            "normalized": "/api/admin/upgrade-compare",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/upgrade/online-compare",
+            "normalized": "/api/admin/upgrade/online-compare",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/upgrade/online-preflight",
+            "normalized": "/api/admin/upgrade/online-preflight",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/upgrade/online-run",
+            "normalized": "/api/admin/upgrade/online-run",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/upload-homepage-cover",
+            "normalized": "/api/admin/upload-homepage-cover",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/upload-watermark",
+            "normalized": "/api/admin/upload-watermark",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/user-badge-freeze",
+            "normalized": "/api/admin/user-badge-freeze",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/user-badge-grant",
+            "normalized": "/api/admin/user-badge-grant",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/user-badge-revoke",
+            "normalized": "/api/admin/user-badge-revoke",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/user-badges",
+            "normalized": "/api/admin/user-badges",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/users",
+            "normalized": "/api/admin/users",
+            "methods": [
+                "delete",
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/users/batch",
+            "normalized": "/api/admin/users/batch",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/users/mute",
+            "normalized": "/api/admin/users/mute",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/users/status",
+            "normalized": "/api/admin/users/status",
+            "methods": [
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/users/unmute",
+            "normalized": "/api/admin/users/unmute",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/users/update",
+            "normalized": "/api/admin/users/update",
+            "methods": [
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/version-check",
+            "normalized": "/api/admin/version-check",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/vip-orders",
+            "normalized": "/api/admin/vip-orders",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/wallet-adjust",
+            "normalized": "/api/admin/wallet-adjust",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/wallet-logs",
+            "normalized": "/api/admin/wallet-logs",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/watermark-preview",
+            "normalized": "/api/admin/watermark-preview",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/wheel-prize-delete",
+            "normalized": "/api/admin/wheel-prize-delete",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/wheel-prize-save",
+            "normalized": "/api/admin/wheel-prize-save",
+            "methods": [
+                "post",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/admin/wheel-prizes",
+            "normalized": "/api/admin/wheel-prizes",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "管理员"
+            ]
+        },
+        {
+            "path": "/api/ai/assist",
+            "normalized": "/api/ai/assist",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/app/account",
+            "normalized": "/api/app/account",
+            "methods": [
+                "delete"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/app/agreements",
+            "normalized": "/api/app/agreements",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/app/auth/wx-app-login",
+            "normalized": "/api/app/auth/wx-app-login",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/app/categories",
+            "normalized": "/api/app/categories",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/app/config",
+            "normalized": "/api/app/config",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/app/devices",
+            "normalized": "/api/app/devices",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/app/devices/kick",
+            "normalized": "/api/app/devices/kick",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/app/events",
+            "normalized": "/api/app/events",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "通知"
+            ]
+        },
+        {
+            "path": "/api/app/push-token",
+            "normalized": "/api/app/push-token",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "通知"
+            ]
+        },
+        {
+            "path": "/api/app/track",
+            "normalized": "/api/app/track",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/app/version",
+            "normalized": "/api/app/version",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/app/wx-jsapi-config",
+            "normalized": "/api/app/wx-jsapi-config",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/auth/avatar",
+            "normalized": "/api/auth/avatar",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/check-email",
+            "normalized": "/api/auth/check-email",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/check-username",
+            "normalized": "/api/auth/check-username",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/cover",
+            "normalized": "/api/auth/cover",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/forgot-password",
+            "normalized": "/api/auth/forgot-password",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/login",
+            "normalized": "/api/auth/login",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/login-phone",
+            "normalized": "/api/auth/login-phone",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/logout",
+            "normalized": "/api/auth/logout",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/me",
+            "normalized": "/api/auth/me",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/oauth/exchange",
+            "normalized": "/api/auth/oauth/exchange",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/oauth/{provider}",
+            "normalized": "/api/auth/oauth/{param}",
+            "methods": [
+                "get"
+            ],
+            "path_params": [
+                "provider"
+            ],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/oauth/{provider}/callback",
+            "normalized": "/api/auth/oauth/{param}/callback",
+            "methods": [
+                "get"
+            ],
+            "path_params": [
+                "provider"
+            ],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/password",
+            "normalized": "/api/auth/password",
+            "methods": [
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/phone-code",
+            "normalized": "/api/auth/phone-code",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/profile",
+            "normalized": "/api/auth/profile",
+            "methods": [
+                "get",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/refresh",
+            "normalized": "/api/auth/refresh",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/register",
+            "normalized": "/api/auth/register",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/reset-password",
+            "normalized": "/api/auth/reset-password",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/send-verification",
+            "normalized": "/api/auth/send-verification",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/set-password",
+            "normalized": "/api/auth/set-password",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/token-refresh",
+            "normalized": "/api/auth/token-refresh",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/verify-email",
+            "normalized": "/api/auth/verify-email",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/auth/wx-mini-login",
+            "normalized": "/api/auth/wx-mini-login",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "认证"
+            ]
+        },
+        {
+            "path": "/api/badges/my",
+            "normalized": "/api/badges/my",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "徽章"
+            ]
+        },
+        {
+            "path": "/api/call/accept",
+            "normalized": "/api/call/accept",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/call/cancel",
+            "normalized": "/api/call/cancel",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/call/hangup",
+            "normalized": "/api/call/hangup",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/call/invite",
+            "normalized": "/api/call/invite",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/call/pending",
+            "normalized": "/api/call/pending",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/call/records",
+            "normalized": "/api/call/records",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/call/reject",
+            "normalized": "/api/call/reject",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/call/token",
+            "normalized": "/api/call/token",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/category/follow",
+            "normalized": "/api/category/follow",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/category/following",
+            "normalized": "/api/category/following",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/category/status",
+            "normalized": "/api/category/status",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/chat/conversation",
+            "normalized": "/api/chat/conversation",
+            "methods": [
+                "delete"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/conversations",
+            "normalized": "/api/chat/conversations",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/deleted",
+            "normalized": "/api/chat/deleted",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/group/announce",
+            "normalized": "/api/chat/group/announce",
+            "methods": [
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/group/dissolve",
+            "normalized": "/api/chat/group/dissolve",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/group/info",
+            "normalized": "/api/chat/group/info",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/group/kick",
+            "normalized": "/api/chat/group/kick",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/group/members",
+            "normalized": "/api/chat/group/members",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/group/mute",
+            "normalized": "/api/chat/group/mute",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/message",
+            "normalized": "/api/chat/message",
+            "methods": [
+                "delete"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/messages",
+            "normalized": "/api/chat/messages",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/new-messages",
+            "normalized": "/api/chat/new-messages",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/private",
+            "normalized": "/api/chat/private",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/read",
+            "normalized": "/api/chat/read",
+            "methods": [
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/restore",
+            "normalized": "/api/chat/restore",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/send",
+            "normalized": "/api/chat/send",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/settings",
+            "normalized": "/api/chat/settings",
+            "methods": [
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/typing",
+            "normalized": "/api/chat/typing",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/chat/unread-count",
+            "normalized": "/api/chat/unread-count",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "即时通讯"
+            ]
+        },
+        {
+            "path": "/api/circles",
+            "normalized": "/api/circles",
+            "methods": [
+                "delete",
+                "get",
+                "post",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/announce",
+            "normalized": "/api/circles/announce",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/approve",
+            "normalized": "/api/circles/approve",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/ban-member",
+            "normalized": "/api/circles/ban-member",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/blacklist",
+            "normalized": "/api/circles/blacklist",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/detail",
+            "normalized": "/api/circles/detail",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/group",
+            "normalized": "/api/circles/group",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/join",
+            "normalized": "/api/circles/join",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/leave",
+            "normalized": "/api/circles/leave",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/manage-member",
+            "normalized": "/api/circles/manage-member",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/manage-post",
+            "normalized": "/api/circles/manage-post",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/members",
+            "normalized": "/api/circles/members",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/mute-member",
+            "normalized": "/api/circles/mute-member",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/my",
+            "normalized": "/api/circles/my",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/my-requests",
+            "normalized": "/api/circles/my-requests",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/pending-posts",
+            "normalized": "/api/circles/pending-posts",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/pending-requests",
+            "normalized": "/api/circles/pending-requests",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/posts",
+            "normalized": "/api/circles/posts",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/circles/reject",
+            "normalized": "/api/circles/reject",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/circles/unban-member",
+            "normalized": "/api/circles/unban-member",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "圈子"
+            ]
+        },
+        {
+            "path": "/api/content-pay/buy",
+            "normalized": "/api/content-pay/buy",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/content-pay/column",
+            "normalized": "/api/content-pay/column",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/content-pay/entitlements",
+            "normalized": "/api/content-pay/entitlements",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/content-pay/orders",
+            "normalized": "/api/content-pay/orders",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/content-pay/product",
+            "normalized": "/api/content-pay/product",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/cron/archive",
+            "normalized": "/api/cron/archive",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "运维"
+            ]
+        },
+        {
+            "path": "/api/cron/badges",
+            "normalized": "/api/cron/badges",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "运维"
+            ]
+        },
+        {
+            "path": "/api/cron/jobs",
+            "normalized": "/api/cron/jobs",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "运维"
+            ]
+        },
+        {
+            "path": "/api/cron/jobs/status",
+            "normalized": "/api/cron/jobs/status",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "运维"
+            ]
+        },
+        {
+            "path": "/api/cron/license-heartbeat",
+            "normalized": "/api/cron/license-heartbeat",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "运维"
+            ]
+        },
+        {
+            "path": "/api/cron/scheduled",
+            "normalized": "/api/cron/scheduled",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "运维"
+            ]
+        },
+        {
+            "path": "/api/csrf",
+            "normalized": "/api/csrf",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "CSRF"
+            ]
+        },
+        {
+            "path": "/api/favorites/check",
+            "normalized": "/api/favorites/check",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "收藏"
+            ]
+        },
+        {
+            "path": "/api/favorites/list",
+            "normalized": "/api/favorites/list",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "收藏"
+            ]
+        },
+        {
+            "path": "/api/favorites/toggle",
+            "normalized": "/api/favorites/toggle",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "收藏"
+            ]
+        },
+        {
+            "path": "/api/follow",
+            "normalized": "/api/follow",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/follow/batch-check",
+            "normalized": "/api/follow/batch-check",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/follow/block",
+            "normalized": "/api/follow/block",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/follow/blocked-check",
+            "normalized": "/api/follow/blocked-check",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/follow/blocks",
+            "normalized": "/api/follow/blocks",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/follow/check",
+            "normalized": "/api/follow/check",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/follow/followers",
+            "normalized": "/api/follow/followers",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/follow/following",
+            "normalized": "/api/follow/following",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/follow/stats",
+            "normalized": "/api/follow/stats",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/follow/suggest",
+            "normalized": "/api/follow/suggest",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/follow/unblock",
+            "normalized": "/api/follow/unblock",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/location/ip",
+            "normalized": "/api/location/ip",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "定位"
+            ]
+        },
+        {
+            "path": "/api/location/reverse",
+            "normalized": "/api/location/reverse",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "定位"
+            ]
+        },
+        {
+            "path": "/api/metrics",
+            "normalized": "/api/metrics",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "运维"
+            ]
+        },
+        {
+            "path": "/api/notifications",
+            "normalized": "/api/notifications",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "通知"
+            ]
+        },
+        {
+            "path": "/api/notifications/clear",
+            "normalized": "/api/notifications/clear",
+            "methods": [
+                "delete"
+            ],
+            "path_params": [],
+            "tags": [
+                "通知"
+            ]
+        },
+        {
+            "path": "/api/notifications/read-all",
+            "normalized": "/api/notifications/read-all",
+            "methods": [
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "通知"
+            ]
+        },
+        {
+            "path": "/api/notifications/unread-count",
+            "normalized": "/api/notifications/unread-count",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "通知"
+            ]
+        },
+        {
+            "path": "/api/notifications/{id}",
+            "normalized": "/api/notifications/{param}",
+            "methods": [
+                "delete"
+            ],
+            "path_params": [
+                "id"
+            ],
+            "tags": [
+                "通知"
+            ]
+        },
+        {
+            "path": "/api/notifications/{id}/read",
+            "normalized": "/api/notifications/{param}/read",
+            "methods": [
+                "put"
+            ],
+            "path_params": [
+                "id"
+            ],
+            "tags": [
+                "通知"
+            ]
+        },
+        {
+            "path": "/api/pages/{slug}",
+            "normalized": "/api/pages/{param}",
+            "methods": [
+                "get"
+            ],
+            "path_params": [
+                "slug"
+            ],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/pay/circle-pay",
+            "normalized": "/api/pay/circle-pay",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/pay/circle-subscribe",
+            "normalized": "/api/pay/circle-subscribe",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/pay/notify/alipay",
+            "normalized": "/api/pay/notify/alipay",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/pay/notify/wxpay",
+            "normalized": "/api/pay/notify/wxpay",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/pay/recharge-config",
+            "normalized": "/api/pay/recharge-config",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/pay/recharge-create",
+            "normalized": "/api/pay/recharge-create",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/pay/recharge-orders",
+            "normalized": "/api/pay/recharge-orders",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/pay/vip-buy",
+            "normalized": "/api/pay/vip-buy",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/pay/vip-info",
+            "normalized": "/api/pay/vip-info",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/pay/vip-orders",
+            "normalized": "/api/pay/vip-orders",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/pay/wallet",
+            "normalized": "/api/pay/wallet",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/points/claim",
+            "normalized": "/api/points/claim",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/points/home",
+            "normalized": "/api/points/home",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/points/logs",
+            "normalized": "/api/points/logs",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/points/signin",
+            "normalized": "/api/points/signin",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/points/tasks",
+            "normalized": "/api/points/tasks",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/points/wheel",
+            "normalized": "/api/points/wheel",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/points/wheel-prizes",
+            "normalized": "/api/points/wheel-prizes",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/points/wheel-records",
+            "normalized": "/api/points/wheel-records",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/posts",
+            "normalized": "/api/posts",
+            "methods": [
+                "delete",
+                "post",
+                "put"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/category",
+            "normalized": "/api/posts/category",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/check-new",
+            "normalized": "/api/posts/check-new",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/checkin/do",
+            "normalized": "/api/posts/checkin/do",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/comment",
+            "normalized": "/api/posts/comment",
+            "methods": [
+                "delete",
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "评论"
+            ]
+        },
+        {
+            "path": "/api/posts/comment-like",
+            "normalized": "/api/posts/comment-like",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "评论"
+            ]
+        },
+        {
+            "path": "/api/posts/comment/god",
+            "normalized": "/api/posts/comment/god",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "评论"
+            ]
+        },
+        {
+            "path": "/api/posts/comment/god/unmark",
+            "normalized": "/api/posts/comment/god/unmark",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "评论"
+            ]
+        },
+        {
+            "path": "/api/posts/comment/pin",
+            "normalized": "/api/posts/comment/pin",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "评论"
+            ]
+        },
+        {
+            "path": "/api/posts/delete-upload",
+            "normalized": "/api/posts/delete-upload",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/detail",
+            "normalized": "/api/posts/detail",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/feedback",
+            "normalized": "/api/posts/feedback",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/latest-ids",
+            "normalized": "/api/posts/latest-ids",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/like",
+            "normalized": "/api/posts/like",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/likes",
+            "normalized": "/api/posts/likes",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/pinned",
+            "normalized": "/api/posts/pinned",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/poll/vote",
+            "normalized": "/api/posts/poll/vote",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/popular",
+            "normalized": "/api/posts/popular",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/question/accept",
+            "normalized": "/api/posts/question/accept",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/question/answer",
+            "normalized": "/api/posts/question/answer",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/repost",
+            "normalized": "/api/posts/repost",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/scheduled",
+            "normalized": "/api/posts/scheduled",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/team/join",
+            "normalized": "/api/posts/team/join",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/team/leave",
+            "normalized": "/api/posts/team/leave",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/timeline",
+            "normalized": "/api/posts/timeline",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/topic",
+            "normalized": "/api/posts/topic",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/upload",
+            "normalized": "/api/posts/upload",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/upload-attachment",
+            "normalized": "/api/posts/upload-attachment",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/posts/upload-video",
+            "normalized": "/api/posts/upload-video",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/realname/status",
+            "normalized": "/api/realname/status",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "实名"
+            ]
+        },
+        {
+            "path": "/api/realname/verify",
+            "normalized": "/api/realname/verify",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "实名"
+            ]
+        },
+        {
+            "path": "/api/reports",
+            "normalized": "/api/reports",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "举报"
+            ]
+        },
+        {
+            "path": "/api/search",
+            "normalized": "/api/search",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "搜索"
+            ]
+        },
+        {
+            "path": "/api/shop/buy",
+            "normalized": "/api/shop/buy",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "商城"
+            ]
+        },
+        {
+            "path": "/api/shop/config",
+            "normalized": "/api/shop/config",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "商城"
+            ]
+        },
+        {
+            "path": "/api/shop/my-posts",
+            "normalized": "/api/shop/my-posts",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "商城"
+            ]
+        },
+        {
+            "path": "/api/shop/orders",
+            "normalized": "/api/shop/orders",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "商城"
+            ]
+        },
+        {
+            "path": "/api/shop/post",
+            "normalized": "/api/shop/post",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "商城"
+            ]
+        },
+        {
+            "path": "/api/shop/post-delete",
+            "normalized": "/api/shop/post-delete",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "商城"
+            ]
+        },
+        {
+            "path": "/api/shop/product",
+            "normalized": "/api/shop/product",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "商城"
+            ]
+        },
+        {
+            "path": "/api/shop/products",
+            "normalized": "/api/shop/products",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "商城"
+            ]
+        },
+        {
+            "path": "/api/site/config",
+            "normalized": "/api/site/config",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/site/featured",
+            "normalized": "/api/site/featured",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/site/friend-links",
+            "normalized": "/api/site/friend-links",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/site/lang",
+            "normalized": "/api/site/lang",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/site/ranking",
+            "normalized": "/api/site/ranking",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/site/stats",
+            "normalized": "/api/site/stats",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/site/user-ranking",
+            "normalized": "/api/site/user-ranking",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/api/sse",
+            "normalized": "/api/sse",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "通知"
+            ]
+        },
+        {
+            "path": "/api/topics",
+            "normalized": "/api/topics",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/upload/register",
+            "normalized": "/api/upload/register",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/upload/sign",
+            "normalized": "/api/upload/sign",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "动态"
+            ]
+        },
+        {
+            "path": "/api/uploads/cleanup",
+            "normalized": "/api/uploads/cleanup",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": [
+                "用户"
+            ]
+        },
+        {
+            "path": "/api/user/alive",
+            "normalized": "/api/user/alive",
+            "methods": [
+                "put"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/user/appeal",
+            "normalized": "/api/user/appeal",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/user/appeals",
+            "normalized": "/api/user/appeals",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/user/check-nickname",
+            "normalized": "/api/user/check-nickname",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/user/comments",
+            "normalized": "/api/user/comments",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "用户"
+            ]
+        },
+        {
+            "path": "/api/user/draft",
+            "normalized": "/api/user/draft",
+            "methods": [
+                "delete",
+                "post"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/user/drafts",
+            "normalized": "/api/user/drafts",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/user/export-data",
+            "normalized": "/api/user/export-data",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "用户"
+            ]
+        },
+        {
+            "path": "/api/user/frame",
+            "normalized": "/api/user/frame",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/user/likes",
+            "normalized": "/api/user/likes",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "用户"
+            ]
+        },
+        {
+            "path": "/api/user/notify-prefs",
+            "normalized": "/api/user/notify-prefs",
+            "methods": [
+                "get",
+                "put"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/user/online",
+            "normalized": "/api/user/online",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/user/phone-code",
+            "normalized": "/api/user/phone-code",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/user/phone/verify",
+            "normalized": "/api/user/phone/verify",
+            "methods": [
+                "post"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/user/privacy",
+            "normalized": "/api/user/privacy",
+            "methods": [
+                "get",
+                "put"
+            ],
+            "path_params": [],
+            "tags": []
+        },
+        {
+            "path": "/api/user/profile",
+            "normalized": "/api/user/profile",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "用户"
+            ]
+        },
+        {
+            "path": "/api/user/search",
+            "normalized": "/api/user/search",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "用户"
+            ]
+        },
+        {
+            "path": "/health",
+            "normalized": "/health",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "运维"
+            ]
+        },
+        {
+            "path": "/robots.txt",
+            "normalized": "/robots.txt",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        },
+        {
+            "path": "/sitemap.xml",
+            "normalized": "/sitemap.xml",
+            "methods": [
+                "get"
+            ],
+            "path_params": [],
+            "tags": [
+                "站点"
+            ]
+        }
+    ]
+}

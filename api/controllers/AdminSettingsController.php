@@ -99,6 +99,8 @@ class AdminSettingsController extends AdminController
             'watermark_enabled', 'watermark_type', 'watermark_text', 'watermark_font_size', 'watermark_color',
             'watermark_opacity', 'watermark_position', 'watermark_margin', 'watermark_rotate', 'watermark_shadow',
             'watermark_image', 'watermark_image_scale', 'watermark_min_size', 'watermark_apply_avatar', 'watermark_font_path', 'ai_comment_enabled', 'ai_comment_provider', 'ai_comment_api_url', 'ai_comment_api_key', 'ai_comment_model', 'ai_comment_prompt', 'ai_comment_max_length', 'ai_comment_timeout', 'ai_audit_enabled', 'ai_audit_provider', 'ai_audit_api_url', 'ai_audit_api_key', 'ai_audit_model', 'ai_audit_custom_words',
+            // P0-3：后台远程自动安装总开关，默认关闭；仅 admin 可改，写入 admin_audit_logs。
+            'ai_auto_install',
             // 云存储直传（settings 同名配置覆盖 config.php 常量）
             'upload_driver', 'upload_sign_ttl', 'upload_dir_prefix', 'upload_cdn_common_domain',
             'upload_oss_access_key_id', 'upload_oss_access_key_secret', 'upload_oss_bucket', 'upload_oss_endpoint',
@@ -155,7 +157,7 @@ class AdminSettingsController extends AdminController
                 'link', 'attachment', 'topic', 'draft', 'schedule', 'category',
             ],
         ];
-        $boolKeys = ['allow_register', 'allow_post', 'allow_like', 'allow_comment', 'upload_compress', 'allow_guest_download_attachment', 'allow_upload_image', 'allow_upload_video', 'allow_upload_attachment', 'allow_mention', 'allow_location', 'allow_anonymous_post', 'category_required', 'title_required', 'url_rewrite', 'nav_search_enabled', 'nav_messages_enabled', 'nav_favorites_enabled', 'nav_profile_enabled', 'ai_comment_enabled', 'ai_audit_enabled', 'upload_oss_ssl', 'upload_cos_ssl', 'upload_qiniu_ssl', 'mail_enabled', 'password_require_upper', 'password_require_lower', 'password_require_digit', 'password_require_special', 'allow_language_switch', 'watermark_enabled', 'watermark_apply_avatar', 'watermark_shadow', 'realname_enabled'];
+        $boolKeys = ['allow_register', 'allow_post', 'allow_like', 'allow_comment', 'upload_compress', 'allow_guest_download_attachment', 'allow_upload_image', 'allow_upload_video', 'allow_upload_attachment', 'allow_mention', 'allow_location', 'allow_anonymous_post', 'category_required', 'title_required', 'url_rewrite', 'nav_search_enabled', 'nav_messages_enabled', 'nav_favorites_enabled', 'nav_profile_enabled', 'ai_comment_enabled', 'ai_audit_enabled', 'upload_oss_ssl', 'upload_cos_ssl', 'upload_qiniu_ssl', 'mail_enabled', 'password_require_upper', 'password_require_lower', 'password_require_digit', 'password_require_special', 'allow_language_switch', 'watermark_enabled', 'watermark_apply_avatar', 'watermark_shadow', 'realname_enabled', 'ai_auto_install'];
         // 圈子功能总开关：App 发布页据此隐藏「发布到圈子」入口
         $boolKeys[] = 'allow_circle';
         // V96：过期订阅自动清退（关掉后只置 status=0，不删成员位）

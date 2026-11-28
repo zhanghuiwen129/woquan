@@ -568,10 +568,13 @@ SQL);
             $feed
         );
 
-        $ssr = file_get_contents(dirname(__DIR__, 3) . '/index.php');
-        $this->assertStringContainsString('VisibilityPolicy::where(0)', $ssr);
-        $this->assertStringContainsString('$postDetail && !\\Hublog\\Core\\VisibilityPolicy::canView($postDetail, 0)', $ssr);
-        $this->assertStringContainsString('WHERE p.id = ? AND p.status = 1 AND {$ssrVisWhere} LIMIT 1', $ssr);
+        // P1-5 拆分后：主查询与游客可见性判定在 FrontRouter，首屏辅助查询在 SsrRenderer。
+        $frontRouter = file_get_contents(dirname(__DIR__, 3) . '/api/core/FrontRouter.php');
+        $this->assertStringContainsString('VisibilityPolicy::where(0)', $frontRouter);
+        $this->assertStringContainsString('$postDetail && !VisibilityPolicy::canView($postDetail, 0)', $frontRouter);
+        $this->assertStringContainsString('WHERE p.id = ? AND p.status = 1 AND {$ssrVisWhere} LIMIT 1', $frontRouter);
+
+        $ssr = file_get_contents(dirname(__DIR__, 3) . '/api/core/SsrRenderer.php');
         $this->assertStringContainsString('WHERE p.id = ? AND {$ssrVisWhere} LIMIT 1', $ssr);
     }
 

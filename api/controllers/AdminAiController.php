@@ -158,7 +158,26 @@ class AdminAiController extends AdminController
      */
     public function ollamaInstall(Request $request): Response
     {
-        $this->requireAdmin($request);
+        $admin = $this->requireAdmin($request);
+        $adminId = (int)($admin['id'] ?? 0);
+        $os = PHP_OS_FAMILY;
+        $model = trim($request->getString('model', 'llama3.2'));
+
+        // 模型名最终会进 shell_exec（虽已 escapeshellarg），再加一层白名单，
+        // 禁止空格/分号/管道等任何脚本片段进入命令。
+        if ($model !== '' && preg_match('/^[A-Za-z0-9][A-Za-z0-9._:\/-]{0,63}$/', $model) !== 1) {
+            return Response::error('模型名不合法，仅允许字母数字与 . _ : / -', 400);
+        }
+
+        // P0-3：显式开关，默认关闭。settings 里没有该键时一律拒绝；
+        // 后台「AI 与 Ollama」设置页勾选后才允许执行远程安装脚本。
+        if (!$this->autoInstallAllowed()) {
+            $this->auditAutoInstall($adminId, 'ai.ollama_install_denied', $model, $os, 'switch=off; command=none', $request);
+            return Response::error(
+                '后台远程自动安装默认关闭，请先在后台设置页开启「允许 AI 远程自动安装」后重试（Linux 还需 config.php 的 ALLOW_REMOTE_INSTALLER=true）',
+                403
+            );
+        }
 
         // 安装过程耗时较长，取消 PHP 执行时间限制
         @set_time_limit(0);
@@ -180,10 +199,18 @@ class AdminAiController extends AdminController
             }
         }
 
-        $os = PHP_OS_FAMILY; // Linux / Windows / Darwin
-        $model = $request->getString('model', 'llama3.2');
         $logs = [];
         $now = fn() => '[' . date('Y-m-d H:i:s') . '] ';
+
+        // P0-3：放行也留痕（谁 / 何时 / 模型 / 系统 / 命令面），统一写 admin_audit_logs。
+        $this->auditAutoInstall(
+            $adminId,
+            'ai.ollama_install',
+            $model,
+            $os,
+            'commands=install-script|service-start|ollama-pull',
+            $request
+        );
 
         $logs[] = $now() . '操作系统检测：' . $os;
 
@@ -232,6 +259,50 @@ class AdminAiController extends AdminController
     }
 
     /**
+     * 后台远程自动安装开关：settings.ai_auto_install 默认关闭。
+     * 读取异常按关闭处理（fail-close），绝不因配置表故障放大 shell 权限。
+     */
+    private function autoInstallAllowed(): bool
+    {
+        try {
+            $raw = SettingsRepository::get('ai_auto_install', '0');
+        } catch (\Throwable $e) {
+            \Hublog\Core\Logger::error('[Hublog AdminAi] 读取 ai_auto_install 失败，按关闭处理: ' . $e->getMessage());
+            return false;
+        }
+        if (is_bool($raw)) {
+            return $raw;
+        }
+        return in_array(strtolower(trim((string)$raw)), ['1', 'true', 'yes', 'on'], true);
+    }
+
+    /**
+     * P0-3 审计：复用后台统一审计表 admin_audit_logs，记录管理员与操作面。
+     * 审计写入失败不阻断安装，但要留错误日志。
+     */
+    private function auditAutoInstall(
+        int $adminId,
+        string $action,
+        string $model,
+        string $os,
+        string $detail,
+        Request $request
+    ): void {
+        try {
+            \Hublog\Core\ChatService::adminLog(
+                $adminId,
+                $action,
+                'ollama',
+                $model !== '' ? $model : 'none',
+                'os=' . $os . '; ' . $detail,
+                $request->getIp()
+            );
+        } catch (\Throwable $e) {
+            \Hublog\Core\Logger::error('[Hublog AdminAi] 自动安装审计写入失败: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Linux 环境安装 Ollama
      */
     private function installOllamaLinux(string $model, array &$logs, callable $now): array|Response
@@ -265,7 +336,7 @@ class AdminAiController extends AdminController
             if (!(defined('ALLOW_REMOTE_INSTALLER') && ALLOW_REMOTE_INSTALLER === true)) {
                 $logs[] = $now() . '已禁用远程脚本自动安装（供应链风险）';
                 $logs[] = $now() . '请在服务器上手动执行：curl -fsSL https://ollama.com/install.sh | sh';
-                $logs[] = $now() . '如确需后台一键安装，请在 config.php 设置 ALLOW_REMOTE_INSTALLER=true';
+                $logs[] = $now() . '如确需后台一键安装，请在后台设置开启 ai_auto_install，并在 config.php 设置 ALLOW_REMOTE_INSTALLER=true';
                 return Response::error(
                     '出于安全考虑已禁用远程脚本自动安装，请手动安装 Ollama 后重试；如需开启请在 config.php 设置 ALLOW_REMOTE_INSTALLER=true',
                     403,

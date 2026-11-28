@@ -56,7 +56,7 @@ let navToken = 0;
 // no-cache 头的 nginx/Apache vhost）下的启发式缓存拿到旧片段。
 // 同时也用于动态 import 的页面模块版本号——否则浏览器会复用无 query 的旧模块缓存，
 // 改了 badges.js / settings.js 等也不生效（之前点菜单空白的同类隐患）。
-const PAGE_VER = '202611211';
+const PAGE_VER = '202611251';
 
 // 页面容器清单（29 页）：标题文案 + 容器 id 一一对应。
 // 隐藏页面必须用这份显式清单，不能用 id 前缀匹配——'page-title'（标题 h1）

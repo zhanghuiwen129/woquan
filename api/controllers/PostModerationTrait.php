@@ -108,8 +108,9 @@ trait PostModerationTrait
                 ModerationRepository::insertGodCommentNotification([
                     'user_id'    => (int)$comment['user_id'],
                     'type'       => 'god_comment',
-                    'title'      => '你的评论被标记为神评',
-                    'content'    => '你的评论获得了「神评」标记，持续产出优质评论可解锁神评系列徽章',
+                    // P0-A：notifications 表无 title 列，越界写入会抛 1054 被下方 catch 空吞，
+                    // 导致神评通知永久发不出。标题语义并入 content，不再写越界列。
+                    'content'    => '你的评论被标记为神评：持续产出优质评论可解锁神评系列徽章',
                     'post_id'    => (int)$comment['post_id'],
                     'comment_id' => $commentId,
                     'sender_id'  => (int)$user['id'],

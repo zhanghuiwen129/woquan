@@ -3,7 +3,7 @@
  * 页面骨架（页头 + 侧栏）写在 HTML 里，本模块只负责填充 #plList。
  */
 import { PAGE_PATH } from './config.js?v=20261116.12';
-import { renderCard } from './feed.js?v=20261116.12';
+import { renderCard } from './feed.js?v=20261128.01';
 import { fillSidebars } from './sidebar.js?v=20261116.12';
 
 function colorFrom(str) {

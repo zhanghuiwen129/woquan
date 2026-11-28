@@ -258,7 +258,14 @@ final class MemberSystemGuardTest extends TestCase
     public function testStatusAmbiguitySplitWithAccountState(): void
     {
         // 迁移 + 终态 DDL 都有 account_state
-        self::assertStringContainsString('account_state', self::src('api/core/MigrationBatchC.php'));
+        self::assertStringContainsString(
+            'account_state',
+            self::src('api/core/MigrationBatchC1.php')
+                . self::src('api/core/MigrationBatchC2.php')
+                . self::src('api/core/MigrationBatchC3.php')
+                . self::src('api/core/MigrationBatchC4.php')
+                . self::src('api/core/MigrationBatchC5.php')
+        );
         self::assertStringContainsString('account_state', self::src('api/core/FreshInstallSchema.php'));
         // 封禁/解封/软删/注销四处写入都维护 account_state
         self::assertStringContainsString('account_state', self::src('api/core/UserRepository.php'));
@@ -311,7 +318,14 @@ final class MemberSystemGuardTest extends TestCase
         self::assertStringContainsString("\$type === 'adjust' && \$bizType === 'admin'", $point,
             '积分审计必须限定后台调整场景');
         // 新表进迁移 + 归档白名单
-        self::assertStringContainsString('member_change_logs', self::src('api/core/MigrationBatchC.php'));
+        self::assertStringContainsString(
+            'member_change_logs',
+            self::src('api/core/MigrationBatchC1.php')
+                . self::src('api/core/MigrationBatchC2.php')
+                . self::src('api/core/MigrationBatchC3.php')
+                . self::src('api/core/MigrationBatchC4.php')
+                . self::src('api/core/MigrationBatchC5.php')
+        );
         self::assertStringContainsString('member_change_logs', self::src('api/core/TableArchive.php'));
     }
 

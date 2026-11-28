@@ -7,7 +7,6 @@ namespace Hublog\Controllers;
 use Hublog\Core\BaseController;
 use Hublog\Core\Cache;
 use Hublog\Core\ContentPayRepository as Repo;
-use Hublog\Core\Database;
 use Hublog\Core\Logger;
 use Hublog\Core\OrderNo;
 use Hublog\Core\Request;
@@ -50,8 +49,7 @@ class ContentPayController extends BaseController
         // 单篇商品对应帖子的作者本人，或专栏作者本人 → 免购
         $authorExempt = false;
         if ($type === Repo::PRODUCT_POST) {
-            $row = Database::fetchOne("SELECT user_id FROM posts WHERE id = ? LIMIT 1", [$targetId]);
-            $authorExempt = $row && (int)$row['user_id'] === $userId;
+            $authorExempt = Repo::findPostAuthorId($targetId) === $userId;
         } else {
             $col = Repo::findColumn($targetId);
             $authorExempt = $col && (int)$col['owner_id'] === $userId;
@@ -121,8 +119,7 @@ class ContentPayController extends BaseController
 
         // 作者本人免购
         if ($productType === Repo::PRODUCT_POST) {
-            $row = Database::fetchOne("SELECT user_id FROM posts WHERE id = ? LIMIT 1", [$targetId]);
-            if ($row && (int)$row['user_id'] === $userId) {
+            if (Repo::findPostAuthorId($targetId) === $userId) {
                 return Response::success(['already_unlocked' => true, 'reason' => 'author'], '作者本人无需购买');
             }
         } else {

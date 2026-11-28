@@ -247,7 +247,9 @@ class ModerationRepository
     private static function assertNotificationFields(array $data): void
     {
         $allowed = [
-            'user_id', 'type', 'title', 'content', 'post_id',
+            // P0-A：notifications 表无 title 列，白名单不得放行该字段，
+            // 否则会掩盖越界写入、让 1054 在 strict 模式下复发。
+            'user_id', 'type', 'content', 'post_id',
             'comment_id', 'sender_id', 'is_read', 'created_at',
         ];
         foreach (array_keys($data) as $column) {

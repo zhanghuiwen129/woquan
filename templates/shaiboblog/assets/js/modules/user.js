@@ -135,10 +135,14 @@ function bindChrome(app) {
         else location.href = HOME_URL;
     };
     const msg = document.getElementById('msgBtn');
-    if (msg) msg.onclick = () => {
-        if (!app.checkAuth()) return;
-        // 私信页当前仍为结构壳，直接跳转会让用户进入空白页；先给出明确提示
-        app.showToast('私信功能尚未开放');
+    if (msg) msg.onclick = async () => {
+        if (!app.checkAuth() || !state.userId) return;
+        try {
+            const d = await app.request('/chat/private', { method: 'POST', body: { user_id: state.userId } });
+            location.href = PAGE_PATH + '/chat?c=' + (d?.conversation_id || '');
+        } catch (e) {
+            app.showToast(e.message || '发起会话失败');
+        }
     };
     // 夜间模式统一收进顶栏用户菜单（nav.js::mountUserMenu 的「夜间模式」项），本页不再自带设置按钮
     const followBtn = document.getElementById('followBtn');

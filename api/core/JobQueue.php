@@ -24,6 +24,12 @@
  * 同一个文件可能被重复入队（比如用户重试上传、网络抖动重发）。
  * uk_job_dedupe 保证「同一 dedupe_key 只有一条任务」，
  * 重复入队直接复用已有任务，不会压缩两次。
+ *
+ * 【优先级与死信（P2-4）】
+ * 长任务（视频压缩）不能把短任务（AI 摘要 / 插件回调）一直堵在队尾：
+ * claimNext() 按 priority DESC、同优先级按 id ASC 认领，短任务可用更高优先级插队。
+ * 死信不另设布尔列，直接复用 status='dead_letter'：与 pending/running/done/failed
+ * 同一状态机，stats() 天然多一个计数，purge() 也只清 done、不动死信。
  */
 
 declare(strict_types=1);
@@ -43,9 +49,14 @@ class JobQueue
     public const STATUS_RUNNING = 'running';
     public const STATUS_DONE    = 'done';
     public const STATUS_FAILED  = 'failed';
+    /** 死信：失败次数达到 MAX_ATTEMPTS，不再被 worker 拉取，留给运维排查 */
+    public const STATUS_DEAD_LETTER = 'dead_letter';
 
     /** 单次 worker 执行的任务上限（防止一次拉太多把 worker 拖死） */
     private const BATCH_LIMIT = 5;
+
+    /** 最大尝试次数：达到后失败任务转 dead_letter（未达上限仍标记 failed） */
+    private const MAX_ATTEMPTS = 3;
 
     /**
      * 入队一个任务。
@@ -54,10 +65,16 @@ class JobQueue
      * @param array  $payload   任务参数（会存成 JSON）
      * @param string $dedupeKey 幂等键；同键不重复排队
      * @param int    $delaySec  延迟多少秒再可执行（0 = 立即）
-     * @return int 任务 ID；命中幂等键时返回已有任务 ID
+     * @param int    $priority  优先级，数值越大越先执行；默认 0 保持既有调用向后兼容
+     * @return int 任务 ID；命中幂等键时返回已有任务 ID（原任务的 priority 不变）
      */
-    public static function enqueue(string $type, array $payload, string $dedupeKey, int $delaySec = 0): int
-    {
+    public static function enqueue(
+        string $type,
+        array $payload,
+        string $dedupeKey,
+        int $delaySec = 0,
+        int $priority = 0
+    ): int {
         $runAfter = date('Y-m-d H:i:s', time() + max(0, $delaySec));
 
         // 先查幂等键：命中就直接复用，避免依赖 INSERT ... ON DUPLICATE 的返回语义
@@ -77,6 +94,7 @@ class JobQueue
                 'dedupe_key' => $dedupeKey,
                 'attempts'   => 0,
                 'run_after'  => $runAfter,
+                'priority'   => $priority,
             ]);
         } catch (\Throwable $e) {
             // 并发下两个请求同时入队 → 唯一索引冲突，此时另一个已经插进去了，复用它即可
@@ -130,6 +148,8 @@ class JobQueue
                     $succeeded++;
                     $details[] = ['id' => $jobId, 'type' => $type, 'ok' => true];
                 } else {
+                    // execute() 返回 false（如插件 handler 不可用）也走同一失败判定，
+                    // 与下方抛异常路径一样会在达到 MAX_ATTEMPTS 时转死信。
                     self::markFailed($jobId, '执行返回失败（未产出结果）');
                     $failed++;
                     $details[] = ['id' => $jobId, 'type' => $type, 'ok' => false];
@@ -153,7 +173,8 @@ class JobQueue
     /**
      * 原子认领一个待执行任务。
      *
-     * 用「先按 id 升序取一条 pending，再带 status 条件 UPDATE 抢占」实现，
+     * 用「先按 priority 降序、同优先级按 id 升序取一条 pending，再带 status 条件
+     * UPDATE 抢占」实现：高优先级短任务不被长任务拖住，同优先级仍按入队顺序公平；
      * 并发 worker 只有一个能抢到（rowCount=0 说明被别人抢了）。
      */
     private static function claimNext(): ?array
@@ -161,7 +182,7 @@ class JobQueue
         $row = Database::fetchOne(
             "SELECT * FROM `jobs`
              WHERE `status` = ? AND `run_after` <= ?
-             ORDER BY `id` ASC LIMIT 1",
+             ORDER BY `priority` DESC, `id` ASC LIMIT 1",
             [self::STATUS_PENDING, date('Y-m-d H:i:s')]
         );
         if (!$row) {
@@ -225,13 +246,24 @@ class JobQueue
     /**
      * 标记失败。
      *
-     * 失败不直接删任务：保留 failed 状态 + 错误摘要，运维能查到「哪个文件压缩失败了、为什么」。
-     * attempts 达到上限的任务不再被拉取（status 不再是 pending）。
+     * 失败不直接删任务：保留状态 + 错误摘要，运维能查到「哪个文件压缩失败了、为什么」。
+     * attempts 达到 MAX_ATTEMPTS 时转 dead_letter（终态，不再被 claimNext 拉取），
+     * 未达上限仍是 failed（与 V94 起的既有语义一致）。
+     *
+     * claimNext() 的 SELECT 是认领前的快照，attempts+1 发生在随后的 UPDATE；
+     * 因此这里重读真实 attempts，才不会把「第 3 次失败」误判成第 2 次。
      */
     private static function markFailed(int $jobId, string $error): void
     {
+        $row = Database::fetchOne(
+            "SELECT `attempts` FROM `jobs` WHERE `id` = ? LIMIT 1",
+            [$jobId]
+        );
+        $attempts = $row ? (int)$row['attempts'] : 0;
+        $status = $attempts >= self::MAX_ATTEMPTS ? self::STATUS_DEAD_LETTER : self::STATUS_FAILED;
+
         Database::update('jobs', [
-            'status'      => self::STATUS_FAILED,
+            'status'      => $status,
             'finished_at' => date('Y-m-d H:i:s'),
             'last_error'  => mb_substr($error, 0, 500),
         ], 'id = ?', [$jobId]);
@@ -250,6 +282,7 @@ class JobQueue
             self::STATUS_RUNNING => 0,
             self::STATUS_DONE    => 0,
             self::STATUS_FAILED  => 0,
+            self::STATUS_DEAD_LETTER => 0,
         ];
         foreach ($rows as $row) {
             $out[(string)$row['status']] = (int)$row['c'];
@@ -261,7 +294,7 @@ class JobQueue
      * 清理已完成的历史任务。
      *
      * done 状态的任务没有保留价值（payload 里是文件路径，不是业务数据），
-     * 但 failed 的要留着给运维查。
+     * 但 failed / dead_letter 的要留着给运维查。
      */
     public static function purge(int $keepDays = 7): int
     {

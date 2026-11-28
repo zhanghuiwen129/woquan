@@ -145,10 +145,13 @@ class ChatBatchCTest extends \PHPUnit\Framework\TestCase
         $this->assertSame('', SourceView::methodSource('noSuchMethod'));
     }
 
-    /** 取 migrate99() 方法体源码（它是 MigrationBatchC 的最后一个方法） */
+    /** 取 migrate99() 方法体源码（位于 MigrationBatchC5） */
     private static function migrate99Source(): string
     {
-        $src = (string)file_get_contents(dirname(__DIR__) . '/core/MigrationBatchC.php');
+        $src = '';
+        foreach (['1', '2', '3', '4', '5'] as $batchNo) {
+            $src .= (string)file_get_contents(dirname(__DIR__) . '/core/MigrationBatchC' . $batchNo . '.php');
+        }
         $start = strpos($src, 'private static function migrate99(');
         if ($start === false) {
             return '';
@@ -159,7 +162,7 @@ class ChatBatchCTest extends \PHPUnit\Framework\TestCase
     public function testV99MigrationVersionAndHardGuard(): void
     {
         $migration = (string)file_get_contents(dirname(__DIR__) . '/core/Migration.php');
-        $this->assertStringContainsString('private static int $currentVersion = 103;', $migration);
+        $this->assertStringContainsString('private static int $currentVersion = 105;', $migration);
 
         $m99 = self::migrate99Source();
         $this->assertTrue(strlen($m99) > 1000, 'migrate99() 必须存在');

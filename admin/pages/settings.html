@@ -836,6 +836,10 @@
 
                     <!-- 一键安装 Ollama -->
                     <div style="margin-bottom:16px;padding:14px;border:1px solid var(--border);border-radius:8px;background:var(--notice-bg);">
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label><input type="checkbox" id="setting-ai_auto_install"> 允许后台远程自动安装（默认关闭，开启后才会执行 shell 安装脚本）</label>
+                            <div style="font-size:12px;color:var(--warn);margin-top:4px;">出于供应链安全，默认拒绝任何远程脚本执行；仅在确认可信网络与镜像后临时开启，操作会写入后台审计日志。</div>
+                        </div>
                         <div class="card-head">
                             <div>
                                 <strong style="font-size:14px;color:var(--info);"><i data-icon="rocket"></i> 一键安装 Ollama</strong>

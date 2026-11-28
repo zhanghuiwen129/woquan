@@ -401,6 +401,12 @@ class ChatController extends BaseController
         if (!ChatService::validateMembership($conversationId, (int)$user['id'])) {
             return Response::error('无权操作该会话', 403);
         }
+        // S10+：成员校验之外还需校验 message_id 归属本会话。否则会话成员传一个
+        // 别的会话的大 id（或任意超大 id）即可把本会话 last_read_message_id 顶到
+        // 高位，把本会话全部未读一次性清零（含自己尚未读到的消息）。
+        if (!ChatRepository::messageBelongsToConversation($messageId, $conversationId)) {
+            return Response::error('消息不属于该会话', 400);
+        }
         ChatService::markAsRead($conversationId, $user['id'], $messageId);
 
         // 单条已读回执：聊天页要逐条显示「已读 / 未读」

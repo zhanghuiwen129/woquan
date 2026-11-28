@@ -302,6 +302,26 @@ class ChatRepository
         }
     }
 
+    /**
+     * markRead 越界守卫：message_id 必须真实存在于该会话。
+     *
+     * S10 已补「调用者是会话成员」校验，但仍缺「message_id 属于该会话」：
+     * 会话成员传一个别的会话的大 id / 超大 id，会把本会话 last_read_message_id
+     * 顶到高位，导致本会话全部未读被清零。这里按 (id, conversation_id) 精确探测，
+     * 兼顾软删消息（deleted_at 不参与判断，位点语义覆盖全会话）。
+     */
+    public static function messageBelongsToConversation(int $messageId, int $conversationId): bool
+    {
+        if ($messageId <= 0 || $conversationId <= 0) {
+            return false;
+        }
+        $row = Database::fetchOne(
+            "SELECT id FROM messages WHERE id = ? AND conversation_id = ? LIMIT 1",
+            [$messageId, $conversationId]
+        );
+        return $row !== false && $row !== null;
+    }
+
     /** recallMessage() —— 撤回前的消息探测（5 列） */
     public static function findMessageForRecall(int $messageId): ?array
     {

@@ -18,7 +18,9 @@
         "test:behavior": "@php vendor/bin/phpunit -c phpunit.xml.dist --testsuite behavior --no-coverage",
         "test:integration": "@php vendor/bin/phpunit -c phpunit.xml.dist --testsuite integration --no-coverage",
         "docs:routes": "@php scripts/parse_routes.php --pretty",
-        "docs:check": "@php scripts/check_route_docs.php"
+        "docs:check": "@php scripts/check_route_docs.php",
+        "gate:filesize": "@php scripts/check-file-size.php --check",
+        "gate:filesize:write": "@php scripts/check-file-size.php --write-baseline"
     },
     "config": {
         "sort-packages": true

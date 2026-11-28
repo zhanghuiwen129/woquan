@@ -29,7 +29,11 @@ final class MigrationContractScanner
         'api/core/MigrationHistory.php',
         'api/core/MigrationBatchA.php',
         'api/core/MigrationBatchB.php',
-        'api/core/MigrationBatchC.php',
+        'api/core/MigrationBatchC1.php',
+        'api/core/MigrationBatchC2.php',
+        'api/core/MigrationBatchC3.php',
+        'api/core/MigrationBatchC4.php',
+        'api/core/MigrationBatchC5.php',
     ];
 
     /** @return list<string> */

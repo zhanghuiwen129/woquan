@@ -1,6 +1,6 @@
 <?php
 /**
- * 行为级测试：异步任务队列（JobQueue，V94）
+ * 行为级测试：异步任务队列（JobQueue，V94 + P2-4 优先级/死信）
  *
  * 背景：视频压缩原在请求内同步跑 ffmpeg（最坏 30 分钟占住 worker），
  * V94 改成「请求内只入队，cron worker 异步消费」。
@@ -12,7 +12,9 @@
  *   3. worker 认领任务并执行，状态流转 pending → running → done
  *   4. 失败任务被标记 failed 且保留错误摘要（可观测）
  *   5. 未到执行时间（run_after）的任务不会被拉取
- *   6. 已完成的历史任务可被清理，failed 的保留给运维查
+ *   6. 已完成的历史任务可被清理，failed / dead_letter 的保留给运维查
+ *   7. 高优先级先被认领；不传 priority 仍按 0 入队（向后兼容）
+ *   8. attempts 达到 MAX_ATTEMPTS 时失败任务转 dead_letter，且不再被拉取
  */
 
 declare(strict_types=1);
@@ -41,10 +43,12 @@ final class JobQueueBehaviorTest extends BehaviorTestCase
             `run_after`   TEXT    NOT NULL DEFAULT (datetime('now','localtime')),
             `started_at`  TEXT    DEFAULT NULL,
             `finished_at` TEXT    DEFAULT NULL,
+            `priority`    INTEGER NOT NULL DEFAULT 0,
             `created_at`  TEXT    NOT NULL DEFAULT (datetime('now','localtime')),
             `updated_at`  TEXT    NOT NULL DEFAULT (datetime('now','localtime')),
             UNIQUE (`dedupe_key`)
         );
+        CREATE INDEX `idx_jobs_priority` ON `jobs` (`status`, `priority`, `run_after`);
         SQL);
     }
 
@@ -156,6 +160,116 @@ final class JobQueueBehaviorTest extends BehaviorTestCase
         $this->assertSame(0, $stats['pending']);
     }
 
+    // ── 优先级 / 死信（P2-4） ─────────────────────────────────────────────
+
+    public function testHigherPriorityJobIsClaimedFirst(): void
+    {
+        // 先入队低优先级，后入队高优先级；同 run_after 下高优先级应插队成功
+        JobQueue::enqueue('unknown_type', ['x' => 1], 'k:low', 0, 1);
+        $highId = JobQueue::enqueue('unknown_type', ['x' => 2], 'k:high', 0, 9);
+
+        $result = JobQueue::runPending(1);
+
+        $this->assertSame(1, $result['processed']);
+        $this->assertSame($highId, $result['details'][0]['id'], '高优先级任务应先被认领');
+        $rows = $this->rows('jobs');
+        $this->assertSame('failed', $rows[1]['status'], '高优先级任务已被执行');
+        $this->assertSame('pending', $rows[0]['status'], '低优先级任务仍在队列');
+    }
+
+    public function testEqualPriorityKeepsInsertionOrder(): void
+    {
+        $first = JobQueue::enqueue('unknown_type', ['x' => 1], 'k:first', 0, 5);
+        JobQueue::enqueue('unknown_type', ['x' => 2], 'k:second', 0, 5);
+
+        $result = JobQueue::runPending(1);
+
+        $this->assertSame($first, $result['details'][0]['id'], '同优先级按 id 升序，保持公平');
+    }
+
+    public function testPriorityDefaultsToZeroForLegacyCallers(): void
+    {
+        // 既有调用点只传 3/4 个参数，必须照常工作且 priority 落库为 0
+        $id = JobQueue::enqueue('unknown_type', ['x' => 1], 'k:legacy');
+        $this->assertGreaterThan(0, $id);
+
+        $rows = $this->rows('jobs');
+        $this->assertSame(0, (int)$rows[0]['priority'], '不传 priority 应默认 0');
+    }
+
+    public function testDedupeReusesExistingJobWithOriginalPriority(): void
+    {
+        $first = JobQueue::enqueue('unknown_type', ['x' => 1], 'k:same', 0, 7);
+        $second = JobQueue::enqueue('unknown_type', ['x' => 2], 'k:same', 0, 2);
+
+        $this->assertSame($first, $second, '新优先级下 dedupe 仍应复用同一任务');
+        $rows = $this->rows('jobs');
+        $this->assertCount(1, $rows);
+        $this->assertSame(7, (int)$rows[0]['priority'], '复用已有任务时不应偷偷改优先级');
+    }
+
+    public function testFailureReachesDeadLetterAfterMaxAttempts(): void
+    {
+        // 未知类型 → execute() 抛异常路径；每次失败后重置为 pending 模拟运维重试入队
+        $id = JobQueue::enqueue('unknown_type', ['x' => 1], 'k:dead');
+        $this->assertTrue($id > 0);
+
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            if ($attempt > 1) {
+                $this->pdo()->exec(
+                    "UPDATE `jobs` SET `status` = 'pending' WHERE `id` = " . (int)$id
+                );
+            }
+            $result = JobQueue::runPending(1);
+            $this->assertSame(1, $result['processed']);
+        }
+
+        $rows = $this->rows('jobs');
+        $this->assertSame(JobQueue::STATUS_DEAD_LETTER, $rows[0]['status'], '达到上限应转死信');
+        $this->assertSame(3, (int)$rows[0]['attempts']);
+        $this->assertNotEmpty($rows[0]['last_error'], '死信也要保留错误摘要');
+
+        // 死信是终态：再跑 worker 不会被拉取
+        $again = JobQueue::runPending();
+        $this->assertSame(0, $again['processed'], '死信任务不应再被拉取');
+    }
+
+    public function testFalseReturnPathAlsoReachesDeadLetter(): void
+    {
+        // plugin_task + 非法 handler → AsyncTask::runHandler() 返回 false（非异常路径）
+        $id = JobQueue::enqueue(
+            JobQueue::TYPE_PLUGIN_TASK,
+            ['handler' => 'no_such_handler'],
+            'k:false-path'
+        );
+
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            if ($attempt > 1) {
+                $this->pdo()->exec(
+                    "UPDATE `jobs` SET `status` = 'pending' WHERE `id` = " . (int)$id
+                );
+            }
+            JobQueue::runPending(1);
+        }
+
+        $rows = $this->rows('jobs');
+        $this->assertSame(JobQueue::STATUS_DEAD_LETTER, $rows[0]['status'], '返回 false 也要能进死信');
+    }
+
+    public function testStatsIncludeDeadLetterCount(): void
+    {
+        $this->pdo()->exec(
+            "INSERT INTO `jobs` (`type`, `status`, `dedupe_key`, `attempts`, `last_error`)
+             VALUES ('unknown_type', 'dead_letter', 'k:dead-seed', 3, '重试耗尽')"
+        );
+
+        $stats = JobQueue::stats();
+
+        $this->assertArrayHasKey('dead_letter', $stats);
+        $this->assertSame(1, $stats['dead_letter']);
+        $this->assertSame(0, $stats['pending']);
+    }
+
     // ── 清理 ──────────────────────────────────────────────────────────────
 
     public function testPurgeRemovesOnlyOldDoneJobs(): void
@@ -189,5 +303,18 @@ final class JobQueueBehaviorTest extends BehaviorTestCase
 
         $this->assertSame(0, $purged, '7 天内的完成任务不应被清理');
         $this->assertCount(1, $this->rows('jobs'));
+    }
+
+    public function testPurgeKeepsDeadLetterJobs(): void
+    {
+        $this->pdo()->exec(
+            "INSERT INTO `jobs` (`type`,`status`,`dedupe_key`,`updated_at`)
+             VALUES ('unknown_type','dead_letter','k:old-dead', datetime('now','localtime','-30 days'))"
+        );
+
+        $purged = JobQueue::purge(7);
+
+        $this->assertSame(0, $purged, '死信任务必须留给运维排查');
+        $this->assertSame('dead_letter', $this->rows('jobs')[0]['status']);
     }
 }

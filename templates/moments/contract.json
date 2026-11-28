@@ -2,7 +2,7 @@
   "schema": "hublog-theme-contract/1.0",
   "base_theme": "moments",
   "generated_by": "scripts/audit-theme.js --gen",
-  "generated_at": "2026-11-14T13:46:57.861Z",
+  "generated_at": "2026-11-28T00:52:05.104Z",
   "stats": {
     "html_files": 18,
     "js_files": 22,

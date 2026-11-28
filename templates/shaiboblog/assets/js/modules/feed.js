@@ -199,3 +199,35 @@ export function setupInfiniteScroll(app) {
         io.observe(sentinel);
     }
 }
+
+/**
+ * 封面加载失败兜底：渐变 SVG（对齐预览页 coverSvg）。
+ * error 事件不冒泡，用 capture 全局监听，同时覆盖 SSR 首屏与动态渲染的卡片。
+ */
+function coverSvg(label, hue) {
+    const h2 = (hue + 28) % 360;
+    const safe = String(label ?? '').replace(/[&<>"']/g, ch => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+    ));
+    const svg = "<svg xmlns='http://www.w3.org/2000/svg' width='800' height='450'>"
+        + "<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>"
+        + "<stop offset='0' stop-color='hsl(" + hue + ",45%,38%)'/>"
+        + "<stop offset='1' stop-color='hsl(" + h2 + ",45%,24%)'/>"
+        + "</linearGradient></defs>"
+        + "<rect width='800' height='450' fill='url(#g)'/>"
+        + "<text x='400' y='228' fill='rgba(255,255,255,.92)' font-size='46' "
+        + "font-family='PingFang SC,Microsoft YaHei,sans-serif' font-weight='700' "
+        + "text-anchor='middle' dominant-baseline='middle'>" + safe + "</text></svg>";
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
+document.addEventListener('error', (e) => {
+    const img = e.target;
+    if (!img || img.tagName !== 'IMG' || img.dataset.cyCoverFallback) return;
+    if (typeof img.closest !== 'function' || !img.closest('.post-thumb')) return;
+    const card = img.closest('.post');
+    const label = card?.querySelector('.post-cat')?.textContent?.trim() || 'WOQUAN';
+    const id = Number(card?.dataset?.id) || 1;
+    img.dataset.cyCoverFallback = '1';
+    img.src = coverSvg(label, (id * 47 + 168) % 360);
+}, true);

@@ -2,28 +2,35 @@
  * shaiboblog 前端入口（ES Module）
  * 按当前路径分发：首页信息流 / 文章详情 / 分类 / 话题 / 搜索 / 个人页 / 写作 / 消息
  */
-import { PAGE_BASE, HOME_URL } from './modules/config.js?v=20261116.12';
-import * as api from './modules/api.js?v=20261116.12';
-import * as utils from './modules/utils.js?v=20261116.12';
-import * as nav from './modules/nav.js?v=20261116.12';
-import * as auth from './modules/auth.js?v=20261116.12';
-import * as feed from './modules/feed.js?v=20261116.12';
-import * as article from './modules/article.js?v=20261116.12';
-import * as category from './modules/category.js?v=20261116.12';
-import * as search from './modules/search.js?v=20261116.12';
-import * as user from './modules/user.js?v=20261116.12';
-import * as messages from './modules/messages.js?v=20261116.12';
-import * as topic from './modules/topic.js?v=20261116.12';
-import * as write from './modules/write.js?v=20261121.01';
-import * as login from './modules/login.js?v=20261116.12';
-import * as account from './modules/account.js?v=20261116.12';
-import * as profileLists from './modules/profileLists.js?v=20261116.12';
-import * as sidebar from './modules/sidebar.js?v=20261116.12';
-import { expandIncludes } from './modules/includes.js?v=20261116.12';
-import { initCyberFx } from './modules/cyberFx.js?v=20261116.12';
-import { initBgFx } from './modules/bgFx.js?v=20261116.12';
-import { initCursorFx } from './modules/cursorFx.js?v=20261116.12';
-import { initWarpFx } from './modules/warpFx.js?v=20261116.12';
+import { PAGE_BASE, HOME_URL } from './modules/config.js?v=20261128.02';
+import * as api from './modules/api.js?v=20261128.02';
+import * as utils from './modules/utils.js?v=20261128.02';
+import * as nav from './modules/nav.js?v=20261128.02';
+import * as auth from './modules/auth.js?v=20261128.02';
+import * as feed from './modules/feed.js?v=20261128.02';
+import * as article from './modules/article.js?v=20261128.02';
+import * as category from './modules/category.js?v=20261128.02';
+import * as search from './modules/search.js?v=20261128.02';
+import * as user from './modules/user.js?v=20261128.02';
+import * as messages from './modules/messages.js?v=20261128.02';
+import * as topic from './modules/topic.js?v=20261128.02';
+import * as write from './modules/write.js?v=20261128.04';
+import * as login from './modules/login.js?v=20261128.02';
+import * as account from './modules/account.js?v=20261128.02';
+import * as profileLists from './modules/profileLists.js?v=20261128.02';
+import * as sidebar from './modules/sidebar.js?v=20261128.02';
+import { expandIncludes } from './modules/includes.js?v=20261128.02';
+import { initCyberFx } from './modules/cyberFx.js?v=20261128.02';
+import { initBgFx } from './modules/bgFx.js?v=20261128.02';
+import { initCursorFx } from './modules/cursorFx.js?v=20261128.02';
+import { initWarpFx } from './modules/warpFx.js?v=20261128.02';
+import * as go from './modules/go.js?v=20261128.02';
+import * as wallet from './modules/wallet.js?v=20261128.02';
+import * as points from './modules/points.js?v=20261128.02';
+import * as resetPassword from './modules/reset-password.js?v=20261128.02';
+import * as chat from './modules/chat.js?v=20261128.02';
+import * as circles from './modules/circles.js?v=20261128.02';
+import * as circle from './modules/circle.js?v=20261128.02';
 
 const app = {
     token: localStorage.getItem('hublog_token'),
@@ -288,6 +295,14 @@ async function boot() {
         const listType = ['followers', 'following', 'favorites', 'pinned']
             .find(k => new RegExp('/(?:u/[^/]+/)?' + k + '/?$').test(path));
         if (listType) { profileLists.renderProfileList(app, listType); return; }
+        if (path === '/go' || path === '/go/') { go.renderGo(app); return; }
+        if (path === '/wallet' || path === '/wallet/') { wallet.renderWallet(app); return; }
+        if (path === '/points' || path === '/points/') { points.renderPoints(app); return; }
+        if (path === '/reset-password' || path === '/reset-password/') { resetPassword.renderResetPassword(app); return; }
+        if (path === '/chat' || path === '/chat/') { chat.renderChat(app); return; }
+        if (path === '/circles' || path === '/circles/') { circles.renderCircles(app); return; }
+        const circleMatch = path.match(/^\/circle\/(\d+)\/?$/);
+        if (circleMatch) { circle.renderCircle(app, circleMatch[1]); return; }
         let name = '模块';
         for (const k in SHELL_NAMES) { if (path.includes('/' + k)) { name = SHELL_NAMES[k]; break; } }
         nav.renderShell(app, name);

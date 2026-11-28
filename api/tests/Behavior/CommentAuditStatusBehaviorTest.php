@@ -279,7 +279,10 @@ SQL);
 
     public function testMigrationV100UsesIdempotentChecksRethrowAndFinalVerify(): void
     {
-        $src = (string)file_get_contents(self::root() . '/api/core/MigrationBatchC.php');
+        $src = '';
+        foreach (['1', '2', '3', '4', '5'] as $batchNo) {
+            $src .= (string)file_get_contents(self::root() . '/api/core/MigrationBatchC' . $batchNo . '.php');
+        }
         $start = strpos($src, 'private static function migrate100(');
         $this->assertNotFalse($start, 'migrate100 必须存在');
         $body = substr($src, $start);
@@ -298,7 +301,7 @@ SQL);
         );
 
         $main = (string)file_get_contents(self::root() . '/api/core/Migration.php');
-        $this->assertStringContainsString('private static int $currentVersion = 103;', $main);
-        $this->assertStringContainsString('migrate66 ~ migrate103', $main);
+        $this->assertStringContainsString('private static int $currentVersion = 105;', $main);
+        $this->assertStringContainsString('migrate66 ~ migrate105', $main);
     }
 }

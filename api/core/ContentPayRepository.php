@@ -28,6 +28,13 @@ final class ContentPayRepository
         ) ?: null;
     }
 
+    /** 帖子作者 user_id（无此帖子返回 null）；供控制器判定作者免购 */
+    public static function findPostAuthorId(int $postId): ?int
+    {
+        $row = Database::fetchOne("SELECT user_id FROM posts WHERE id = ? LIMIT 1", [$postId]);
+        return $row ? (int)$row['user_id'] : null;
+    }
+
     /** 已上架的单篇商品 */
     public static function findActivePostProduct(int $postId): ?array
     {

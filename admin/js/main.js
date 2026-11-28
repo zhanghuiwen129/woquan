@@ -9,12 +9,12 @@
 import * as core_js from './core.js';
 // 版本参数：nav-ui.js 修复了「点菜单 → 整页空白」（隐藏逻辑误伤 page-host），
 // 必须带版本号强刷，避免浏览器复用旧模块缓存导致修复不生效
-import * as nav_ui_js from './nav-ui.js?v=202611211';
+import * as nav_ui_js from './nav-ui.js?v=202611251';
 import * as dashboard_js from './dashboard.js';
 
 // 图标库 / 主题开关属于外壳基础设施，走动态 import 保持首屏静态依赖只有 3 个模块。
 // startIconObserver 会在片段懒加载、JS 模板 innerHTML 更新后自动水合 <i data-icon>。
-import('./icons.js?v=202611211').then(m => {
+import('./icons.js?v=202611251').then(m => {
     m.startIconObserver();
     const label = document.getElementById('theme-label');
     if (label) label.textContent = m.currentTheme() === 'dark' ? '浅色' : '深色';

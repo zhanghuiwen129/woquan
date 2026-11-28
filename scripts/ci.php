@@ -27,6 +27,9 @@
  *       （check-theme-sync.js 假阳性较多）暂按 WARN 接入。
  *   6.8 路由 / OpenAPI 对账：parse_routes.php 零依赖解析真实路由，
  *       check_route_docs.php 用冻结基线拦「新增路由未入文档」与差异扩大。
+ *   6.9 客户端 API 契约对账：openapi 端点清单与客户端调用漂移冻结（只减不增）。
+ *   6.10 单文件行数只减不增门禁（P1-2）：受管文件行数较基线增长、或新增文件超 300 行即阻断，
+ *        防巨型类继续膨胀；生成物按 docs/file_size_baseline.json 的 exempt 清单豁免。
  *
  * 退出码：0 = 全通过，1 = 存在失败项。
  */
@@ -159,6 +162,26 @@ if ($gitCode !== 0) {
         $leaked === [],
         $leaked === [] ? 'config.php / .env / .installed.lock 均未入库' : '发现已跟踪的敏感文件: ' . implode(', ', array_unique($leaked))
     );
+}
+
+// ── 2.1 发布版本三值绑定门禁（P2-3） ──────────────────────────────────────
+// 纯只读校验：git tag ↔ APP_VERSION 去 v/V 前缀后须一致；Migration 版本是 schema
+// 维度，只校验为正整数。无 tag / 无 config.php（CI 源码包检出常态）由脚本降级为
+// WARN，此处必须走 $warnings 而不是 $failures，不能破坏既有门禁通过性。
+// 用 --json 的 status 区分 pass / warn / fail（脚本 WARN 的退出码同样是 0）。
+section('2.1 发布版本三值绑定');
+$out = '';
+$code = run([$php, $root . '/scripts/check-release-version.php', '--json'], $root, $out);
+$releaseCheck = json_decode($out, true);
+$releaseName = '发布版本三值绑定（check-release-version.php）';
+if (!is_array($releaseCheck) || !isset($releaseCheck['status'])) {
+    report($releaseName, false, '脚本输出无法解析（退出码 ' . $code . '）: ' . tail($out, 5));
+} elseif ($releaseCheck['status'] === 'fail') {
+    report($releaseName, false, (string)($releaseCheck['message'] ?? '绑定不一致'));
+} elseif ($releaseCheck['status'] === 'warn') {
+    report($releaseName, true, '', (string)($releaseCheck['message'] ?? '环境性警告，跳过绑定校验'));
+} else {
+    report($releaseName, true, (string)($releaseCheck['message'] ?? '绑定一致'));
 }
 
 if ($onlyLint) {
@@ -351,6 +374,22 @@ if ($phpstan === null) {
     $failures[] = 'PHPStan 未安装（php scripts/install-phpstan.php）';
     echo "[FAIL] PHPStan — 未安装，门禁失败（请先执行 php scripts/install-phpstan.php）\n";
 } else {
+    // 统一两仓门禁日志：分析前先回显 PHPStan 版本，便于确认 CI 用的是同一个 phar。
+    // 版本探测失败只报告 unknown，不改变门禁结论。
+    $versionOut = '';
+    $versionCode = run([$php, $phpstan, '--version'], $root, $versionOut);
+    $version = 'unknown';
+    if ($versionCode === 0 && $versionOut !== '') {
+        foreach (preg_split('/\R/', trim($versionOut)) ?: [] as $line) {
+            $line = trim($line);
+            if (str_contains($line, 'PHPStan')) {
+                $version = $line;
+                break;
+            }
+        }
+    }
+    echo "[INFO] PHPStan 版本 — {$version}\n";
+
     $cmd = [
         $php,
         $phpstan,
@@ -399,6 +438,24 @@ if (!$nodeOk) {
     } else {
         $failures[] = '前台主题 DOM 契约审计（audit-theme.js）';
         echo "[FAIL] 前台主题 DOM 契约审计：\n" . tail($out, 30) . "\n";
+    }
+}
+
+// ── 6.6.1 前端最小冒烟（node:test + 内置解析器，零新增依赖） ──────────────
+// 校验 app-client API 路径字面量、3 套主题入口 JS 语法与 theme.json content_format。
+// 与主题 DOM 契约审计共用 node 探针：无 node 仅 WARN，有 node 失败则硬阻断。
+$smokeScript = $root . '/scripts/audit-frontend-smoke.mjs';
+if (!$nodeOk || !is_file($smokeScript)) {
+    $warnings[] = 'Node.js 未安装或 audit-frontend-smoke.mjs 缺失 — 跳过前端最小冒烟';
+    echo "[WARN] 前端最小冒烟 — node/脚本不可用，跳过\n";
+} else {
+    $out = '';
+    $code = run(['node', $smokeScript], $root, $out);
+    if ($code === 0) {
+        echo "[PASS] 前端最小冒烟 — API 路径 / 主题 JS 语法 / content_format 均通过\n";
+    } else {
+        $failures[] = '前端最小冒烟（audit-frontend-smoke.mjs）';
+        echo "[FAIL] 前端最小冒烟：\n" . tail($out, 30) . "\n";
     }
 }
 
@@ -496,6 +553,39 @@ report(
     '路由/OpenAPI 差异基线（check_route_docs.php）',
     $code === 0,
     $code === 0 ? tail($out, 3) : tail($out, 25)
+);
+
+// ── 6.9 客户端 API 契约对账门禁（P1-1） ──────────────────────────────────
+// 以 openapi.yaml 为唯一契约源：端点清单必须最新，客户端调用不得出现基线外新增漂移。
+// 存量漂移由 docs/client_api_baseline.json 冻结、只减不增；两个脚本均为零外部依赖，CI 恒可达。
+section('6.9 客户端 API 契约对账');
+$out = '';
+$code = run([$php, $root . '/scripts/build-client-endpoints.php', '--check'], $root, $out);
+report(
+    '端点清单新鲜度（build-client-endpoints.php --check）',
+    $code === 0,
+    $code === 0 ? tail($out, 3) : tail($out, 10)
+);
+
+$out = '';
+$code = run([$php, $root . '/scripts/check-client-api-contract.php'], $root, $out);
+report(
+    '客户端契约漂移（check-client-api-contract.php）',
+    $code === 0,
+    $code === 0 ? tail($out, 5) : tail($out, 25)
+);
+
+// ── 6.10 单文件行数只减不增门禁（P1-2） ──────────────────────────────────
+// 冻结 api/core|controllers|middleware 下 .php 的逻辑行数，只减不增；新增超阈值文件
+// 同样阻断（否则膨胀只是迁移到新文件）。脚本严格 FAIL；如团队要先观察一个迭代，
+// 只需把下面 report() 的第 4 参数传 $warn 文案即可转 WARN，脚本本身无需改动。
+section('6.10 单文件行数只减不增门禁');
+$out = '';
+$code = run([$php, $root . '/scripts/check-file-size.php', '--check'], $root, $out);
+report(
+    '单文件行数只减不增（check-file-size.php）',
+    $code === 0,
+    $code === 0 ? tail($out, 3) : tail($out, 20)
 );
 
 // ── 汇总 ─────────────────────────────────────────────────────────────────

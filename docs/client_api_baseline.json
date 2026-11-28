@@ -1,0 +1,10 @@
+{
+    "note": "P1-1 存量漂移冻结基线：门禁只拦 allowed_drift 之外的新增漂移，漂移数只减不增。存量补齐后请重新执行 php scripts/check-client-api-contract.php --write-baseline 并人工评审。",
+    "baseline_count": 1,
+    "manifest_count": 351,
+    "client_call_count": 336,
+    "client_unique_count": 190,
+    "allowed_drift": [
+        "/api/auth/oauth/providers"
+    ]
+}

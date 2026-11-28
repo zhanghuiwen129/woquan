@@ -5,8 +5,9 @@
  * plugin_states 是唯一可信源，Cache('plugin_states', 300s) 只是读缓存；
  * 任何写操作都 invalidateCache()，清缓存后状态仍从 DB 重建。
  *
- * 读路径刻意「失败降级」：迁移尚未执行 / DB 临时不可用时，isEnabled() 返回 true
- * （新插件默认启用语义），让 5 个内置插件的加载行为与改造前一致；
+ * 读路径为 fail-close：迁移尚未执行 / DB 临时不可用时，只放行 CORE_PLUGINS 白名单
+ * （5 个无 plugin.json 的核心插件，保证核心功能不因读失败而崩），其余插件一律视为禁用，
+ * 避免管理员禁用态被读降级绕过；DB 正常时新插件仍按「无状态行默认启用」处理。
  * 写路径失败则抛出，由控制器给出明确错误，绝不假装写入成功。
  */
 
@@ -19,14 +20,34 @@ class PluginStateRepository
     public const CACHE_KEY = 'plugin_states';
     private const CACHE_TTL = 300;
 
+    /**
+     * 读失败时的最小放行名单：5 个随核心发布、无 plugin.json 的核心插件。
+     * DemoExtension 是二开示例而非核心功能，读失败时同样禁用，遵循最保守口径。
+     */
+    private const CORE_PLUGINS = [
+        'aicomment',
+        'contentaudit',
+        'smartrecommend',
+        'smartsearch',
+        'smartsummary',
+    ];
+
+    /** 本次进程最近一次状态读取是否失败（区分「无状态行」与「读降级」） */
+    private static bool $readFailed = false;
+
     /** 允许写进 plugin_states 的字段白名单，防止控制器拼出任意列 */
     private const WRITABLE_FIELDS = [
         'enabled', 'install_status', 'installed_version', 'last_error', 'installed_at',
     ];
 
-    /** @return array<string,array<string,mixed>> 键为小写插件名 */
+    /**
+     * 全量状态表；读取失败时返回空表并置 readFailed 标记，由 isEnabled() 做白名单兜底。
+     *
+     * @return array<string,array<string,mixed>> 键为小写插件名
+     */
     public static function allStates(): array
     {
+        self::$readFailed = false;
         try {
             /** @var array<string,array<string,mixed>> $states */
             $states = Cache::remember(self::CACHE_KEY, static function (): array {
@@ -39,9 +60,17 @@ class PluginStateRepository
                 }
                 return $result;
             }, self::CACHE_TTL);
-            return is_array($states) ? $states : [];
+            if (!is_array($states)) {
+                // 缓存值损坏也按读失败处理，不能把「读不到」误判成「无状态行 = 默认启用」。
+                self::$readFailed = true;
+                error_log('[Hublog PluginState] 缓存状态格式异常，仅放行核心插件白名单'); // @allow-error-log
+                return [];
+            }
+            return $states;
         } catch (\Throwable $e) {
-            Logger::error('[Hublog PluginState] 读取状态失败，按默认启用降级: ' . $e->getMessage());
+            self::$readFailed = true;
+            // 读降级必须留痕，Logger 自身在 DB 异常时可能不可用。
+            error_log('[Hublog PluginState] 读取状态失败，仅放行核心插件白名单: ' . $e->getMessage()); // @allow-error-log
             return [];
         }
     }
@@ -52,14 +81,23 @@ class PluginStateRepository
         return $states[strtolower($name)] ?? null;
     }
 
-    /** 新插件（无状态行）默认启用 */
+    /**
+     * 插件是否启用。DB 正常时保持原语义（无状态行默认启用）；
+     * 读取异常时只放行 CORE_PLUGINS，其他插件一律禁用（fail-close）。
+     */
     public static function isEnabled(string $name): bool
     {
         $state = self::get($name);
         if ($state === null) {
-            return true;
+            return self::$readFailed ? self::isCorePlugin($name) : true;
         }
         return (int)($state['enabled'] ?? 1) === 1;
+    }
+
+    /** 读降级白名单判定（大小写不敏感，与 allStates() 的键口径一致） */
+    private static function isCorePlugin(string $name): bool
+    {
+        return in_array(strtolower(trim($name)), self::CORE_PLUGINS, true);
     }
 
     /**

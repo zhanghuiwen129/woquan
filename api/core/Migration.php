@@ -14,12 +14,16 @@
  * 本文件从上到下依次是：
  *   ① 迁移调度核心（run / GET_LOCK 互斥 / 版本读写 / 关键表与字段校验）
  *   ② buildFullSchema()：全新安装的基础建表 + 默认数据（约 500 行，单独一大块，只到 V35）
- *   ③ 增量迁移 migrate26 ~ migrate103（老库升级按版本号顺序逐个执行）
+ *   ③ 增量迁移 migrate26 ~ migrate105（老库升级按版本号顺序逐个执行）
  *      —— 已拆分到 trait，降低单文件体积：
  *         · MigrationBatchA.php：migrate26 ~ migrate45
  *         · MigrationBatchB.php：migrate46 ~ migrate65 + backfillPostTagsFromContent / markExistingPollPosts
- *         · MigrationBatchC.php：migrate66 ~ migrate103
- *         主类通过 `use MigrationBatchA, MigrationBatchB, MigrationBatchC` 引入，编译期展平进主类，零行为差异。
+ *         · MigrationBatchC1.php：migrate66 ~ migrate73
+ *         · MigrationBatchC2.php：migrate74 ~ migrate81
+ *         · MigrationBatchC3.php：migrate82 ~ migrate89
+ *         · MigrationBatchC4.php：migrate90 ~ migrate97
+ *         · MigrationBatchC5.php：migrate98 ~ migrate105（批次 C 合计 migrate66 ~ migrate105）
+ *         主类通过 `use MigrationBatchA, MigrationBatchB, MigrationBatchC1, MigrationBatchC2, MigrationBatchC3, MigrationBatchC4, MigrationBatchC5` 引入，编译期展平进主类，零行为差异。
  *   ④ 辅助方法（now() / log() 等）
  * V1~V25 的历史迁移在 MigrationHistory.php（trait），通过 `use MigrationHistory` 引入。
  *
@@ -27,7 +31,7 @@
  * 【新增表 / 字段时必须做的两件事】（漏一件就会埋线上事故）
  *   1. 写一个新的 migrateNN()，并把 $currentVersion 加到 NN；
  *   2. 执行 `php scripts/build_migration_contract.php --write` 重新生成 MigrationContract.php。
- *      —— 终态契约由脚本从本文件 + 4 个 trait 的 SQL 字符串自动生成，不再手工登记两份清单：
+ *      —— 终态契约由脚本从本文件 + 8 个 trait 的 SQL 字符串自动生成，不再手工登记两份清单：
  *         run() 在全新安装和升级结束时都会用契约校验一次，缺表/缺列会抛异常并真实回退
  *         DB 版本号让下次请求重跑。漏跑生成器 = CI 直接红（MigrationContractTest）。
  *         历史教训：手工清单曾长期只登记 24 张表、16 列，漏登 4 表 + 数十列，站点带着残库运行。
@@ -53,7 +57,7 @@ namespace Hublog\Core;
 class Migration
 {
     use MigrationHistory;
-    use MigrationBatchA, MigrationBatchB, MigrationBatchC;
+    use MigrationBatchA, MigrationBatchB, MigrationBatchC1, MigrationBatchC2, MigrationBatchC3, MigrationBatchC4, MigrationBatchC5;
     private static string $versionFile = __DIR__ . '/../../cache/.schema_version';
     // P0-9：本地「已验证」标记文件（version + 时间戳）。原实现每个请求都要
     // GET_LOCK + MAX(version) + information_schema ×15+ ≈ 19 次 SQL 才发现
@@ -88,7 +92,11 @@ class Migration
     // V99: 私信软删除语义统一（V52 五列硬自检 + 存量脏数据幂等修复 + 终态哨兵），无新增业务列
     // V100: 评论审核状态列（comments.status/audit_state）+ AI 配额预扣状态列（ai_usage_logs.status）
     // V101: 扩展闭环基础设施三表（plugin_states/plugin_configs/pages）+ 协议占位种子
-    private static int $currentVersion = 103;
+    // V102: 会员数据一致性（account_state / 验证码哈希列 / 积分幂等键）
+    // V103: 会员变更审计表（member_change_logs）
+    // V104: 私信通知关联会话（notifications.conversation_id）
+    // V105: jobs 任务队列优先级（priority）+ 死信状态（status='dead_letter'）
+    private static int $currentVersion = 105;
     private static bool $checked = false;
     /** 全新安装快速路径同请求只跑一次（install.php 只调用一次，这里防重放） */
     private static bool $freshChecked = false;
@@ -338,7 +346,7 @@ class Migration
         self::seedFreshBase();
         self::benchMark('base_seeded');
 
-        // ③ 补跑增量迁移拿 V36+ 种子。快照在终态 DDL 之后拍，
+        // ③ 补跑增量迁移拿 V36+ 种子（当前到 migrate102）。快照在终态 DDL 之后拍，
         //    迁移里「表/列/索引已存在」的探测几乎全部内存命中，只剩真实种子 INSERT。
         Database::enableSchemaSnapshot();
         try {

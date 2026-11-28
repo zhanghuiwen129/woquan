@@ -522,18 +522,24 @@ trait PostCommentTrait
                     Helper::now()
                 );
                 // Create notification for mentioned user
-                PostRepository::insertNotification([
-                    'user_id' => (int)$mentionedUserId,
-                    'type' => 'mention',
-                    'title' => '提到你',
-                    // 通知内容必须用过滤并 purify 后的正文，避免原始 HTML/敏感词进入通知
-                    'content' => mb_substr($commentContent, 0, 100),
-                    'post_id' => $data['post_id'],
-                    'comment_id' => $commentId,
-                    'sender_id' => $user['id'],
-                    'is_read' => 0,
-                    'created_at' => Helper::now()
-                ]);
+                // P0-A：notifications 表无 title 列，写入会抛 1054；评论主链路无事务，
+                // 异常冒泡会让「评论已落库但接口返回 500」的半成功状态。这里去掉越界的
+                // title 字段，并单独包 try/catch，保证通知写入失败绝不影响评论发布主流程。
+                try {
+                    PostRepository::insertNotification([
+                        'user_id' => (int)$mentionedUserId,
+                        'type' => 'mention',
+                        // 通知内容必须用过滤并 purify 后的正文，避免原始 HTML/敏感词进入通知
+                        'content' => mb_substr($commentContent, 0, 100),
+                        'post_id' => $data['post_id'],
+                        'comment_id' => $commentId,
+                        'sender_id' => $user['id'],
+                        'is_read' => 0,
+                        'created_at' => Helper::now()
+                    ]);
+                } catch (\Throwable $e) {
+                    \Hublog\Core\Logger::error('[Hublog CommentMention] 通知写入失败: ' . $e->getMessage());
+                }
                 // P1-3：实时推送给被 @ 的人
                 try {
                     SsePush::push((int)$mentionedUserId, 'notification', [

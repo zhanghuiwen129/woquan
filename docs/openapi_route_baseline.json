@@ -1,9 +1,9 @@
 {
-    "generated_at": "2026-11-21T00:39:24+08:00",
+    "generated_at": "2026-11-25T15:17:13+08:00",
     "note": "G5 历史差异基线：门禁只拦 allowed_missing 之外的新增缺失，差异数只减不增。存量补齐后请重新执行 php scripts/check_route_docs.php --write-baseline 并人工评审。",
     "baseline_count": 19,
-    "route_count": 416,
-    "openapi_path_count": 349,
+    "route_count": 418,
+    "openapi_path_count": 351,
     "allowed_missing": [
         "GET /api/admin/appcenter/app",
         "GET /api/admin/appcenter/apps",
